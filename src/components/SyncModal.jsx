@@ -640,6 +640,8 @@ function ManualFilePanel({ role, onDone, onBackupSuccess }) {
         <Button variant={role === 'receiver' ? 'primary' : 'secondary'} fullWidth icon={<UploadIcon className="w-4 h-4" />} onClick={handleImportClick}>
           {i18n.t('sync.import_backup_file')}
         </Button>
+        {/* Hidden native file picker opened by the Import button — not a visible field */}
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <input ref={fileRef} type="file" accept=".atbak,.json,application/json" className="hidden" onChange={handleImport} />
       </div>
       {status && (

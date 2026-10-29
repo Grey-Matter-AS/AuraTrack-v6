@@ -16,6 +16,8 @@ function RedAlert({ elapsed, onClose, emergencyMedications = [], neurologistName
     <div
       role="alertdialog"
       aria-modal="true"
+      // Deliberate exception to the kit overlays: the full-screen seizure alert must cover everything
+      // eslint-disable-next-line no-restricted-syntax
       className="fixed inset-0 flex flex-col items-center select-none overflow-y-auto"
       style={{
         zIndex: 'var(--z-alert)',

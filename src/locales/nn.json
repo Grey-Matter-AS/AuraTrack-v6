@@ -93,7 +93,9 @@
     "tab_eeg": "EEG Diary",
     "tab_wellbeing": "Velvære",
     "from_date": "Frå",
-    "to_date": "Til"
+    "to_date": "Til",
+    "from_date_hint": "Frå dato",
+    "to_date_hint": "Til dato"
   },
   "export": {
     "title": "Eksporter & rapportar",
@@ -492,7 +494,9 @@
       "factor_type_boolean": "Tilstades / fråverande",
       "factor_type_scale": "Skala 0-3",
       "factor_type_number": "Tal",
-      "factor_unit_placeholder": "Eining"
+      "factor_unit_placeholder": "Eining",
+      "factor_label": "Faktornamn",
+      "factor_type": "Faktortype"
     },
     "medications": {
       "section": "Medisinar",
@@ -1145,5 +1149,12 @@
   "common": {
     "close": "Lukk",
     "section": "Seksjon"
+  },
+  "ui": {
+    "select_date": "Vel dato",
+    "select_time": "Vel tid",
+    "select_datetime": "Vel dato og tid",
+    "select_month": "Vel månad",
+    "choose": "Vel…"
   }
 }

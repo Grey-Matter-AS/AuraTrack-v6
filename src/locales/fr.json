@@ -93,7 +93,9 @@
     "tab_eeg": "EEG Diary",
     "tab_wellbeing": "Bien-être",
     "from_date": "Du",
-    "to_date": "Au"
+    "to_date": "Au",
+    "from_date_hint": "Date de début",
+    "to_date_hint": "Date de fin"
   },
   "export": {
     "title": "Export & Rapports",
@@ -492,7 +494,9 @@
       "factor_type_boolean": "Présent / absent",
       "factor_type_scale": "Échelle 0-3",
       "factor_type_number": "Nombre",
-      "factor_unit_placeholder": "Unité"
+      "factor_unit_placeholder": "Unité",
+      "factor_label": "Nom du facteur",
+      "factor_type": "Type de facteur"
     },
     "medications": {
       "section": "Médicaments",
@@ -1145,5 +1149,12 @@
   "common": {
     "close": "Fermer",
     "section": "Section"
+  },
+  "ui": {
+    "select_date": "Choisir une date",
+    "select_time": "Choisir l'heure",
+    "select_datetime": "Choisir date et heure",
+    "select_month": "Choisir le mois",
+    "choose": "Choisir…"
   }
 }

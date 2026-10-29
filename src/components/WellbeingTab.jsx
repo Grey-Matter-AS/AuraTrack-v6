@@ -4,7 +4,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Too
 import { formatEventDate, formatEventTime } from '../utils/formatters';
 import { WellbeingEntrySheet } from './WellbeingEntrySheet';
 import { EditIcon, TrashIcon } from './AppIcons';
-import { Card, ChipGroup, EmptyState } from './ui';
+import { Card, ChipGroup, DateInput, EmptyState, Select } from './ui';
 
 const WINDOWS = [
   { label: '7D', days: 7 },
@@ -200,32 +200,28 @@ export function WellbeingTab({ events = [], wellbeing, settings = {} }) {
           {t('wellbeing.log_wellbeing', 'Log wellbeing')}
         </button>
         <div className="ui-row">
-          <input
-            type="date"
+          <DateInput
             value={fromDate}
             max={toDate || undefined}
-            onChange={e => setFromDate(e.target.value)}
+            onChange={setFromDate}
             aria-label={t('history.from_date', 'From')}
-            className="ui-field"
+            placeholder={t('history.from_date_hint', 'From date')}
           />
-          <input
-            type="date"
+          <DateInput
             value={toDate}
             min={fromDate || undefined}
-            onChange={e => setToDate(e.target.value)}
+            onChange={setToDate}
             aria-label={t('history.to_date', 'To')}
-            className="ui-field"
+            placeholder={t('history.to_date_hint', 'To date')}
           />
         </div>
-        <select
-          value={factorFilter}
-          onChange={e => setFactorFilter(e.target.value)}
+        <Select
           aria-label={t('wellbeing.all_context_factors', 'All context factors')}
-          className="ui-field"
-        >
-          <option value="">{t('wellbeing.all_context_factors', 'All context factors')}</option>
-          {factorDefinitions.map(factor => <option key={factor.id} value={factor.id}>{factorLabel(factor, t, factor.id)}</option>)}
-        </select>
+          placeholder={t('wellbeing.all_context_factors', 'All context factors')}
+          value={factorFilter}
+          onChange={setFactorFilter}
+          options={factorDefinitions.map(factor => ({ value: factor.id, label: factorLabel(factor, t, factor.id) }))}
+        />
       </div>
 
       {filtered.length === 0 ? (

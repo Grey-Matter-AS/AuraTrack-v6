@@ -93,7 +93,9 @@
     "tab_eeg": "EEG Diary",
     "tab_wellbeing": "Hyvinvointi",
     "from_date": "Alkaen",
-    "to_date": "Asti"
+    "to_date": "Asti",
+    "from_date_hint": "Alkupäivä",
+    "to_date_hint": "Loppupäivä"
   },
   "export": {
     "title": "Vienti & Raportit",
@@ -492,7 +494,9 @@
       "factor_type_boolean": "Läsnä / ei läsnä",
       "factor_type_scale": "Asteikko 0-3",
       "factor_type_number": "Numero",
-      "factor_unit_placeholder": "Yksikkö"
+      "factor_unit_placeholder": "Yksikkö",
+      "factor_label": "Tekijän nimi",
+      "factor_type": "Tekijän tyyppi"
     },
     "medications": {
       "section": "Lääkkeet",
@@ -1145,5 +1149,12 @@
   "common": {
     "close": "Sulje",
     "section": "Osio"
+  },
+  "ui": {
+    "select_date": "Valitse päivä",
+    "select_time": "Valitse aika",
+    "select_datetime": "Valitse päivä ja aika",
+    "select_month": "Valitse kuukausi",
+    "choose": "Valitse…"
   }
 }

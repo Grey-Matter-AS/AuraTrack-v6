@@ -11,7 +11,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { TRIGGERS } from '../data/constants';
 import { CheckIcon, CloseIcon, EditIcon, GripIcon, TrashIcon } from './AppIcons';
-import { Button, DateInput, FieldRow, IconButton } from './ui';
+import { Button, DateInput, FieldRow, IconButton, TextArea, TextInput } from './ui';
 
 const POST_ICTAL_FINDINGS = [
   'Confusion',
@@ -128,14 +128,14 @@ function EditableTimer({ phase, label, color, calcValue, manualDurations, edited
       {stage === 'editing' && (
         <div className="ui-inline justify-center">
           <span className="ui-inline justify-center">
-            <input
-              type="text"
+            <TextInput
               inputMode="numeric"
               pattern="[0-9]*"
               value={inputVal}
-              onChange={e => setInputVal(e.target.value.replace(/\D/g, ''))}
+              onChange={value => setInputVal(value.replace(/\D/g, ''))}
               aria-label={label}
-              className="ui-field ui-field--compact"
+              placeholder="0"
+              className="ui-field--compact"
               autoFocus
             />
             <span className="text-xs font-bold" style={{ color: 'var(--text-dim)' }}>s</span>
@@ -207,14 +207,14 @@ function EditableTotalTimer({ calcValue, manualDurations, editedTimers, onSetMan
       {stage === 'editing' && (
         <div className="ui-inline">
           <span className="ui-inline">
-            <input
-              type="text"
+            <TextInput
               inputMode="numeric"
               pattern="[0-9]*"
               value={inputVal}
-              onChange={e => setInputVal(e.target.value.replace(/\D/g, ''))}
+              onChange={value => setInputVal(value.replace(/\D/g, ''))}
               aria-label="TOTAL DURATION"
-              className="ui-field w-24 text-center"
+              placeholder="0"
+              className="!w-24 text-center"
               autoFocus
             />
             <span className="text-lg font-bold" style={{ color: 'var(--text-dim)' }}>s</span>
@@ -539,10 +539,11 @@ function Summary({
           <p className="text-[10px] font-black uppercase tracking-widest mb-3 ml-1" style={{ color: 'var(--text-dim)' }}>
             CLINICAL OBSERVATIONS
           </p>
-          <textarea
+          <TextArea
+            aria-label={t('event_card.notes_placeholder')}
             value={notes}
-            onChange={e => setNotes(e.target.value)}
-            className="ui-field min-h-[140px]"
+            onChange={setNotes}
+            className="min-h-[140px]"
             placeholder={t('event_card.notes_placeholder')}
           />
         </div>

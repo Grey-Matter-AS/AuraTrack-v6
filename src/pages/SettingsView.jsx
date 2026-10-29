@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SettingsForm } from '../components/SettingsForm';
-import { Tabs } from '../components/Tabs';
+import { Tabs } from '../components/ui';
 import { ScrollFade } from '../components/ScrollFade';
 
 export default function SettingsView({ settings, onUpdate, onReset, onBack, pwa, notificationPermission, onRequestNotificationPermission, onSync, initialTab = 'identity', storagePersistence = null, onBackupSuccess = null }) {

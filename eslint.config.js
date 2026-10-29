@@ -19,6 +19,23 @@ export default defineConfig([
     },
   },
   {
+    // UI standardisation: every field and pop-up comes from the shared kit (src/components/ui)
+    files: ['src/**/*.jsx'],
+    ignores: ['src/components/ui/**'],
+    rules: {
+      'no-restricted-syntax': ['error',
+        {
+          selector: "JSXOpeningElement[name.name=/^(input|select|textarea)$/]",
+          message: 'Use the UI kit field components from src/components/ui (TextInput, NumberInput, DecimalInput, DateInput, Select, TextArea, Checkbox).',
+        },
+        {
+          selector: "JSXAttribute[name.name='className'] > Literal[value=/\\bfixed inset-0\\b/]",
+          message: 'Use BottomSheet or Dialog from src/components/ui for overlays.',
+        },
+      ],
+    },
+  },
+  {
     files: ['playwright.config.js', 'tests/**/*.js'],
     languageOptions: {
       globals: globals.node,

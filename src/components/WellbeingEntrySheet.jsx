@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WELLBEING_MOOD_OPTIONS } from '../data/constants';
-import { BottomSheet, Button, ChipGroup, DateInput, DecimalInput, Field, Inset, TextArea } from './ui';
+import { BottomSheet, Button, Checkbox, ChipGroup, DateInput, DecimalInput, Field, Inset, TextArea } from './ui';
 
 const INTENSITY_OPTIONS = [
   { value: 1, label: 'Mild', labelKey: 'wellbeing.mild' },
@@ -40,19 +40,7 @@ function FactorControl({ definition, value, onChange, t }) {
   const help = translatedHelp(t, definition);
   if (definition.type === 'boolean') {
     return (
-      <label className="ui-inset flex items-start gap-3 cursor-pointer" title={help}>
-        <input
-          type="checkbox"
-          checked={Boolean(value)}
-          onChange={e => onChange(e.target.checked)}
-          className="mt-0.5 w-5 h-5 shrink-0"
-          style={{ accentColor: 'var(--accent)' }}
-        />
-        <span className="min-w-0">
-          <span className="block text-sm font-medium">{label}</span>
-          {help && <span className="block text-[11px] leading-snug mt-0.5" style={{ color: 'var(--text-dim)' }}>{help}</span>}
-        </span>
-      </label>
+      <Checkbox checked={value} onChange={onChange} label={label} help={help} title={help} />
     );
   }
 

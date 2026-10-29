@@ -5,6 +5,7 @@ import { ArrowRightIcon } from '../components/AppIcons';
 import Summary from '../components/Summary';
 import { SYMPTOM_WIZARD, REGION_WIZARD, SEIZURE_TYPES } from '../data/constants';
 import { db } from '../data/db';
+import { TextArea } from '../components/ui';
 
 const FAVORITES_KEY = 'favoriteSymptomSets';
 
@@ -43,10 +44,11 @@ function TextEntryStep({
       </div>
 
       <div className="space-y-4">
-        <textarea
+        <TextArea
+          aria-label={placeholder}
           value={value}
-          onChange={e => onChange(e.target.value)}
-          className="ui-field min-h-[140px]"
+          onChange={onChange}
+          className="min-h-[140px]"
           placeholder={placeholder}
           autoFocus
         />

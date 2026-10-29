@@ -10,7 +10,7 @@ import { defaultScheduledTimes, diffRegimen, regimenSnapshot, scheduledDaysLabel
 import { describeChange, formLabel, regimenDoseSummary, regimenSummary } from '../utils/medicationChanges';
 import { COMMON_ANTISEIZURE_INGREDIENTS, DEFAULT_WELLBEING_FACTORS, MEDICATION_FORMS } from '../data/constants';
 import { MedicationChangeConfirm } from './MedicationChangeConfirm';
-import { Button, ButtonRow, ChipGroup, ChoiceList, DateInput, DecimalInput, Dialog, FieldRow, Inset, Section as KitSection, Select, TextInput, Toggle, useToast } from './ui';
+import { Button, ButtonRow, ChipGroup, ChoiceList, DateInput, DecimalInput, Dialog, FieldRow, Inset, Section as KitSection, Select, TextArea, TextInput, Toggle, useToast } from './ui';
 import {
   BellIcon,
   BellOffIcon,
@@ -1034,16 +1034,15 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
         </div>
         <div>
           <FieldLabel>{t('settings.appearance.language')}</FieldLabel>
-          <select
+          <Select
+            aria-label={t('settings.appearance.language')}
             value={settings.language || 'en'}
-            onChange={e => {
-              i18n.changeLanguage(e.target.value);
-              onUpdate('language', e.target.value);
+            onChange={value => {
+              i18n.changeLanguage(value);
+              onUpdate('language', value);
             }}
-            className="ui-field"
-          >
-            {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
-          </select>
+            options={LANGUAGES.map(l => ({ value: l.code, label: l.label }))}
+          />
         </div>
       </Section>}
 
@@ -1058,16 +1057,17 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
         </div>
         <div>
           <FieldLabel>{t('settings.display.date_format')}</FieldLabel>
-          <select
+          <Select
+            aria-label={t('settings.display.date_format')}
             value={settings.dateFormat}
-            onChange={e => onUpdate('dateFormat', e.target.value)}
-            className="ui-field"
-          >
-            <option value="locale">{t('settings.display.date_system')}</option>
-            <option value="ISO">ISO  — 2025-05-14</option>
-            <option value="US">US   — 05/14/2025</option>
-            <option value="EU">EU   — 14/05/2025</option>
-          </select>
+            onChange={value => onUpdate('dateFormat', value)}
+            options={[
+              { value: 'locale', label: t('settings.display.date_system') },
+              { value: 'ISO', label: 'ISO  — 2025-05-14' },
+              { value: 'US', label: 'US   — 05/14/2025' },
+              { value: 'EU', label: 'EU   — 14/05/2025' },
+            ]}
+          />
         </div>
         <div>
           <FieldLabel>{t('settings.display.duration_display')}</FieldLabel>
@@ -1134,16 +1134,13 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
               </p>
               <div className="space-y-3">
                 {wellbeingFactors.map((factor, index) => (
-                  <div
-                    key={factor.id || index}
-                    className="rounded-2xl p-3 space-y-2"
-                    style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <input
+                  <Inset key={factor.id || index} className="!p-3 space-y-2">
+                    <div className="ui-row ui-row--split items-center">
+                      <TextInput
+                        aria-label={t('settings.recording.factor_label', 'Factor name')}
+                        placeholder={t('settings.recording.factor_label', 'Factor name')}
                         value={factor.label || ''}
-                        onChange={e => updateWellbeingFactor(index, { label: e.target.value })}
-                        className="ui-field"
+                        onChange={value => updateWellbeingFactor(index, { label: value })}
                       />
                       <Toggle
                         value={factor.active !== false}
@@ -1151,29 +1148,31 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
                         label={factor.label || t('settings.recording.factor_active', 'Factor active')}
                       />
                     </div>
-                    <div className="grid grid-cols-[1fr_auto] gap-2">
-                      <select
+                    <FieldRow split>
+                      <Select
+                        aria-label={t('settings.recording.factor_type', 'Factor type')}
                         value={factor.type || 'boolean'}
-                        onChange={e => updateWellbeingFactor(index, { type: e.target.value })}
-                        className="ui-field"
-                      >
-                        <option value="boolean">{t('settings.recording.factor_type_boolean', 'Present / absent')}</option>
-                        <option value="scale">{t('settings.recording.factor_type_scale', 'Scale 0-3')}</option>
-                        <option value="number">{t('settings.recording.factor_type_number', 'Number')}</option>
-                      </select>
-                      <input
-                        value={factor.unit || ''}
-                        onChange={e => updateWellbeingFactor(index, { unit: e.target.value })}
-                        placeholder={t('settings.recording.factor_unit_placeholder', 'Unit')}
-                        className="ui-field w-20"
+                        onChange={value => updateWellbeingFactor(index, { type: value })}
+                        options={[
+                          { value: 'boolean', label: t('settings.recording.factor_type_boolean', 'Present / absent') },
+                          { value: 'scale', label: t('settings.recording.factor_type_scale', 'Scale 0-3') },
+                          { value: 'number', label: t('settings.recording.factor_type_number', 'Number') },
+                        ]}
                       />
-                    </div>
-                    <textarea
+                      <TextInput
+                        aria-label={t('settings.recording.factor_unit_placeholder', 'Unit')}
+                        value={factor.unit || ''}
+                        onChange={value => updateWellbeingFactor(index, { unit: value })}
+                        placeholder={t('settings.recording.factor_unit_placeholder', 'Unit')}
+                        className="!w-24"
+                      />
+                    </FieldRow>
+                    <TextArea
+                      aria-label={t('settings.recording.factor_help_placeholder', 'Tooltip/helper text')}
                       value={factor.help || ''}
-                      onChange={e => updateWellbeingFactor(index, { help: e.target.value })}
+                      onChange={value => updateWellbeingFactor(index, { help: value })}
                       placeholder={t('settings.recording.factor_help_placeholder', 'Tooltip/helper text')}
                       rows={2}
-                      className="ui-field"
                     />
                     <button
                       onClick={() => removeWellbeingFactor(index)}
@@ -1181,10 +1180,10 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
                     >
                       {t('settings.recording.remove_factor', 'Remove factor')}
                     </button>
-                  </div>
+                  </Inset>
                 ))}
               </div>
-              <div className="grid grid-cols-2 gap-2 mt-3">
+              <div className="ui-button-row mt-3">
                 <button
                   onClick={addWellbeingFactor}
                   className="ui-btn ui-btn--secondary ui-btn--md"
@@ -1204,21 +1203,22 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
         <div>
           <FieldLabel>{t('settings.recording.quick_labels')}</FieldLabel>
           <p className="text-[11px] text-[var(--text-dim)] mb-3">{t('settings.recording.quick_labels_help')}</p>
-          <div className="grid grid-cols-2 gap-2">
+          <FieldRow min="8rem">
             {(settings.quickNoteLabels || []).map((label, i) => (
-              <input
+              <TextInput
                 key={i}
+                aria-label={t('settings.recording.button_n', { n: i + 1 })}
                 value={label}
-                onChange={e => {
+                onChange={value => {
                   const updated = [...settings.quickNoteLabels];
-                  updated[i] = e.target.value;
+                  updated[i] = value;
                   onUpdate('quickNoteLabels', updated);
                 }}
                 placeholder={t('settings.recording.button_n', { n: i + 1 })}
-                className="ui-field text-center"
+                className="text-center"
               />
             ))}
-          </div>
+          </FieldRow>
         </div>
       </Section>}
 
@@ -1331,6 +1331,8 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
             ))}
           </div>
         </div>
+        {/* Hidden native file picker opened by the Import button — not a visible field */}
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <input ref={fileInputRef} type="file" accept=".atbak,.json,application/json" className="hidden" onChange={handleImport} />
 
 
@@ -1371,12 +1373,12 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
         </Row>
         <div>
           <FieldLabel>{t('settings.reports.additional_notes')}</FieldLabel>
-          <textarea
+          <TextArea
+            aria-label={t('settings.reports.additional_notes')}
             value={settings.reportNotes || ''}
-            onChange={e => onUpdate('reportNotes', e.target.value)}
+            onChange={value => onUpdate('reportNotes', value)}
             placeholder={t('settings.reports.notes_placeholder')}
             rows={4}
-            className="ui-field"
           />
         </div>
       </Section>}

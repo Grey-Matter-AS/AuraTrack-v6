@@ -93,7 +93,9 @@
     "tab_export": "Export",
     "tab_eeg": "EEG Diary",
     "from_date": "From",
-    "to_date": "To"
+    "to_date": "To",
+    "from_date_hint": "From date",
+    "to_date_hint": "To date"
   },
   "export": {
     "title": "Export & Reports",
@@ -496,7 +498,9 @@
       "factor_type_boolean": "Present / absent",
       "factor_type_scale": "Scale 0-3",
       "factor_type_number": "Number",
-      "factor_unit_placeholder": "Unit"
+      "factor_unit_placeholder": "Unit",
+      "factor_label": "Factor name",
+      "factor_type": "Factor type"
     },
     "medications": {
       "section": "Medications",
@@ -1149,5 +1153,12 @@
   "common": {
     "close": "Close",
     "section": "Section"
+  },
+  "ui": {
+    "select_date": "Select date",
+    "select_time": "Select time",
+    "select_datetime": "Select date & time",
+    "select_month": "Select month",
+    "choose": "Choose…"
   }
 }

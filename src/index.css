@@ -1031,3 +1031,44 @@ html, body, #root {
     .ui-tabs-picker { display: block; }
   }
 }
+
+@layer components {
+  /* Date / time fields: own hint + icon so an empty field is never a blank box (iOS) */
+  .ui-date { position: relative; min-width: 0; max-width: 100%; }
+  .ui-date > .ui-field { position: relative; padding-right: 2.75rem; }
+  .ui-date__hint {
+    position: absolute;
+    top: 50%;
+    left: calc(0.875rem + 1px);
+    right: 2.75rem;
+    transform: translateY(-50%);
+    color: var(--text-faint);
+    font-size: max(16px, 1em);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+  }
+  .ui-date__icon {
+    position: absolute;
+    top: 50%;
+    right: 0.875rem;
+    display: flex;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    pointer-events: none;
+  }
+  /* Hide Chrome's own empty "dd/mm/yyyy" while our hint shows */
+  .ui-date--empty > .ui-field::-webkit-datetime-edit { color: transparent; }
+  /* Chrome/Android: the native picker button covers the whole field (invisible), so tapping
+     anywhere opens the picker and only the kit icon is visible */
+  .ui-date > .ui-field::-webkit-calendar-picker-indicator {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    height: auto;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}

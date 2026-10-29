@@ -4,14 +4,14 @@ import { EventCard } from '../components/EventCard';
 import { SEIZURE_TYPES } from '../data/constants';
 import SeizureTrendChart from '../components/SeizureTrendChart';
 import { buildDangerMap } from '../utils/dangerFlags';
-import { Tabs } from '../components/Tabs';
+import { Tabs } from '../components/ui';
 import { MedicationHistoryTab } from '../components/MedicationHistoryTab';
 import { EEGDiaryTab } from '../components/EEGDiaryTab';
 import { WellbeingTab } from '../components/WellbeingTab';
 import ExportView from './ExportView';
 import { ScrollFade } from '../components/ScrollFade';
 import { useMedications } from '../hooks/useMedications';
-import { EmptyState } from '../components/ui';
+import { DateInput, EmptyState, Select } from '../components/ui';
 
 export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, historyPageSize = 10, settings = {}, initialTab = 'seizures', eeg = null, wellbeing = null, events = [], onBackupSuccess = null }) {
   const { t } = useTranslation();
@@ -83,15 +83,15 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
 
           <div className="mb-4 flex flex-col gap-2">
             <div className="flex flex-wrap gap-2 items-center">
-              <select
-                value={typeFilter}
-                onChange={e => { setTypeFilter(e.target.value); setPage(0); }}
-                className="ui-field flex-1 basis-40"
-                aria-label={t('history.all_types')}
-              >
-                <option value="">{t('history.all_types')}</option>
-                {SEIZURE_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-              </select>
+              <div className="flex-1 basis-40 min-w-0">
+                <Select
+                  aria-label={t('history.all_types')}
+                  placeholder={t('history.all_types')}
+                  value={typeFilter}
+                  onChange={value => { setTypeFilter(value); setPage(0); }}
+                  options={SEIZURE_TYPES.map(type => ({ value: type, label: type }))}
+                />
+              </div>
               <button
                 type="button"
                 aria-pressed={completionFilter === 'needs_details'}
@@ -110,21 +110,19 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
               )}
             </div>
             <div className="ui-row">
-              <input
-                type="date"
+              <DateInput
                 value={fromDate}
                 max={toDate || undefined}
-                onChange={e => { setFromDate(e.target.value); setPage(0); }}
+                onChange={value => { setFromDate(value); setPage(0); }}
                 aria-label={t('history.from_date', 'From')}
-                className="ui-field"
+                placeholder={t('history.from_date_hint', 'From date')}
               />
-              <input
-                type="date"
+              <DateInput
                 value={toDate}
                 min={fromDate || undefined}
-                onChange={e => { setToDate(e.target.value); setPage(0); }}
+                onChange={value => { setToDate(value); setPage(0); }}
                 aria-label={t('history.to_date', 'To')}
-                className="ui-field"
+                placeholder={t('history.to_date_hint', 'To date')}
               />
             </div>
           </div>

@@ -93,7 +93,9 @@
     "tab_eeg": "EEG Diary",
     "tab_wellbeing": "Välbefinnande",
     "from_date": "Från",
-    "to_date": "Till"
+    "to_date": "Till",
+    "from_date_hint": "Från datum",
+    "to_date_hint": "Till datum"
   },
   "export": {
     "title": "Export & Rapporter",
@@ -492,7 +494,9 @@
       "factor_type_boolean": "Finns / finns inte",
       "factor_type_scale": "Skala 0-3",
       "factor_type_number": "Nummer",
-      "factor_unit_placeholder": "Enhet"
+      "factor_unit_placeholder": "Enhet",
+      "factor_label": "Faktorns namn",
+      "factor_type": "Faktortyp"
     },
     "medications": {
       "section": "Mediciner",
@@ -1145,5 +1149,12 @@
   "common": {
     "close": "Stäng",
     "section": "Avsnitt"
+  },
+  "ui": {
+    "select_date": "Välj datum",
+    "select_time": "Välj tid",
+    "select_datetime": "Välj datum och tid",
+    "select_month": "Välj månad",
+    "choose": "Välj…"
   }
 }

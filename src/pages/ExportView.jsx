@@ -19,6 +19,7 @@ import {
   filterEventsByDateRange,
 } from '../utils/exportHelpers';
 import { useMedications } from '../hooks/useMedications';
+import { DateInput } from '../components/ui';
 
 export default function ExportView({ onBack, settings = {}, isEmbedded = false, eeg = null, onBackupSuccess = null }) {
   const { t } = useTranslation();
@@ -151,27 +152,8 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
           {t('export.date_range')}
         </p>
         <div className="ui-row">
-          <div className="flex-1">
-            <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-faint)' }}>{t('export.from')}</p>
-            <input
-              type="date"
-              value={fromDate}
-              max={toDate}
-              onChange={e => setFromDate(e.target.value)}
-              className="ui-field"
-            />
-          </div>
-          <div className="flex-1">
-            <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-faint)' }}>{t('export.to')}</p>
-            <input
-              type="date"
-              value={toDate}
-              min={fromDate}
-              max={today}
-              onChange={e => setToDate(e.target.value)}
-              className="ui-field"
-            />
-          </div>
+          <DateInput label={t('export.from')} value={fromDate} max={toDate} onChange={setFromDate} />
+          <DateInput label={t('export.to')} value={toDate} min={fromDate} max={today} onChange={setToDate} />
         </div>
       </div>
 
@@ -304,16 +286,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
             </div>
           </div>
           <div className="ui-row">
-            <div className="flex-1">
-              <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-faint)' }}>{t('export.month')}</p>
-              <input
-                type="month"
-                value={diaryMonth}
-                max={today.slice(0, 7)}
-                onChange={e => setDiaryMonth(e.target.value)}
-                className="ui-field"
-              />
-            </div>
+            <DateInput type="month" label={t('export.month')} value={diaryMonth} max={today.slice(0, 7)} onChange={setDiaryMonth} />
             <div className="date-selector-actions">
               <button
                 onClick={handleSeizureDiary}
