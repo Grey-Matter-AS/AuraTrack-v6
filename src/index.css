@@ -23,8 +23,13 @@
   /* Accent (chosen in Settings → Appearance via data-accent; blue by default) */
   --blue: #5b8def;
   --accent: var(--blue);
-  /* Fixed phase colour for "recovery" — phases carry meaning, so they ignore the accent */
+  /* Phase / status text colours — they carry meaning, so they ignore the accent, but each
+     theme gets a shade that stays readable on its own background */
+  --phase-aura: #f59e0b;
+  --phase-seizure: #ef4444;
   --phase-recovery: #5b8def;
+  --text-warning: #f59e0b;
+  --text-danger: #ef4444;
 
   /* Medication status — dark mode */
   --status-missed-bg:     rgba(220,38,38,0.20);
@@ -55,7 +60,6 @@
   --warning-text: #facc15;
   --warning-border: #f59e0b;
   --on-selected: #ffffff;
-  --inset-bg: color-mix(in srgb, var(--bg-base) 55%, var(--bg-card));
 
   /* Stacking order: sheets < dialogs < toasts < seizure alert < print preview */
   --z-sheet: 50;
@@ -70,15 +74,20 @@
   --bg-base:     #f8fafc;
   --bg-base-95:  rgba(248, 250, 252, 0.95);
   --bg-card:     #ffffff;
-  --bg-raised:   #334155; /* keep dark for filled buttons — contrast on light bg */
+  --bg-raised:   #e2e8f0; /* light raised surface; text on it is dark (no dark-on-dark) */
   --bg-input:    #f1f5f9;
   --text-primary:   #0f172a;
   --text-secondary: #334155;
   --text-dim:       #475569;
   --text-faint:     #64748b;
-  --text-on-raised: #ffffff;
-  --text-on-raised-muted: rgba(255,255,255,0.80);
-  --border:        #e2e8f0;
+  --text-on-raised: #0f172a;
+  --text-on-raised-muted: rgba(15,23,42,0.72);
+  --border:        #cbd5e1;
+  --phase-aura: #b45309;
+  --phase-seizure: #b91c1c;
+  --phase-recovery: #1d4ed8;
+  --text-warning: #b45309;
+  --text-danger: #b91c1c;
   --border-subtle: rgba(226, 232, 240, 0.7);
 
   /* Medication status — light mode */
@@ -96,15 +105,20 @@
     --bg-base:     #f8fafc;
     --bg-base-95:  rgba(248, 250, 252, 0.95);
     --bg-card:     #ffffff;
-    --bg-raised:   #334155;
+    --bg-raised:   #e2e8f0;
     --bg-input:    #f1f5f9;
     --text-primary:   #0f172a;
     --text-secondary: #334155;
     --text-dim:       #475569;
     --text-faint:     #64748b;
-    --text-on-raised: #ffffff;
-    --text-on-raised-muted: rgba(255,255,255,0.80);
-    --border:        #e2e8f0;
+    --text-on-raised: #0f172a;
+    --text-on-raised-muted: rgba(15,23,42,0.72);
+    --border:        #cbd5e1;
+    --phase-aura: #b45309;
+    --phase-seizure: #b91c1c;
+    --phase-recovery: #1d4ed8;
+    --text-warning: #b45309;
+    --text-danger: #b91c1c;
     --border-subtle: rgba(226, 232, 240, 0.7);
 
     /* Medication status — light mode */
@@ -114,6 +128,25 @@
     --status-late-bg:       #fef3c7;
     --status-late-text:     #92400e;
     --status-late-border:   #fcd34d;
+  }
+}
+
+/* ─── Native control colours (select arrows, date/time icons, checkboxes, scrollbars) ───
+   color-scheme tells iOS / Android / desktop browsers which palette to draw their own
+   controls in, so they never end up dark-on-dark or light-on-light. */
+:root, [data-theme="dark"] {
+  color-scheme: dark;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+[data-theme="system"] { color-scheme: dark; }
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] {
+    color-scheme: light;
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   }
 }
 
@@ -132,6 +165,14 @@
   --action-blue-border: color-mix(in srgb, var(--accent) 78%, #000);
   --action-blue-active: color-mix(in srgb, var(--accent) 85%, #000);
   --selected: var(--accent);
+  /* Accent used as text/icon colour (on cards, raised surfaces) */
+  --accent-text: var(--accent);
+  --inset-bg: color-mix(in srgb, var(--bg-base) 55%, var(--bg-card));
+}
+/* Light backgrounds need a darker accent for text to stay readable */
+[data-theme="light"][data-accent] { --accent-text: color-mix(in srgb, var(--accent) 68%, #000); }
+@media (prefers-color-scheme: light) {
+  [data-theme="system"][data-accent] { --accent-text: color-mix(in srgb, var(--accent) 68%, #000); }
 }
 
 /* ─── Light-mode text overrides (Tailwind hardcoded classes) ── */
@@ -172,6 +213,17 @@ button, a, [role="button"], input, select, textarea {
 }
 
 @layer base {
+  select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: var(--chevron);
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+  }
+  select option { color: var(--text-primary); background-color: var(--bg-card); }
+
   button,
   [role="button"] {
     font-weight: 500;
@@ -741,13 +793,14 @@ html, body, #root {
     padding: 0.625rem 0.875rem;
     border-radius: 0.875rem;
     border: 1px solid var(--border);
-    background: var(--bg-input);
+    background-color: var(--bg-input);
     color: var(--text-primary);
     outline: none;
     box-sizing: border-box;
   }
+  select.ui-field { background-image: var(--chevron); background-repeat: no-repeat; background-position: right 0.875rem center; background-size: 1rem; }
   textarea.ui-field { min-height: 5.5rem; resize: none; }
-  select.ui-field { padding-right: 2rem; text-overflow: ellipsis; }
+  select.ui-field { padding-right: 2.5rem; text-overflow: ellipsis; }
   .ui-field[readonly], .ui-field:disabled { opacity: 0.65; }
   .ui-field--compact { width: 4.5rem; text-align: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 800; }
 
@@ -954,7 +1007,7 @@ html, body, #root {
   /* Narrow screens: the tabs become one picker, styled like the selected tab so it reads as
      tappable — accent fill, bold label, large chevron */
   .ui-tabs-picker { display: none; }
-  .ui-tabs-select {
+  select.ui-tabs-select {
     -webkit-appearance: none;
     appearance: none;
     min-height: var(--touch-target-compact);
@@ -972,7 +1025,7 @@ html, body, #root {
     text-transform: uppercase;
     cursor: pointer;
   }
-  .ui-tabs-select option { color: var(--text-primary); background: var(--bg-card); text-transform: none; }
+  select.ui-tabs-select option { color: var(--text-primary); background: var(--bg-card); text-transform: none; }
   @media (max-width: 479px) {
     .ui-tabs-chips { display: none; }
     .ui-tabs-picker { display: block; }

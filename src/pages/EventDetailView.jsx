@@ -136,7 +136,7 @@ export default function EventDetailView({ eventId, onEdit, onClose, durationForm
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>{t('event_detail.total_duration')}</p>
               <p className="text-4xl font-mono font-black leading-none"
-                style={{ color: dangerFlags.flags.includes('long_duration') ? '#f59e0b' : 'var(--text-primary)' }}>
+                style={{ color: dangerFlags.flags.includes('long_duration') ? 'var(--text-warning)' : 'var(--text-primary)' }}>
                 {fmtDur(event.duration)}
               </p>
             </div>
@@ -174,7 +174,7 @@ export default function EventDetailView({ eventId, onEdit, onClose, durationForm
               {event.eegSessionId && (
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--text-dim)' }}>{t('event_detail.eeg_session', 'EEG session')}</span>
-                  <span className="font-medium text-xs uppercase" style={{ color: 'var(--accent)' }}>{t('event_detail.linked', 'Linked')}</span>
+                  <span className="font-medium text-xs uppercase" style={{ color: 'var(--accent-text)' }}>{t('event_detail.linked', 'Linked')}</span>
                 </div>
               )}
               {event.videoAttached && (
@@ -226,7 +226,7 @@ export default function EventDetailView({ eventId, onEdit, onClose, durationForm
             <div className="space-y-3">
               {event.symptoms.map((s, i) => (
                 <div key={i} className="pb-3 last:pb-0" style={{ borderBottom: i < event.symptoms.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
-                  <p className="text-sm uppercase tracking-tight leading-none mb-1" style={{ color: 'var(--action-blue)' }}>{s.symptom}</p>
+                  <p className="text-sm uppercase tracking-tight leading-none mb-1" style={{ color: 'var(--accent-text)' }}>{s.symptom}</p>
                   <p className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>{s.region} › {s.specificPart}</p>
                 </div>
               ))}
@@ -275,7 +275,7 @@ export default function EventDetailView({ eventId, onEdit, onClose, durationForm
               <div className="space-y-2">
                 {event.postIctal.paralysisLocations.map((location, index) => (
                   <div key={`${location.region}-${location.subRegion}-${location.specificPart}-${index}`} className="rounded-2xl px-3 py-2" style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)' }}>
-                    <p className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--action-blue)' }}>
+                    <p className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>
                       {t('tagging.todds_paralysis', "Todd's paralysis")}
                     </p>
                     <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>

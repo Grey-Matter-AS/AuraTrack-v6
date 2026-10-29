@@ -91,7 +91,7 @@ export function EventCard({ event, onEdit, onDelete, onViewDetail, dangerFlags, 
           >
             <span
               className="font-mono font-black text-lg"
-              style={{ color: flags?.includes('long_duration') ? '#f59e0b' : '#ef4444' }}
+              style={{ color: flags?.includes('long_duration') ? 'var(--text-warning)' : 'var(--text-danger)' }}
             >
               {fmtDur(event.duration)}
             </span>

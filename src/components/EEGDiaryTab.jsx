@@ -165,7 +165,7 @@ export function EEGDiaryTab({
       <Card className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1 basis-48">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'var(--accent)' }}>{t('eeg.title', 'EEG Diary')}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'var(--accent-text)' }}>{t('eeg.title', 'EEG Diary')}</p>
             <p className="text-sm mt-1" style={{ color: 'var(--text-dim)' }}>
               {t('eeg.description', 'EEG sessions stay separate from seizure history. Seizures recorded during EEG appear here as linked reference rows.')}
             </p>

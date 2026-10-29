@@ -1323,7 +1323,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
           <div className="space-y-2 pt-1">
             {['exports', 'sync', 'recommendation'].map((item) => (
               <div key={item} className="flex gap-2 items-start">
-                <span className="text-xs leading-6" style={{ color: 'var(--accent)' }}>•</span>
+                <span className="text-xs leading-6" style={{ color: 'var(--accent-text)' }}>•</span>
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   {t(`settings.data.security_${item}`)}
                 </p>

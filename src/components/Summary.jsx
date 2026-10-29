@@ -56,7 +56,7 @@ function SortableSymptomRow({ symptom, index, onRemove }) {
       <DragHandle {...listeners} />
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm uppercase tracking-tight leading-none mb-1 truncate" style={{ color: 'var(--action-blue)' }}>
+        <p className="text-sm uppercase tracking-tight leading-none mb-1 truncate" style={{ color: 'var(--accent-text)' }}>
           {symptom.symptom}
         </p>
         <p className="text-[11px] font-medium truncate" style={{ color: 'var(--text-secondary)' }}>
@@ -351,9 +351,9 @@ function Summary({
         </div>
 
         <div className="grid grid-cols-3 gap-2 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-          <EditableTimer phase="aura"     label="AURA"     color="#f59e0b"
+          <EditableTimer phase="aura"     label="AURA"     color="var(--phase-aura)"
             calcValue={auraDur}     manualDurations={manualDurations} editedTimers={editedTimers} onSetManualDuration={handleSetManualDuration} />
-          <EditableTimer phase="seizure"  label="SEIZURE"  color="#ef4444"
+          <EditableTimer phase="seizure"  label="SEIZURE"  color="var(--phase-seizure)"
             calcValue={seizureDur}  manualDurations={manualDurations} editedTimers={editedTimers} onSetManualDuration={handleSetManualDuration} />
           <EditableTimer phase="recovery" label="RECOVERY" color="var(--phase-recovery)"
             calcValue={recoveryDur} manualDurations={manualDurations} editedTimers={editedTimers} onSetManualDuration={handleSetManualDuration} />
@@ -405,7 +405,7 @@ function Summary({
                     style={{ backgroundColor: 'var(--bg-raised)', borderColor: 'var(--accent)' }}>
                     <DragHandle />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm uppercase tracking-tight leading-none truncate" style={{ color: 'var(--action-blue)' }}>
+                      <p className="text-sm uppercase tracking-tight leading-none truncate" style={{ color: 'var(--accent-text)' }}>
                         {activeSymptom.symptom}
                       </p>
                       <p className="text-[11px] font-medium truncate" style={{ color: 'var(--text-secondary)' }}>
@@ -484,7 +484,7 @@ function Summary({
                 {postIctal.paralysisLocations.map((location, index) => (
                   <div key={`${location.region}-${location.subRegion}-${location.specificPart}-${index}`} className="flex items-center gap-3 rounded-2xl px-3 py-2" style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)' }}>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--action-blue)' }}>
+                      <p className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>
                         {t('tagging.todds_paralysis', "Todd's paralysis")}
                       </p>
                       <p className="text-[11px] leading-snug break-words" style={{ color: 'var(--text-secondary)' }}>

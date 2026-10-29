@@ -200,7 +200,7 @@ export default function IdleView({
               <div className="min-w-0 flex-1 basis-48 flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--accent)' }}
+                  style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--accent-text)' }}
                 >
                   <ActivityIcon className="w-5 h-5" />
                 </div>
@@ -225,7 +225,7 @@ export default function IdleView({
             <Card tone="accent" className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0 flex-1 basis-40">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'var(--accent)' }}>{t('idle.eeg_active', 'EEG Diary Active')}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'var(--accent-text)' }}>{t('idle.eeg_active', 'EEG Diary Active')}</p>
                   <p className="text-sm font-bold mt-1" style={{ color: 'var(--text-primary)' }}>{eegSession.title || t('idle.eeg_session_default', 'EEG monitoring session')}</p>
                   <p className="text-[11px] mt-1" style={{ color: 'var(--text-dim)' }}>
                     {t('idle.eeg_session_elapsed', 'Session elapsed')}: {durationFormat === 'human' ? formatDuration(eegElapsed) : `${eegElapsed}s`}

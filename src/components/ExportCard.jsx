@@ -7,7 +7,7 @@ export function ExportCard({ label, description, icon = null, onExport, actions 
         {icon && (
           <div
             className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--accent)', border: '1px solid var(--border)' }}
+            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--accent-text)', border: '1px solid var(--border)' }}
           >
             {icon}
           </div>

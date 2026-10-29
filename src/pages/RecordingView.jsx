@@ -183,7 +183,7 @@ function RecordingView({
             <div className="py-3 rounded-2xl text-center" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
               <p className="app-status-badge app-status-badge--danger !text-[9px] !px-2 !py-0.5 !mb-1 mx-auto">{t('recording.seizure')}</p>
               <p className="text-2xl font-mono font-bold leading-none"
-                style={{ color: laps.aura && !laps.seizure && seizureDuration >= 240 ? '#ef4444' : 'var(--text-primary)' }}>
+                style={{ color: laps.aura && !laps.seizure && seizureDuration >= 240 ? 'var(--text-danger)' : 'var(--text-primary)' }}>
                 {fmtDur(seizureDuration)}
               </p>
             </div>
@@ -226,7 +226,7 @@ function RecordingView({
           <p className="text-xs font-black uppercase tracking-[0.4em] mb-2" style={{ color: 'var(--text-dim)' }}>{t('recording.total_elapsed')}</p>
           <div
             className="text-[11vh] font-mono font-black tracking-tighter tabular-nums leading-none"
-            style={{ color: elapsed >= 240 && userMode !== 'CARETAKER' ? '#ef4444' : 'var(--text-primary)' }}
+            style={{ color: elapsed >= 240 && userMode !== 'CARETAKER' ? 'var(--text-danger)' : 'var(--text-primary)' }}
           >
             {fmtDur(elapsed)}
           </div>

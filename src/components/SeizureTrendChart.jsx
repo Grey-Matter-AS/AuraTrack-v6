@@ -118,7 +118,7 @@ export default function SeizureTrendChart({ allEvents, medicationChanges = [] })
           <p className="text-xs font-black uppercase tracking-widest leading-tight" style={{ color: 'var(--text-primary)' }}>
             {description}
           </p>
-          <p className="text-[9px] font-bold mt-0.5" style={{ color: 'var(--accent)' }}>
+          <p className="text-[9px] font-bold mt-0.5" style={{ color: 'var(--accent-text)' }}>
             {total} event{total !== 1 ? 's' : ''}
           </p>
         </div>

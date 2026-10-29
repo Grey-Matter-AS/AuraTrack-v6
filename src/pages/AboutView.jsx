@@ -56,7 +56,7 @@ export default function AboutView({ onBack }) {
               target="_blank"
               rel="noopener noreferrer"
               className="text-[11px] font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-all"
-              style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--accent)', border: '1px solid var(--border)' }}
+              style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--accent-text)', border: '1px solid var(--border)' }}
             >
               {t('about.github')}
             </a>
