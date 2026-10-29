@@ -20,14 +20,16 @@ export function Tabs({ tabs, activeTab, onTabChange }) {
           </button>
         ))}
       </div>
-      <select
-        className="ui-tabs-select ui-field"
-        aria-label={t('common.section', 'Section')}
-        value={activeTab}
-        onChange={e => onTabChange(e.target.value)}
-      >
-        {tabs.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
-      </select>
+      <label className="ui-tabs-picker">
+        <span className="ui-label">{t('common.section', 'Section')} · {tabs.findIndex(tab => tab.id === activeTab) + 1}/{tabs.length}</span>
+        <select
+          className="ui-tabs-select ui-field"
+          value={activeTab}
+          onChange={e => onTabChange(e.target.value)}
+        >
+          {tabs.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
+        </select>
+      </label>
     </div>
   );
 }
