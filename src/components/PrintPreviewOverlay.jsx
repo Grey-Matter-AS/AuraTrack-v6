@@ -21,9 +21,10 @@ export function PrintPreviewOverlay({ title, styles, html, onClose }) {
       <style>{styles}</style>
       <div className="auratrack-print-preview-toolbar no-print">
         <button
+          type="button"
           onClick={onClose}
-          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: '#1f2937', color: '#fff', border: '1px solid rgba(255,255,255,0.18)' }}
+          className="ui-btn ui-btn--sm shrink-0"
+          style={{ backgroundColor: '#1f2937', color: '#fff', borderColor: 'rgba(255,255,255,0.18)' }}
         >
           {t('nav.back')}
         </button>
@@ -38,9 +39,9 @@ export function PrintPreviewOverlay({ title, styles, html, onClose }) {
           )}
         </div>
         <button
+          type="button"
           onClick={() => window.print()}
-          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+          className="ui-btn ui-btn--primary ui-btn--sm shrink-0"
         >
           {t('export.print_save_pdf')}
         </button>

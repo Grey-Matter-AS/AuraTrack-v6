@@ -1,10 +1,8 @@
+import { Button, ButtonRow, Card } from './ui';
 
 export function ExportCard({ label, description, icon = null, onExport, actions = null }) {
   return (
-    <div
-      className="w-full p-6 rounded-2xl text-left shadow-lg"
-      style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-    >
+    <Card className="w-full !p-5 text-left shadow-lg">
       <div className="flex items-start gap-3">
         {icon && (
           <div
@@ -20,32 +18,16 @@ export function ExportCard({ label, description, icon = null, onExport, actions 
         </div>
       </div>
       {actions ? (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <ButtonRow className="mt-4">
           {actions.map(action => (
-            <button
-              key={action.label}
-              onClick={action.onClick}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-              style={{
-                backgroundColor: action.variant === 'secondary' ? 'var(--bg-raised)' : 'var(--action-blue)',
-                color: '#fff',
-                border: action.variant === 'secondary' ? '1px solid var(--border)' : '1px solid var(--action-blue-border)',
-              }}
-            >
-              {action.icon}
+            <Button key={action.label} variant={action.variant === 'secondary' ? 'secondary' : 'primary'} size="sm" icon={action.icon} onClick={action.onClick}>
               {action.label}
-            </button>
+            </Button>
           ))}
-        </div>
+        </ButtonRow>
       ) : (
-        <button
-          onClick={onExport}
-          className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
-        >
-          Export
-        </button>
+        <Button variant="primary" size="sm" className="mt-4" onClick={onExport}>Export</Button>
       )}
-    </div>
+    </Card>
   );
 }

@@ -33,8 +33,7 @@ function TextEntryStep({
         {onBack ? (
           <button
             onClick={onBack}
-            className="px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+            className="ui-btn ui-btn--secondary ui-btn--md"
           >
             ← BACK
           </button>
@@ -47,16 +46,14 @@ function TextEntryStep({
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="w-full rounded-[2rem] p-5 text-base min-h-[140px] outline-none transition-all resize-none"
-          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          className="ui-field min-h-[140px]"
           placeholder={placeholder}
           autoFocus
         />
         <button
           onClick={onSubmit}
           disabled={!value.trim()}
-          className="w-full py-5 rounded-[2rem] text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
-          style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '2px solid var(--action-blue-border)' }}
+          className="ui-btn ui-btn--primary ui-btn--lg ui-btn--full"
         >
           {submitLabel}
         </button>

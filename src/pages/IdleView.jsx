@@ -8,6 +8,7 @@ import { EEG_ACTIVITY_OPTIONS, EEG_MOOD_OPTIONS } from '../data/constants';
 import { formatDuration } from '../utils/formatters';
 import { WellbeingEntrySheet } from '../components/WellbeingEntrySheet';
 import { ActivityIcon } from '../components/AppIcons';
+import { BottomSheet, Button, Card, ChipGroup, ChoiceList, EmptyState, Field, Inset, NumberInput, Select, TextArea, TextInput } from '../components/ui';
 
 // Shared sizing for the two home-screen circle buttons — sized so both fit side by side on a ~393px phone
 const circleButtonStyle = {
@@ -25,83 +26,36 @@ const circleButtonStyle = {
 function EegSessionSheet({ onClose, onStart }) {
   const { t } = useTranslation();
   const [durationPreset, setDurationPreset] = useState('24h');
-  const [customHours, setCustomHours] = useState('');
+  const [customHours, setCustomHours] = useState(0);
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3">
-      <div className="w-full max-w-md rounded-[2rem] p-5 space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: 'var(--text-primary)' }}>{t('eeg.start_session', 'Start EEG Diary')}</h3>
-          <button onClick={onClose} className="app-icon-action app-icon-action--primary !min-h-[36px] !px-3">
-            {t('eeg.close', 'Close')}
-          </button>
+    <BottomSheet
+      title={t('eeg.start_session', 'Start EEG Diary')}
+      onClose={onClose}
+      footer={(
+        <div className="ui-button-row">
+          <Button variant="primary" onClick={() => onStart({ durationPreset, customHours: customHours ? String(customHours) : '', title, notes })}>{t('eeg.start', 'Start')}</Button>
+          <Button variant="secondary" onClick={onClose}>{t('eeg.cancel', 'Cancel')}</Button>
         </div>
-        <div className="flex gap-2">
-          {['24h', '72h', 'custom'].map(option => {
-            const active = durationPreset === option;
-            return (
-              <button
-                key={option}
-                onClick={() => setDurationPreset(option)}
-                className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest"
-                style={{
-                  backgroundColor: active ? 'var(--action-blue)' : 'var(--bg-raised)',
-                  color: active ? '#fff' : 'var(--text-on-raised)',
-                  border: active ? '1px solid transparent' : '1px solid var(--border)',
-                }}
-              >
-                {option}
-              </button>
-            );
-          })}
-        </div>
-        {durationPreset === 'custom' && (
-          <input
-            type="number"
-            min="1"
-            value={customHours}
-            onChange={e => setCustomHours(e.target.value)}
-            placeholder={t('eeg.custom_hours', 'Custom hours')}
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-            style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          />
-        )}
-        <input
-          type="text"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          placeholder={t('eeg.session_label_placeholder', 'Session label (optional)')}
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-          style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+      )}
+    >
+      <Field label={t('eeg.duration_label', 'Duration')}>
+        <ChipGroup
+          fill
+          label={t('eeg.duration_label', 'Duration')}
+          value={durationPreset}
+          onChange={setDurationPreset}
+          options={['24h', '72h', 'custom'].map(option => ({ value: option, label: option }))}
         />
-        <textarea
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          placeholder={t('eeg.session_notes_placeholder', 'Notes for this EEG session (optional)')}
-          rows={3}
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
-          style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        />
-        <div className="flex gap-2">
-          <button
-            onClick={() => onStart({ durationPreset, customHours, title, notes })}
-            className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest"
-            style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
-          >
-            {t('eeg.start', 'Start')}
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-          >
-            {t('eeg.cancel', 'Cancel')}
-          </button>
-        </div>
-      </div>
-    </div>
+      </Field>
+      {durationPreset === 'custom' && (
+        <NumberInput label={t('eeg.custom_hours', 'Custom hours')} value={customHours} onChange={setCustomHours} maxLength={3} />
+      )}
+      <TextInput label={t('eeg.session_label', 'Session label')} value={title} onChange={setTitle} placeholder={t('eeg.session_label_placeholder', 'Session label (optional)')} />
+      <TextArea label={t('eeg.notes_label', 'Notes')} value={notes} onChange={setNotes} placeholder={t('eeg.session_notes_placeholder', 'Notes for this EEG session (optional)')} rows={3} />
+    </BottomSheet>
   );
 }
 
@@ -115,84 +69,30 @@ function EegActivitySheet({ onClose, onStart }) {
   const filtered = EEG_ACTIVITY_OPTIONS.filter(activity => activity.toLowerCase().includes(query.toLowerCase())).slice(0, 20);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3">
-      <div className="w-full max-w-md rounded-[2rem] p-5 space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-black uppercase tracking-widest" style={{ color: 'var(--text-primary)' }}>{t('eeg.start_activity', 'Start EEG Activity')}</h3>
-          <button onClick={onClose} className="app-icon-action app-icon-action--primary !min-h-[36px] !px-3">
-            {t('eeg.close', 'Close')}
-          </button>
+    <BottomSheet
+      title={t('eeg.start_activity', 'Start EEG Activity')}
+      onClose={onClose}
+      footer={(
+        <div className="ui-button-row">
+          <Button variant="primary" onClick={() => onStart({ activityLabel: selected, customActivityText, moodLabel, notes })}>{t('eeg.start', 'Start')}</Button>
+          <Button variant="secondary" onClick={onClose}>{t('eeg.cancel', 'Cancel')}</Button>
         </div>
-        <input
-          type="text"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder={t('eeg.search_activities_placeholder', 'Search common activities')}
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-          style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        />
-        <div className="max-h-40 overflow-auto rounded-2xl p-2 space-y-2" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-          {filtered.map(activity => {
-            const active = selected === activity;
-            return (
-              <button
-                key={activity}
-                onClick={() => setSelected(activity)}
-                className="w-full rounded-xl px-3 py-2 text-left text-sm font-bold"
-                style={{
-                  backgroundColor: active ? 'var(--action-blue)' : 'var(--bg-card)',
-                  color: active ? '#fff' : 'var(--text-primary)',
-                  border: active ? '1px solid var(--action-blue-border)' : '1px solid transparent',
-                }}
-              >
-                {activity}
-              </button>
-            );
-          })}
-        </div>
-        <input
-          type="text"
-          value={customActivityText}
-          onChange={e => setCustomActivityText(e.target.value)}
-          placeholder={t('eeg.exact_activity_placeholder', 'Exact activity details (optional)')}
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-          style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        />
-        <select
-          value={moodLabel}
-          onChange={e => setMoodLabel(e.target.value)}
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-          style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        >
-          <option value="">{t('eeg.mood_placeholder', 'Mood (optional)')}</option>
-          {EEG_MOOD_OPTIONS.map(mood => <option key={mood} value={mood}>{mood}</option>)}
-        </select>
-        <textarea
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          placeholder={t('eeg.notes_placeholder', 'Notes (optional)')}
-          rows={3}
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
-          style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        />
-        <div className="flex gap-2">
-          <button
-            onClick={() => onStart({ activityLabel: selected, customActivityText, moodLabel, notes })}
-            className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest"
-            style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
-          >
-            {t('eeg.start', 'Start')}
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-          >
-            {t('eeg.cancel', 'Cancel')}
-          </button>
-        </div>
-      </div>
-    </div>
+      )}
+    >
+      <TextInput label={t('eeg.activity_label', 'Activity')} value={query} onChange={setQuery} placeholder={t('eeg.search_activities_placeholder', 'Search common activities')} />
+      <Inset className="max-h-48 overflow-y-auto !p-2">
+        <ChoiceList value={selected} onChange={setSelected} options={filtered.map(activity => ({ value: activity, label: activity }))} />
+      </Inset>
+      <TextInput label={t('eeg.exact_activity_label', 'Details')} value={customActivityText} onChange={setCustomActivityText} placeholder={t('eeg.exact_activity_placeholder', 'Exact activity details (optional)')} />
+      <Select
+        label={t('eeg.mood_label', 'Mood')}
+        placeholder={t('eeg.mood_placeholder', 'Mood (optional)')}
+        value={moodLabel}
+        onChange={setMoodLabel}
+        options={EEG_MOOD_OPTIONS.map(mood => ({ value: mood, label: mood }))}
+      />
+      <TextArea label={t('eeg.notes_label', 'Notes')} value={notes} onChange={setNotes} placeholder={t('eeg.notes_placeholder', 'Notes (optional)')} rows={3} />
+    </BottomSheet>
   );
 }
 
@@ -286,13 +186,9 @@ export default function IdleView({
           )}
         </div>
         {!eegSession && eegDiaryEnabled && (
-          <button
-            onClick={() => setShowSessionSheet(true)}
-            className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-          >
+          <Button variant="secondary" size="sm" onClick={() => setShowSessionSheet(true)}>
             {t('idle.start_eeg_diary', 'Start EEG Diary')}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -300,11 +196,8 @@ export default function IdleView({
       <div className="w-full flex-1 min-h-0 flex flex-col overflow-hidden">
         <ScrollFade className="space-y-3" wrapperClassName="flex-1">
           {wellbeingEnabled && wellbeing && (
-            <div
-              className="w-full rounded-2xl p-3 flex items-center justify-between gap-3"
-              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-            >
-              <div className="min-w-0 flex items-center gap-3">
+            <Card compact className="w-full flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 flex-1 basis-48 flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                   style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--accent)' }}
@@ -322,39 +215,32 @@ export default function IdleView({
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowWellbeingSheet(true)}
-                className="rounded-xl px-3 py-2 text-[10px] font-medium uppercase tracking-widest active:scale-95 transition-all shrink-0"
-                style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
-              >
+              <Button variant="primary" size="sm" className="shrink-0" onClick={() => setShowWellbeingSheet(true)}>
                 {t('wellbeing.log_action', 'Log')}
-              </button>
-            </div>
+              </Button>
+            </Card>
           )}
 
           {eegSession && (
-            <div className="rounded-[2rem] p-5 space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid color-mix(in srgb, var(--accent) 40%, transparent)' }}>
-              <div className="flex items-center justify-between gap-3">
-                <div>
+            <Card tone="accent" className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0 flex-1 basis-40">
                   <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'var(--accent)' }}>{t('idle.eeg_active', 'EEG Diary Active')}</p>
                   <p className="text-sm font-bold mt-1" style={{ color: 'var(--text-primary)' }}>{eegSession.title || t('idle.eeg_session_default', 'EEG monitoring session')}</p>
                   <p className="text-[11px] mt-1" style={{ color: 'var(--text-dim)' }}>
                     {t('idle.eeg_session_elapsed', 'Session elapsed')}: {durationFormat === 'human' ? formatDuration(eegElapsed) : `${eegElapsed}s`}
                   </p>
                 </div>
-                <button
-                  onClick={() => onEndEegSession?.(eegSession.id)}
-                  className="app-icon-action app-icon-action--danger"
-                >
+                <Button variant="danger" size="sm" className="shrink-0" onClick={() => onEndEegSession?.(eegSession.id)}>
                   {t('idle.end_eeg', 'End EEG')}
-                </button>
+                </Button>
               </div>
 
-              <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+              <Inset>
                 {eegCurrentActivity ? (
                   <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1 basis-40">
                         <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>{t('idle.current_activity', 'Current activity')}</p>
                         <p className="text-base font-black" style={{ color: 'var(--text-primary)' }}>{eegCurrentActivity.activityLabel}</p>
                         {eegCurrentActivity.customActivityText && (
@@ -371,49 +257,25 @@ export default function IdleView({
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onStopEegActivity?.(eegCurrentActivity.id)}
-                        className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                        style={{ backgroundColor: '#dc2626', color: '#fff', border: '1px solid #991b1b' }}
-                      >
-                        {t('idle.stop_activity', 'Stop Activity')}
-                      </button>
-                      <button
-                        onClick={onOpenEegDiary}
-                        className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                        style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
-                      >
-                        {t('idle.view_log', 'View Log')}
-                      </button>
+                    <div className="ui-button-row">
+                      <Button variant="danger" onClick={() => onStopEegActivity?.(eegCurrentActivity.id)}>{t('idle.stop_activity', 'Stop Activity')}</Button>
+                      <Button variant="primary" onClick={onOpenEegDiary}>{t('idle.view_log', 'View Log')}</Button>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('idle.eeg_no_activity', 'No EEG activity running')}</p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setShowActivitySheet(true)}
-                        className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                        style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
-                      >
-                        {t('idle.start_activity', 'Start Activity')}
-                      </button>
-                      <button
-                        onClick={onOpenEegDiary}
-                        className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                        style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
-                      >
-                        {t('idle.view_log', 'View Log')}
-                      </button>
+                    <div className="ui-button-row">
+                      <Button variant="primary" onClick={() => setShowActivitySheet(true)}>{t('idle.start_activity', 'Start Activity')}</Button>
+                      <Button variant="secondary" onClick={onOpenEegDiary}>{t('idle.view_log', 'View Log')}</Button>
                     </div>
                   </div>
                 )}
-              </div>
+              </Inset>
               <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-dim)' }}>
                 {t('idle.eeg_auto_stop_hint', 'If a seizure starts, any active EEG activity is stopped automatically and a seizure reference is added to the EEG log.')}
               </p>
-            </div>
+            </Card>
           )}
 
           {hasMedications && (
@@ -432,9 +294,7 @@ export default function IdleView({
           </div>
 
           {history.length === 0 ? (
-            <div className="border-2 border-dashed border-slate-800 rounded-3xl py-8 text-center">
-              <p className="italic text-sm" style={{ color: 'var(--text-secondary)' }}>{t('idle.no_events')}</p>
-            </div>
+            <EmptyState>{t('idle.no_events')}</EmptyState>
           ) : (
             history.map(event => (
               <EventCard

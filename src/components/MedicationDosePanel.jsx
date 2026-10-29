@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { slotDose, slotLabel, scheduledTimestampForDay } from '../utils/medicationSchedule';
 import { CheckIcon, PillIcon } from './AppIcons';
+import { BottomSheet, Button, Card, ChoiceList, TextInput } from './ui';
 
 export function MedicationDosePanel({ medicationGroups, allActiveMedications, onSaveDoses }) {
   const { t } = useTranslation();
@@ -43,20 +44,12 @@ export function MedicationDosePanel({ medicationGroups, allActiveMedications, on
     setAdHocNote('');
   };
 
-  const selectStyle = {
-    backgroundColor: 'var(--bg-input)',
-    border: '1px solid var(--border)',
-    color: 'var(--text-primary)',
-  };
   const translatedSlotLabel = (hhMM) => t(`medication_panel.slots.${slotLabel(hhMM).toLowerCase()}`, slotLabel(hhMM));
 
   return (
-    <div
-      className="w-full rounded-2xl p-3 space-y-3"
-      style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-    >
-      <div className="flex justify-between items-center gap-3">
-        <div className="min-w-0 flex items-center gap-3">
+    <Card compact className="w-full space-y-3">
+      <div className="flex flex-wrap justify-between items-center gap-3">
+        <div className="min-w-0 flex-1 flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
             style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--accent)' }}
@@ -72,14 +65,9 @@ export function MedicationDosePanel({ medicationGroups, allActiveMedications, on
             <CheckIcon className="w-3 h-3" /> {t('medication_panel.saved')}
           </span>
         ) : (
-          <button
-            onClick={handleSave}
-            disabled={toggledKeys.size === 0}
-            className="rounded-xl px-3 py-2 text-[10px] font-medium uppercase tracking-widest active:scale-95 transition-all disabled:opacity-30"
-            style={{ backgroundColor: '#16a34a', color: '#fff', border: '1px solid #15803d' }}
-          >
+          <Button variant="success" size="sm" className="shrink-0" onClick={handleSave} disabled={toggledKeys.size === 0}>
             {t('medication_panel.save')}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -109,18 +97,21 @@ export function MedicationDosePanel({ medicationGroups, allActiveMedications, on
                   {medicationGroups[hhMM].map(med => {
                     const key = `${med.id}|${hhMM}`;
                     const active = toggledKeys.has(key);
+                    // Colour carries the dose status: selected to log, missed, late, or due
                     const btnStyle = active
-                      ? { backgroundColor: '#16a34a', color: '#fff', border: '1px solid #15803d' }
+                      ? { backgroundColor: 'var(--success)', color: 'var(--on-action)', borderColor: 'var(--success-border)' }
                       : slotIsMissed
-                      ? { backgroundColor: '#dc2626', color: '#fff', border: '1px solid #991b1b' }
+                      ? { backgroundColor: 'var(--danger)', color: 'var(--on-action)', borderColor: 'var(--danger-border)' }
                       : slotIsLate
-                      ? { backgroundColor: '#334155', color: '#facc15', border: '1px solid #f59e0b' }
-                      : { backgroundColor: '#334155', color: '#fff', border: '1px solid #64748b' };
+                      ? { backgroundColor: 'var(--warning-bg)', color: 'var(--warning-text)', borderColor: 'var(--warning-border)' }
+                      : undefined;
                     return (
                       <button
                         key={key}
+                        type="button"
+                        aria-pressed={active}
                         onClick={() => toggle(med.id, hhMM)}
-                        className="px-4 py-2 rounded-full font-medium text-xs transition-all active:scale-95"
+                        className="ui-chip !normal-case !tracking-normal !text-xs"
                         style={btnStyle}
                       >
                         {med.name} {slotDose(med, hhMM)}{med.unit}
@@ -133,67 +124,36 @@ export function MedicationDosePanel({ medicationGroups, allActiveMedications, on
           })
         )}
 
-        <button
-          onClick={() => setShowAdHoc(true)}
-          className="w-full rounded-2xl px-4 py-3 text-[10px] font-medium uppercase tracking-widest active:scale-[0.98] transition-all"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-        >
+        <Button variant="secondary" fullWidth onClick={() => setShowAdHoc(true)}>
           {t('medication_panel.extra_dose')}
-        </button>
+        </Button>
       </div>
 
       {/* Ad-hoc dose bottom sheet */}
       {showAdHoc && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowAdHoc(false); }}
+        <BottomSheet
+          title={t('medication_panel.log_extra_dose')}
+          onClose={() => setShowAdHoc(false)}
+          footer={<Button variant="secondary" fullWidth onClick={() => setShowAdHoc(false)}>{t('medication_panel.cancel')}</Button>}
         >
-          <div
-            className="w-full max-w-md rounded-[2rem] p-6 space-y-4"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-          >
-            <p className="text-[10px] font-medium uppercase tracking-[0.3em]" style={{ color: 'var(--text-dim)' }}>
-              {t('medication_panel.log_extra_dose')}
-            </p>
-            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
-              {t('medication_panel.extra_dose_help')}
-            </p>
-            <input
-              type="text"
-              value={adHocNote}
-              onChange={e => setAdHocNote(e.target.value)}
-              placeholder={t('medication_panel.reason_placeholder')}
-              aria-label={t('medication_panel.reason_label')}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={selectStyle}
-            />
-            <div className="space-y-2">
-              {allActiveMedications.map(med => (
-                <button
-                  key={med.id}
-                  onClick={() => handleAdHocSave(med)}
-                  className="w-full py-3 px-4 rounded-2xl text-left transition-all active:scale-[0.98]"
-                  style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}
-                >
-                  <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{med.name}</span>
-                  <span className="ml-2 text-xs" style={{ color: 'var(--text-dim)' }}>
-                    {med.dose}{med.unit} · {med.frequency}
-                    {med.isRescue && <span className="ml-1 text-amber-500">· {t('medication_panel.rescue')}</span>}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setShowAdHoc(false)}
-              className="w-full py-3 rounded-2xl font-medium text-xs uppercase tracking-widest"
-              style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-            >
-              {t('medication_panel.cancel')}
-            </button>
-          </div>
-        </div>
+          <p className="text-xs" style={{ color: 'var(--text-faint)' }}>{t('medication_panel.extra_dose_help')}</p>
+          <TextInput
+            label={t('medication_panel.reason_label')}
+            value={adHocNote}
+            onChange={setAdHocNote}
+            placeholder={t('medication_panel.reason_placeholder')}
+          />
+          <ChoiceList
+            value={null}
+            onChange={id => handleAdHocSave(allActiveMedications.find(med => med.id === id))}
+            options={allActiveMedications.map(med => ({
+              value: med.id,
+              label: med.name,
+              detail: `${med.dose}${med.unit} · ${med.frequency}${med.isRescue ? ` · ${t('medication_panel.rescue')}` : ''}`,
+            }))}
+          />
+        </BottomSheet>
       )}
-    </div>
+    </Card>
   );
 }

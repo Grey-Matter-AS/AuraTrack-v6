@@ -103,14 +103,14 @@ export function EventCard({ event, onEdit, onDelete, onViewDetail, dangerFlags, 
       <div className="flex gap-2 mt-3">
         <button
           onClick={handleView}
-          className="app-icon-action app-icon-action--accent flex-1"
+          className="ui-btn ui-btn--primary ui-btn--sm flex-1"
         >
           <EyeIcon className="w-4 h-4 shrink-0" />
           <span className="app-chip-text">{t('event_card.view_edit')}</span>
         </button>
         <button
           onClick={() => onDelete(event.id)}
-          className="app-icon-action app-icon-action--danger"
+          className="ui-btn ui-btn--danger ui-btn--sm"
         >
           <TrashIcon className="w-4 h-4 shrink-0" />
           <span className="app-chip-text">{t('event_card.delete')}</span>

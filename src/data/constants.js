@@ -353,14 +353,14 @@ export const EEG_ACTIVITY_OPTIONS = [
   'Packing',
 ];
 
-// Common anti-seizure / rescue medication active ingredients (INN names, not translated).
+// Common anti-seizure / rescue medication active ingredients (INN names, not translated, shown capitalised).
 // Shown as suggestions in the medication form; users can type any other ingredient.
 export const COMMON_ANTISEIZURE_INGREDIENTS = [
-  'acetazolamide', 'brivaracetam', 'cannabidiol', 'carbamazepine', 'cenobamate', 'clobazam',
-  'clonazepam', 'diazepam', 'eslicarbazepine', 'ethosuximide', 'fenfluramine', 'gabapentin',
-  'lacosamide', 'lamotrigine', 'levetiracetam', 'lorazepam', 'midazolam', 'oxcarbazepine',
-  'perampanel', 'phenobarbital', 'phenytoin', 'pregabalin', 'primidone', 'rufinamide',
-  'stiripentol', 'tiagabine', 'topiramate', 'valproate', 'vigabatrin', 'zonisamide',
+  'Acetazolamide', 'Brivaracetam', 'Cannabidiol', 'Carbamazepine', 'Cenobamate', 'Clobazam',
+  'Clonazepam', 'Diazepam', 'Eslicarbazepine', 'Ethosuximide', 'Fenfluramine', 'Gabapentin',
+  'Lacosamide', 'Lamotrigine', 'Levetiracetam', 'Lorazepam', 'Midazolam', 'Oxcarbazepine',
+  'Perampanel', 'Phenobarbital', 'Phenytoin', 'Pregabalin', 'Primidone', 'Rufinamide',
+  'Stiripentol', 'Tiagabine', 'Topiramate', 'Valproate', 'Vigabatrin', 'Zonisamide',
 ];
 
 // Built-in dosage forms; labels come from medication_forms.<key>. Custom forms are stored as typed.

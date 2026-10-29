@@ -11,6 +11,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { TRIGGERS } from '../data/constants';
 import { CheckIcon, CloseIcon, EditIcon, GripIcon, TrashIcon } from './AppIcons';
+import { Button, DateInput, FieldRow, IconButton } from './ui';
 
 const POST_ICTAL_FINDINGS = [
   'Confusion',
@@ -65,7 +66,7 @@ function SortableSymptomRow({ symptom, index, onRemove }) {
 
       <button
         onClick={() => onRemove(index)}
-        className="app-icon-action app-icon-action--danger shrink-0"
+        className="ui-icon-btn ui-icon-btn--danger"
         aria-label="Remove symptom"
       >
         <TrashIcon className="w-4 h-4" />
@@ -106,7 +107,7 @@ function EditableTimer({ phase, label, color, calcValue, manualDurations, edited
           </p>
           <button
             onClick={() => setStage('confirm')}
-            className="app-icon-action app-icon-action--accent !min-h-[36px] !min-w-0 !px-3 !text-[9px]"
+            className="ui-btn ui-btn--primary ui-btn--sm shrink-0"
           >
             <EditIcon className="w-3.5 h-3.5 shrink-0" />
             EDIT
@@ -117,42 +118,32 @@ function EditableTimer({ phase, label, color, calcValue, manualDurations, edited
       {stage === 'confirm' && (
         <div className="space-y-1.5">
           <p className="text-[9px] font-bold" style={{ color: 'var(--text-dim)' }}>Edit {label.toLowerCase()}?</p>
-          <div className="flex gap-1.5 justify-center">
-            <button onClick={startEdit}
-              className="min-h-[40px] px-3 rounded-lg text-[9px] font-black uppercase bg-amber-500 text-white active:scale-95 transition-transform">
-              YES
-            </button>
-            <button onClick={cancelEdit}
-              className="min-h-[40px] px-3 rounded-lg text-[9px] font-black uppercase active:scale-95 transition-transform"
-              style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-secondary)' }}>
-              NO
-            </button>
+          <div className="ui-inline justify-center">
+            <Button variant="warning" size="sm" onClick={startEdit}>YES</Button>
+            <Button variant="secondary" size="sm" onClick={cancelEdit}>NO</Button>
           </div>
         </div>
       )}
 
       {stage === 'editing' && (
-        <div className="flex items-center justify-center gap-1.5">
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={inputVal}
-            onChange={e => setInputVal(e.target.value.replace(/\D/g, ''))}
-            className="w-14 text-center rounded-lg px-1 py-1.5 font-mono font-black outline-none"
-            style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--accent)', color: 'var(--text-primary)' }}
-            autoFocus
-          />
-          <span className="text-xs font-bold" style={{ color: 'var(--text-dim)' }}>s</span>
-          <button onClick={saveEdit}
-            className="min-w-[40px] min-h-[40px] px-2 rounded-lg bg-green-600 text-white font-black text-xs active:scale-95 transition-transform">
-            <CheckIcon className="w-4 h-4" />
-          </button>
-          <button onClick={cancelEdit}
-            className="min-w-[40px] min-h-[40px] px-2 rounded-lg font-black text-xs active:scale-95 transition-transform"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}>
-            <CloseIcon className="w-4 h-4" />
-          </button>
+        <div className="ui-inline justify-center">
+          <span className="ui-inline justify-center">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={inputVal}
+              onChange={e => setInputVal(e.target.value.replace(/\D/g, ''))}
+              aria-label={label}
+              className="ui-field ui-field--compact"
+              autoFocus
+            />
+            <span className="text-xs font-bold" style={{ color: 'var(--text-dim)' }}>s</span>
+          </span>
+          <span className="ui-inline justify-center">
+            <IconButton label="Save" tone="success" onClick={saveEdit}><CheckIcon className="w-4 h-4" /></IconButton>
+            <IconButton label="Cancel" onClick={cancelEdit}><CloseIcon className="w-4 h-4" /></IconButton>
+          </span>
         </div>
       )}
     </div>
@@ -195,7 +186,7 @@ function EditableTotalTimer({ calcValue, manualDurations, editedTimers, onSetMan
           )}
           <button
             onClick={() => setStage('confirm')}
-            className="app-icon-action app-icon-action--accent !min-h-[36px] !min-w-0 !px-3 !text-[9px]"
+            className="ui-btn ui-btn--primary ui-btn--sm shrink-0"
           >
             <EditIcon className="w-3.5 h-3.5 shrink-0" />
             EDIT
@@ -206,42 +197,32 @@ function EditableTotalTimer({ calcValue, manualDurations, editedTimers, onSetMan
       {stage === 'confirm' && (
         <div className="space-y-2">
           <p className="text-[10px] font-bold" style={{ color: 'var(--text-dim)' }}>Edit total duration?</p>
-          <div className="flex gap-2">
-            <button onClick={startEdit}
-              className="min-h-[44px] px-4 rounded-xl text-xs font-black uppercase bg-amber-500 text-white active:scale-95 transition-transform">
-              YES, EDIT
-            </button>
-            <button onClick={cancelEdit}
-              className="min-h-[44px] px-4 rounded-xl text-xs font-black uppercase active:scale-95 transition-transform"
-              style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-secondary)' }}>
-              CANCEL
-            </button>
+          <div className="ui-button-row">
+            <Button variant="warning" onClick={startEdit}>YES, EDIT</Button>
+            <Button variant="secondary" onClick={cancelEdit}>CANCEL</Button>
           </div>
         </div>
       )}
 
       {stage === 'editing' && (
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={inputVal}
-            onChange={e => setInputVal(e.target.value.replace(/\D/g, ''))}
-            className="w-24 text-center rounded-xl px-3 py-2 text-2xl font-mono font-black outline-none"
-            style={{ backgroundColor: 'var(--bg-raised)', border: '2px solid var(--accent)', color: 'var(--text-primary)' }}
-            autoFocus
-          />
-          <span className="text-lg font-bold" style={{ color: 'var(--text-dim)' }}>s</span>
-          <button onClick={saveEdit}
-            className="min-h-[44px] px-4 rounded-xl text-sm font-black uppercase bg-green-600 text-white active:scale-95 transition-transform">
-            <CheckIcon className="w-4 h-4 inline-block mr-1.5 align-[-3px]" /> {t('summary.save')}
-          </button>
-          <button onClick={cancelEdit}
-            className="min-h-[44px] px-4 rounded-xl text-sm font-black uppercase active:scale-95 transition-transform"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}>
-            <CloseIcon className="w-4 h-4" />
-          </button>
+        <div className="ui-inline">
+          <span className="ui-inline">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={inputVal}
+              onChange={e => setInputVal(e.target.value.replace(/\D/g, ''))}
+              aria-label="TOTAL DURATION"
+              className="ui-field w-24 text-center"
+              autoFocus
+            />
+            <span className="text-lg font-bold" style={{ color: 'var(--text-dim)' }}>s</span>
+          </span>
+          <span className="ui-inline">
+            <Button variant="success" icon={<CheckIcon className="w-4 h-4" />} onClick={saveEdit}>{t('summary.save')}</Button>
+            <IconButton label="Cancel" onClick={cancelEdit}><CloseIcon className="w-4 h-4" /></IconButton>
+          </span>
         </div>
       )}
     </div>
@@ -256,31 +237,17 @@ function DateTimeOverrideRow({ startTime, overrideDateTime, onSetEventDateTime }
   const pad = n => String(n).padStart(2, '0');
   const defDate = overrideDateTime?.date ?? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const defTime = overrideDateTime?.time ?? `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  const today   = new Date().toISOString().slice(0, 10);
-  const inputSt = { backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' };
+  // Local calendar date for the max (toISOString would give the UTC date)
+  const now = new Date();
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
   return (
-    <div className="mb-4 pb-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-      <p className="text-[9px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--text-faint)' }}>
-        {t('summary.event_datetime')}
-      </p>
-      <div className="flex gap-2 date-time-row">
-        <input
-          type="date"
-          max={today}
-          value={defDate}
-          onChange={e => onSetEventDateTime(e.target.value, defTime)}
-          className="flex-1 min-w-0 rounded-xl px-3 py-2 text-sm font-bold outline-none"
-          style={inputSt}
-        />
-        <input
-          type="time"
-          value={defTime}
-          onChange={e => onSetEventDateTime(defDate, e.target.value)}
-          className="flex-1 min-w-0 rounded-xl px-3 py-2 text-sm font-bold outline-none"
-          style={inputSt}
-        />
-      </div>
+    <div>
+      <p className="ui-label">{t('summary.event_date_time', 'Event date & time')}</p>
+      <FieldRow>
+        <DateInput max={today} value={defDate} onChange={value => onSetEventDateTime(value, defTime)} aria-label={t('manual_entry.date')} />
+        <DateInput type="time" value={defTime} onChange={value => onSetEventDateTime(defDate, value)} aria-label={t('manual_entry.time')} />
+      </FieldRow>
     </div>
   );
 }
@@ -388,7 +355,7 @@ function Summary({
             calcValue={auraDur}     manualDurations={manualDurations} editedTimers={editedTimers} onSetManualDuration={handleSetManualDuration} />
           <EditableTimer phase="seizure"  label="SEIZURE"  color="#ef4444"
             calcValue={seizureDur}  manualDurations={manualDurations} editedTimers={editedTimers} onSetManualDuration={handleSetManualDuration} />
-          <EditableTimer phase="recovery" label="RECOVERY" color="var(--action-blue)"
+          <EditableTimer phase="recovery" label="RECOVERY" color="var(--phase-recovery)"
             calcValue={recoveryDur} manualDurations={manualDurations} editedTimers={editedTimers} onSetManualDuration={handleSetManualDuration} />
         </div>
       </div>
@@ -495,15 +462,14 @@ function Summary({
             })}
           </div>
 
-          <div className="rounded-[1.5rem] p-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div>
+          <div className="ui-card">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+              <div className="min-w-0 flex-1 basis-40">
                 <p className="text-sm font-black uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>{t('tagging.post_ictal_paralysis', 'After-seizure paralysis')}</p>
               </div>
               <button
                 onClick={onEditPostIctalParalysis}
-                className="shrink-0 min-h-[40px] px-3 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+                className="ui-btn ui-btn--secondary ui-btn--sm"
               >
                 {t('tagging.add_area', '+ Add Area')}
               </button>
@@ -527,7 +493,7 @@ function Summary({
                     </div>
                     <button
                       onClick={() => onRemovePostIctalParalysisLocation?.(index)}
-                      className="app-icon-action app-icon-action--danger shrink-0"
+                      className="ui-icon-btn ui-icon-btn--danger"
                       aria-label={t('tagging.remove_area', 'Remove area')}
                     >
                       <TrashIcon className="w-4 h-4" />
@@ -576,8 +542,7 @@ function Summary({
           <textarea
             value={notes}
             onChange={e => setNotes(e.target.value)}
-            className="w-full rounded-[2rem] p-5 text-base min-h-[140px] outline-none transition-all resize-none"
-            style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            className="ui-field min-h-[140px]"
             placeholder={t('event_card.notes_placeholder')}
           />
         </div>
@@ -587,7 +552,7 @@ function Summary({
       <div className="app-section-card mt-2">
         <button
           onClick={onSave}
-          className="w-full min-h-[4.75rem] px-5 bg-green-600 text-white rounded-[1.85rem] font-black uppercase text-sm tracking-[0.2em] shadow-xl active:scale-95 transition-transform"
+          className="ui-btn ui-btn--success ui-btn--md ui-btn--full min-h-[4.75rem]"
         >
           FINISH & SAVE LOG
         </button>

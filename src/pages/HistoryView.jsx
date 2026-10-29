@@ -11,6 +11,7 @@ import { WellbeingTab } from '../components/WellbeingTab';
 import ExportView from './ExportView';
 import { ScrollFade } from '../components/ScrollFade';
 import { useMedications } from '../hooks/useMedications';
+import { EmptyState } from '../components/ui';
 
 export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, historyPageSize = 10, settings = {}, initialTab = 'seizures', eeg = null, wellbeing = null, events = [], onBackupSuccess = null }) {
   const { t } = useTranslation();
@@ -55,11 +56,10 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
     <div className="app-page-shell flex-1 flex flex-col w-full overflow-hidden mx-auto">
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-4 shrink-0">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 shrink-0">
         <button
           onClick={onBack}
-          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+          className="ui-btn ui-btn--secondary ui-btn--sm"
         >
           {t('nav.back')}
         </button>
@@ -82,61 +82,55 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
           <SeizureTrendChart allEvents={allEvents} medicationChanges={medicationChanges} />
 
           <div className="mb-4 flex flex-col gap-2">
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center">
               <select
                 value={typeFilter}
                 onChange={e => { setTypeFilter(e.target.value); setPage(0); }}
-                className="flex-1 rounded-xl px-3 py-2 text-xs outline-none"
-                style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                className="ui-field flex-1 basis-40"
+                aria-label={t('history.all_types')}
               >
                 <option value="">{t('history.all_types')}</option>
                 {SEIZURE_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
               </select>
               <button
+                type="button"
+                aria-pressed={completionFilter === 'needs_details'}
                 onClick={() => { setCompletionFilter(f => f === 'needs_details' ? 'all' : 'needs_details'); setPage(0); }}
-                className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shrink-0"
-                style={{
-                  backgroundColor: completionFilter === 'needs_details' ? 'var(--accent)' : 'var(--bg-raised)',
-                  color: completionFilter === 'needs_details' ? '#fff' : 'var(--text-on-raised)',
-                  border: completionFilter === 'needs_details' ? '1px solid transparent' : '1px solid var(--border)',
-                }}
+                className="ui-chip shrink-0"
               >
                 {t('history.needs_details', 'Needs details')} {needsDetailsCount > 0 ? `(${needsDetailsCount})` : ''}
               </button>
               {(fromDate || toDate || completionFilter !== 'all') && (
                 <button
                   onClick={() => { setFromDate(''); setToDate(''); setCompletionFilter('all'); setPage(0); }}
-                  className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shrink-0"
-                  style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+                  className="ui-btn ui-btn--secondary ui-btn--sm shrink-0"
                 >
                   {t('history.clear')}
                 </button>
               )}
             </div>
-            <div className="flex gap-2 date-time-row">
+            <div className="ui-row">
               <input
                 type="date"
                 value={fromDate}
                 max={toDate || undefined}
                 onChange={e => { setFromDate(e.target.value); setPage(0); }}
-                className="flex-1 rounded-xl px-3 py-2 text-xs outline-none"
-                style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                aria-label={t('history.from_date', 'From')}
+                className="ui-field"
               />
               <input
                 type="date"
                 value={toDate}
                 min={fromDate || undefined}
                 onChange={e => { setToDate(e.target.value); setPage(0); }}
-                className="flex-1 rounded-xl px-3 py-2 text-xs outline-none"
-                style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+                aria-label={t('history.to_date', 'To')}
+                className="ui-field"
               />
             </div>
           </div>
 
           {paged.length === 0 ? (
-            <div className="border-2 border-dashed rounded-3xl py-8 text-center" style={{ borderColor: 'var(--border)' }}>
-              <p className="italic text-sm" style={{ color: 'var(--text-faint)' }}>{t('history.no_events')}</p>
-            </div>
+            <EmptyState>{t('history.no_events')}</EmptyState>
           ) : (
             paged.map(event => (
               <EventCard
@@ -154,12 +148,11 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
           )}
 
           {totalPages > 1 && (
-            <div className="flex justify-between items-center pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            <div className="flex flex-wrap justify-between items-center gap-2 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <button
                 disabled={page === 0}
                 onClick={() => setPage(p => Math.max(0, p - 1))}
-                className="px-4 py-2 rounded-xl text-xs font-black uppercase disabled:opacity-30 transition-all"
-                style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}
+                className="ui-btn ui-btn--secondary ui-btn--sm"
               >
                 {t('history.prev')}
               </button>
@@ -169,8 +162,7 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
               <button
                 disabled={currentPage >= totalPages - 1}
                 onClick={() => setPage(p => Math.min(Math.max(0, totalPages - 1), p + 1))}
-                className="px-4 py-2 rounded-xl text-xs font-black uppercase disabled:opacity-30 transition-all"
-                style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}
+                className="ui-btn ui-btn--secondary ui-btn--sm"
               >
                 {t('history.next')}
               </button>

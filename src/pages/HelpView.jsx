@@ -33,8 +33,7 @@ export default function HelpView({ onBack, onAbout }) {
       <div className="flex items-center gap-4 mb-6 shrink-0">
         <button
           onClick={onBack}
-          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+          className="ui-btn ui-btn--secondary ui-btn--sm"
         >
           {t('nav.back')}
         </button>
@@ -83,8 +82,7 @@ export default function HelpView({ onBack, onAbout }) {
 
         <button
           onClick={onAbout}
-          className="w-full mt-2 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised-muted)', border: '1px solid var(--border)' }}
+          className="ui-btn ui-btn--secondary ui-btn--md ui-btn--full mt-2"
         >
           {t('help.about_btn')}
         </button>

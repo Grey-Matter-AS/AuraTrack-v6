@@ -78,8 +78,7 @@ export default function EventDetailView({ eventId, onEdit, onClose, durationForm
         <p className="text-sm font-bold" style={{ color: 'var(--text-dim)' }}>{t('event_detail.not_found')}</p>
         <button
           onClick={onClose}
-          className="px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+          className="ui-btn ui-btn--secondary ui-btn--md"
         >
           {t('nav.back')}
         </button>
@@ -107,14 +106,14 @@ export default function EventDetailView({ eventId, onEdit, onClose, durationForm
       <div className="flex items-center gap-2 sm:gap-4 mb-4 shrink-0">
         <button
           onClick={onClose}
-          className="app-icon-action app-icon-action--primary"
+          className="ui-btn ui-btn--secondary ui-btn--sm"
         >
           {t('nav.back')}
         </button>
         <h2 className="flex-1 min-w-0 text-center text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-dim)' }}>{t('event_detail.title')}</h2>
         <button
           onClick={() => onEdit(event)}
-          className="app-icon-action app-icon-action--accent"
+          className="ui-btn ui-btn--primary ui-btn--sm"
         >
           <EditIcon className="w-4 h-4 shrink-0" />
           <span className="app-chip-text">{t('event_detail.edit')}</span>

@@ -70,8 +70,10 @@ const sameList = (a = [], b = []) =>
 // Lists the clinically relevant fields that differ, e.g. ['name', 'slotDose:20:00', 'form']
 export function diffRegimen(from, to) {
   const fields = [];
+  // Ingredient spelling case doesn't make it a different medicine ("lamotrigine" = "Lamotrigine")
+  const norm = (key, value) => (key === 'activeIngredient' ? String(value ?? '').toLowerCase() : (value ?? ''));
   for (const key of ['name', 'activeIngredient', 'form', 'unit', 'frequency']) {
-    if ((from[key] ?? '') !== (to[key] ?? '')) fields.push(key);
+    if (norm(key, from[key]) !== norm(key, to[key])) fields.push(key);
   }
   // Scheduled meds compare the effective dose of each slot both regimens share (new or removed
   // slots show up under scheduledTimes); as-needed meds compare the single dose

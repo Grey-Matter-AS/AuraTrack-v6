@@ -4,6 +4,7 @@ import { useMedications } from '../hooks/useMedications';
 import { getScheduledDosesForDay, getDoseStatus } from '../utils/medicationSchedule';
 import { changeTypeLabel, describeChange } from '../utils/medicationChanges';
 import { EditIcon } from './AppIcons';
+import { BottomSheet, Button, DateInput, EmptyState } from './ui';
 
 function parseHHMM(hhMM) {
   const [h, m] = hhMM.split(':').map(Number);
@@ -170,11 +171,7 @@ export function MedicationHistoryTab({ settings = {} }) {
 
   if (scheduledMeds.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <p className="italic text-sm" style={{ color: 'var(--text-faint)' }}>
-          No scheduled medications. Add medications in Settings → Medications.
-        </p>
-      </div>
+      <EmptyState>No scheduled medications. Add medications in Settings → Medications.</EmptyState>
     );
   }
 
@@ -216,11 +213,7 @@ export function MedicationHistoryTab({ settings = {} }) {
         if (doses.length === 0 && adHocLogs.length === 0 && dayChanges.length === 0) return null;
 
         return (
-          <div
-            key={dayMs}
-            className="rounded-[1.5rem] overflow-hidden"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-          >
+          <div key={dayMs} className="ui-card !p-0 overflow-hidden">
             {/* Day header */}
             <div
               className="px-4 py-3 border-b"
@@ -250,7 +243,7 @@ export function MedicationHistoryTab({ settings = {} }) {
                   <button
                     key={`${medicationId}-${scheduledHHMM}`}
                     onClick={() => openEdit(dayMs, med, scheduledHHMM)}
-                    className="w-full flex items-center justify-between px-4 py-3 transition-all active:opacity-70 text-left"
+                    className="w-full min-h-[3rem] flex items-center justify-between gap-3 px-4 py-3 transition-all active:opacity-70 text-left"
                     style={{ borderColor: 'var(--border-subtle)' }}
                   >
                     <div className="flex-1 min-w-0">
@@ -314,78 +307,35 @@ export function MedicationHistoryTab({ settings = {} }) {
       })}
 
       {days.length === 0 && (
-        <div className="py-8 text-center">
-          <p className="italic text-sm" style={{ color: 'var(--text-faint)' }}>No history yet.</p>
-        </div>
+        <EmptyState>No history yet.</EmptyState>
       )}
 
       {/* Edit modal */}
       {editCell && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center p-4"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-          onClick={e => { if (e.target === e.currentTarget) setEditCell(null); }}
+        <BottomSheet
+          title={`Edit Dose — ${editCell.med.name}`}
+          onClose={() => setEditCell(null)}
+          footer={(
+            <>
+              {editCell.log?.status === 'assumed' && (
+                <Button variant="ghost" fullWidth onClick={handleConfirmAssumed} style={{ color: 'var(--success)', borderColor: 'var(--success)' }}>
+                  {t('medication_history.confirm_taken')}
+                </Button>
+              )}
+              <div className="ui-button-row">
+                <Button variant="success" onClick={handleMarkTaken}>Mark Taken</Button>
+                <Button variant="danger" onClick={handleMarkMissed}>Mark Missed</Button>
+              </div>
+              <Button variant="secondary" fullWidth onClick={() => setEditCell(null)}>Cancel</Button>
+            </>
+          )}
         >
-          <div
-            className="w-full max-w-md rounded-[2rem] p-6 space-y-4"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-          >
-            <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'var(--text-dim)' }}>
-              Edit Dose — {editCell.med.name}
-            </p>
-            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
-              {fmtDay(editCell.dayMs)} · Scheduled {editCell.hhMM}
-              {editCell.log?.isEdited && <span className="app-status-badge app-status-badge--info ml-2">Previously edited</span>}
-            </p>
-
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>
-                Actual time taken
-              </p>
-              <input
-                type="time"
-                value={editTime}
-                onChange={e => setEditTime(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-              />
-            </div>
-
-            {editCell.log?.status === 'assumed' && (
-              <button
-                onClick={handleConfirmAssumed}
-                className="w-full py-3 rounded-2xl font-black text-xs uppercase tracking-widest"
-                style={{ backgroundColor: 'transparent', color: '#16a34a', border: '1px dashed #16a34a' }}
-              >
-                {t('medication_history.confirm_taken')}
-              </button>
-            )}
-
-            <div className="flex gap-2">
-              <button
-                onClick={handleMarkTaken}
-                className="flex-1 py-3 rounded-2xl font-black text-xs uppercase tracking-widest"
-                style={{ backgroundColor: '#16a34a', color: '#fff' }}
-              >
-                Mark Taken
-              </button>
-              <button
-                onClick={handleMarkMissed}
-                className="flex-1 py-3 rounded-2xl font-black text-xs uppercase tracking-widest"
-                style={{ backgroundColor: '#dc2626', color: '#fff' }}
-              >
-                Mark Missed
-              </button>
-            </div>
-            <button
-              onClick={() => setEditCell(null)}
-              className="w-full py-3 rounded-2xl font-black text-xs uppercase tracking-widest"
-              style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+          <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
+            {fmtDay(editCell.dayMs)} · Scheduled {editCell.hhMM}
+            {editCell.log?.isEdited && <span className="app-status-badge app-status-badge--info ml-2">Previously edited</span>}
+          </p>
+          <DateInput type="time" label="Actual time taken" value={editTime} onChange={setEditTime} />
+        </BottomSheet>
       )}
     </div>
   );

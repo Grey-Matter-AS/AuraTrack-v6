@@ -74,7 +74,8 @@
     "no_paralysis_areas": "No hay zonas de parálisis registradas.",
     "todds_paralysis": "Parálisis de Todd",
     "add_paralysis_area": "Añadir zona de parálisis",
-    "add_paralysis_areas": "Añadir {{count}} zona(s) de parálisis"
+    "add_paralysis_areas": "Añadir {{count}} zona(s) de parálisis",
+    "remove_area": "Quitar zona"
   },
   "history": {
     "title": "Historial",
@@ -90,7 +91,9 @@
     "tab_medications": "Medicamentos",
     "tab_export": "Exportar",
     "tab_eeg": "EEG Diary",
-    "tab_wellbeing": "Bienestar"
+    "tab_wellbeing": "Bienestar",
+    "from_date": "Desde",
+    "to_date": "Hasta"
   },
   "export": {
     "title": "Exportar e informes",
@@ -564,7 +567,8 @@
       "per_slot_dose_help": "Indica una dosis ({{unit}}) para cada hora.",
       "assume_taken": "Dar las dosis por tomadas",
       "assume_taken_help": "Las dosis no registradas se guardan como «supuestamente tomadas» 90 minutos después de su hora. Puedes corregirlas en el historial y los informes las muestran aparte de las confirmadas.",
-      "stopped_on": "suspendido el {{date}}"
+      "stopped_on": "suspendido el {{date}}",
+      "active_ingredient_add_new": "Añadir nuevo principio activo…"
     },
     "reports": {
       "section": "Clinician & Reports",
@@ -734,7 +738,8 @@
     "manual_durations": "Ajustar duraciones manualmente",
     "remove_symptom": "Eliminar",
     "drag_to_reorder": "Drag to reorder",
-    "event_datetime": "Event Date & Time"
+    "event_datetime": "Event Date & Time",
+    "event_date_time": "Fecha y hora del evento"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -773,7 +778,14 @@
     "notes_or_reference": "Notes / Seizure Ref",
     "seizure_type": "Seizure",
     "activity_type": "Activity",
-    "badge": "EEG"
+    "badge": "EEG",
+    "activity_label": "Actividad",
+    "duration_label": "Duración",
+    "start_time_label": "Inicio",
+    "end_time_label": "Fin",
+    "exact_activity_label": "Detalles",
+    "notes_label": "Notas",
+    "session_label": "Nombre de la sesión"
   },
   "wellbeing": {
     "eyebrow": "Bienestar",
@@ -863,7 +875,9 @@
       "tearful_crying_help": "Llanto o lágrimas visibles, aunque la persona no pueda explicar por qué."
     },
     "load_failed": "No se pudieron cargar las entradas de bienestar.",
-    "choose_mood_error": "Elige un estado de ánimo antes de guardar."
+    "choose_mood_error": "Elige un estado de ánimo antes de guardar.",
+    "notes_label": "Notas",
+    "recorded_at": "Fecha y hora"
   },
   "sync": {
     "wellbeing_entries_added_one": "{{count}} nueva entrada de bienestar añadida",
@@ -1123,5 +1137,13 @@
   "medication_history": {
     "assumed": "SUPUESTA",
     "confirm_taken": "Confirmar toma"
+  },
+  "app": {
+    "update_available": "Actualización disponible",
+    "update_reload": "Recargar"
+  },
+  "common": {
+    "close": "Cerrar",
+    "section": "Sección"
   }
 }

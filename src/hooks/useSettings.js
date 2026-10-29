@@ -20,7 +20,7 @@ const DEFAULTS = {
 
   // Appearance
   theme: 'dark',               // 'dark' | 'light' | 'system'
-  accentColor: 'red',          // 'red' | 'blue' | 'green' | 'purple' | 'amber'
+  accentColor: 'blue',         // 'red' | 'blue' | 'green' | 'purple' | 'amber'
   fontSize: 'normal',          // 'small' | 'normal' | 'large' | 'xlarge'
 
   // Display

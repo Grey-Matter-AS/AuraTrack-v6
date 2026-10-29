@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WELLBEING_MOOD_OPTIONS } from '../data/constants';
+import { BottomSheet, Button, ChipGroup, DateInput, DecimalInput, Field, Inset, TextArea } from './ui';
 
 const INTENSITY_OPTIONS = [
   { value: 1, label: 'Mild', labelKey: 'wellbeing.mild' },
@@ -39,19 +40,16 @@ function FactorControl({ definition, value, onChange, t }) {
   const help = translatedHelp(t, definition);
   if (definition.type === 'boolean') {
     return (
-      <label
-        className="flex items-start gap-3 rounded-2xl p-3"
-        style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}
-        title={help}
-      >
+      <label className="ui-inset flex items-start gap-3 cursor-pointer" title={help}>
         <input
           type="checkbox"
           checked={Boolean(value)}
           onChange={e => onChange(e.target.checked)}
-          className="mt-1"
+          className="mt-0.5 w-5 h-5 shrink-0"
+          style={{ accentColor: 'var(--accent)' }}
         />
         <span className="min-w-0">
-          <span className="block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{label}</span>
+          <span className="block text-sm font-medium">{label}</span>
           {help && <span className="block text-[11px] leading-snug mt-0.5" style={{ color: 'var(--text-dim)' }}>{help}</span>}
         </span>
       </label>
@@ -62,59 +60,33 @@ function FactorControl({ definition, value, onChange, t }) {
     const numeric = value === undefined || value === null || value === '' ? null : Number(value);
     const scaleLabels = translatedScaleLabels(t, definition);
     return (
-      <div
-        className="rounded-2xl p-3 space-y-2"
-        style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}
-        title={help}
-      >
+      <Inset className="space-y-2" title={help}>
         <div>
-          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{label}</p>
+          <p className="text-sm font-medium">{label}</p>
           {help && <p className="text-[11px] leading-snug mt-0.5" style={{ color: 'var(--text-dim)' }}>{help}</p>}
         </div>
-        <div className="grid grid-cols-4 gap-1">
-          {scaleLabels.map((label, scaleValue) => (
-            <button
-              key={scaleValue}
-              type="button"
-              onClick={() => onChange(scaleValue)}
-              className="rounded-xl px-1 py-2 text-[10px] font-medium uppercase tracking-widest"
-              style={{
-                backgroundColor: numeric === scaleValue ? 'var(--accent)' : 'var(--bg-card)',
-                color: numeric === scaleValue ? '#fff' : 'var(--text-primary)',
-                border: numeric === scaleValue ? '1px solid transparent' : '1px solid var(--border)',
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+        <ChipGroup
+          fill
+          label={label}
+          value={numeric}
+          onChange={onChange}
+          options={scaleLabels.map((scaleLabel, scaleValue) => ({ value: scaleValue, label: scaleLabel }))}
+        />
+      </Inset>
     );
   }
 
   return (
-    <div
-      className="rounded-2xl p-3 space-y-2"
-      style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}
-      title={help}
-    >
+    <Inset className="space-y-2" title={help}>
       <div>
-        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{label}</p>
+        <p className="text-sm font-medium">{label}</p>
         {help && <p className="text-[11px] leading-snug mt-0.5" style={{ color: 'var(--text-dim)' }}>{help}</p>}
       </div>
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          min="0"
-          step="0.25"
-          value={value ?? ''}
-          onChange={e => onChange(e.target.value)}
-          className="min-w-0 flex-1 rounded-xl px-3 py-2 text-sm outline-none"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        />
-        {definition.unit && <span className="text-xs font-medium" style={{ color: 'var(--text-dim)' }}>{definition.unit}</span>}
+      <div className="ui-row ui-row--split items-center">
+        <DecimalInput value={value ?? ''} onChange={onChange} aria-label={label} />
+        {definition.unit ? <span className="text-xs font-medium" style={{ color: 'var(--text-dim)' }}>{definition.unit}</span> : <span />}
       </div>
-    </div>
+    </Inset>
   );
 }
 
@@ -164,136 +136,63 @@ export function WellbeingEntrySheet({ entry = null, factorDefinitions = [], onSa
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-3">
-      <div
-        className="w-full max-w-md rounded-[2rem] max-h-[92dvh] overflow-hidden flex flex-col"
-        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
-        data-testid="wellbeing-entry-sheet"
-      >
-        <div className="p-5 pb-3 flex items-center justify-between gap-3 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-          <div>
-            <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: 'var(--text-dim)' }}>
-              {t('wellbeing.eyebrow', 'Wellbeing')}
-            </p>
-            <h3 className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>
-              {entry ? t('wellbeing.edit_entry', 'Edit Wellbeing Entry') : t('wellbeing.new_entry', 'Log Wellbeing')}
-            </h3>
+    <BottomSheet
+      title={entry ? t('wellbeing.edit_entry', 'Edit Wellbeing Entry') : t('wellbeing.new_entry', 'Log Wellbeing')}
+      onClose={onClose}
+      testId="wellbeing-entry-sheet"
+      bodyTestId="wellbeing-entry-scroll"
+      footer={(
+        <>
+          {error && <p className="app-alert app-alert--danger rounded-xl px-4 py-3 text-xs font-medium">{error}</p>}
+          <div className="ui-button-row">
+            <Button variant="success" onClick={submit}>{t('wellbeing.save', 'Save')}</Button>
+            <Button variant="secondary" onClick={onClose}>{t('eeg.cancel', 'Cancel')}</Button>
           </div>
-          <button onClick={onClose} className="app-icon-action app-icon-action--primary !min-h-[36px] !px-3">
-            {t('eeg.close', 'Close')}
-          </button>
-        </div>
+        </>
+      )}
+    >
+      <DateInput type="datetime-local" label={t('wellbeing.recorded_at', 'Date and time')} value={recordedAt} onChange={setRecordedAt} />
 
-        <div className="p-5 space-y-4 overflow-y-auto min-h-0" data-testid="wellbeing-entry-scroll">
-          <input
-            type="datetime-local"
-            value={recordedAt}
-            onChange={e => setRecordedAt(e.target.value)}
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-            style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+      <Field label={t('wellbeing.mood', 'Mood')} help={selectedMood ? translatedHelp(t, selectedMood) : ''}>
+        <ChipGroup
+          fill
+          label={t('wellbeing.mood', 'Mood')}
+          value={primaryMood}
+          onChange={setPrimaryMood}
+          options={WELLBEING_MOOD_OPTIONS.map(option => ({ value: option.label, label: translatedLabel(t, option) }))}
+        />
+      </Field>
+
+      <Field label={t('wellbeing.intensity', 'Intensity')}>
+        <ChipGroup
+          fill
+          label={t('wellbeing.intensity', 'Intensity')}
+          value={intensity}
+          onChange={setIntensity}
+          options={INTENSITY_OPTIONS.map(option => ({ value: option.value, label: t(option.labelKey, option.label) }))}
+        />
+      </Field>
+
+      <div className="space-y-2">
+        <p className="ui-label">{t('wellbeing.context', 'Context')}</p>
+        {activeDefinitions.map(definition => (
+          <FactorControl
+            key={definition.id}
+            definition={definition}
+            value={factors[definition.id]}
+            onChange={value => updateFactor(definition.id, value)}
+            t={t}
           />
-
-          <div>
-          <p className="text-[11px] font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--text-dim)' }}>
-            {t('wellbeing.mood', 'Mood')}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {WELLBEING_MOOD_OPTIONS.map(option => {
-              const label = translatedLabel(t, option);
-              const help = translatedHelp(t, option);
-              const active = primaryMood === option.label;
-              return (
-                <button
-                  key={option.label}
-                  type="button"
-                  title={help}
-                  onClick={() => setPrimaryMood(option.label)}
-                  className="rounded-xl px-3 py-2 text-xs font-medium text-left"
-                  style={{
-                  backgroundColor: active ? 'var(--accent)' : 'var(--bg-raised)',
-                    color: active ? '#fff' : 'var(--text-on-raised)',
-                    border: active ? '1px solid transparent' : '1px solid var(--border)',
-                  }}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          {selectedMood && translatedHelp(t, selectedMood) && (
-            <p className="text-[11px] mt-2 leading-snug" style={{ color: 'var(--text-dim)' }}>
-              {translatedHelp(t, selectedMood)}
-            </p>
-          )}
-          </div>
-
-          <div>
-          <p className="text-[11px] font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--text-dim)' }}>
-            {t('wellbeing.intensity', 'Intensity')}
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {INTENSITY_OPTIONS.map(option => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setIntensity(option.value)}
-                className="rounded-xl py-2 text-[10px] font-medium uppercase tracking-widest"
-                style={{
-                  backgroundColor: intensity === option.value ? 'var(--accent)' : 'var(--bg-raised)',
-                  color: intensity === option.value ? '#fff' : 'var(--text-on-raised)',
-                  border: intensity === option.value ? '1px solid transparent' : '1px solid var(--border)',
-                }}
-              >
-                {t(option.labelKey, option.label)}
-              </button>
-            ))}
-          </div>
-          </div>
-
-          <div className="space-y-2">
-          <p className="text-[11px] font-medium uppercase tracking-widest" style={{ color: 'var(--text-dim)' }}>
-            {t('wellbeing.context', 'Context')}
-          </p>
-          {activeDefinitions.map(definition => (
-            <FactorControl
-              key={definition.id}
-              definition={definition}
-              value={factors[definition.id]}
-              onChange={value => updateFactor(definition.id, value)}
-              t={t}
-            />
-          ))}
-          </div>
-
-          <textarea
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            placeholder={t('wellbeing.notes_placeholder', 'Notes (optional)')}
-            rows={3}
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
-            style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          />
-        </div>
-
-        {error && <p className="app-alert app-alert--danger mx-5 mt-3 rounded-xl px-4 py-3 text-xs font-medium">{error}</p>}
-
-        <div className="p-5 pt-3 flex gap-2 shrink-0" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-          <button
-            onClick={submit}
-            className="flex-1 py-3 rounded-xl text-xs font-medium uppercase tracking-widest"
-            style={{ backgroundColor: '#16a34a', color: '#fff', border: '1px solid #15803d' }}
-          >
-            {t('wellbeing.save', 'Save')}
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-xl text-xs font-medium uppercase tracking-widest"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-          >
-            {t('eeg.cancel', 'Cancel')}
-          </button>
-        </div>
+        ))}
       </div>
-    </div>
+
+      <TextArea
+        label={t('wellbeing.notes_label', 'Notes')}
+        value={notes}
+        onChange={setNotes}
+        placeholder={t('wellbeing.notes_placeholder', 'Notes (optional)')}
+        rows={3}
+      />
+    </BottomSheet>
   );
 }

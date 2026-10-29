@@ -135,8 +135,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
         <div className="flex items-center gap-4 mb-6 shrink-0">
           <button
             onClick={onBack}
-            className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+            className="ui-btn ui-btn--secondary ui-btn--sm"
           >
             {t('nav.back')}
           </button>
@@ -151,7 +150,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
         <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)' }}>
           {t('export.date_range')}
         </p>
-        <div className="date-selector-stack">
+        <div className="ui-row">
           <div className="flex-1">
             <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-faint)' }}>{t('export.from')}</p>
             <input
@@ -159,8 +158,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
               value={fromDate}
               max={toDate}
               onChange={e => setFromDate(e.target.value)}
-              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
-              style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              className="ui-field"
             />
           </div>
           <div className="flex-1">
@@ -171,8 +169,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
               min={fromDate}
               max={today}
               onChange={e => setToDate(e.target.value)}
-              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
-              style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+              className="ui-field"
             />
           </div>
         </div>
@@ -224,8 +221,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
         />
 
         <div
-          className="rounded-2xl px-5 py-4"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          className="ui-card"
         >
           <p className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--text-dim)' }}>
             {t('export.privacy_notice_title')}
@@ -241,17 +237,16 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
         </p>
 
         <div
-          className="rounded-2xl p-6 space-y-3"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--accent)', boxShadow: `0 0 20px color-mix(in srgb, var(--accent) 15%, transparent)` }}
+          className="ui-card ui-card--accent !p-5 space-y-3"
         >
-          <div className="flex items-start gap-4">
+          <div className="flex flex-wrap items-start gap-4">
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0"
               style={{ backgroundColor: 'var(--action-blue)', color: '#fff' }}
             >
               <StethoscopeIcon className="w-6 h-6" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0 basis-48">
               <p className="font-black uppercase tracking-widest text-sm" style={{ color: 'var(--text-primary)' }}>
                 {t('export.neuro_report_label')}
               </p>
@@ -269,16 +264,14 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
           <div className="flex flex-wrap gap-2">
             <button
               onClick={handleNeurologistReport}
-              className="flex-1 min-w-[150px] inline-flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest text-center active:scale-95 transition-all"
-              style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+              className="ui-btn ui-btn--primary ui-btn--md flex-1 min-w-[150px]"
             >
               <EyeIcon className="w-4 h-4" />
               {t('export.open_preview')}
             </button>
             <button
               onClick={handleNeurologistReportPdf}
-              className="flex-1 min-w-[150px] inline-flex items-center justify-center gap-2 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest text-center active:scale-95 transition-all"
-              style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+              className="ui-btn ui-btn--primary ui-btn--md flex-1 min-w-[150px]"
             >
               <DownloadIcon className="w-4 h-4" />
               {t('export.download_pdf')}
@@ -292,17 +285,16 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
         </p>
 
         <div
-          className="rounded-2xl p-5 space-y-3"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+          className="ui-card !p-5 space-y-3"
         >
-          <div className="flex items-start gap-4">
+          <div className="flex flex-wrap items-start gap-4">
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0"
               style={{ backgroundColor: 'var(--bg-raised)' }}
             >
               <CalendarIcon className="w-6 h-6" />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0 basis-48">
               <p className="font-black uppercase tracking-widest text-sm" style={{ color: 'var(--text-primary)' }}>
                 {t('export.diary_label')}
               </p>
@@ -311,7 +303,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
               </p>
             </div>
           </div>
-          <div className="date-selector-stack">
+          <div className="ui-row">
             <div className="flex-1">
               <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-faint)' }}>{t('export.month')}</p>
               <input
@@ -319,23 +311,20 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
                 value={diaryMonth}
                 max={today.slice(0, 7)}
                 onChange={e => setDiaryMonth(e.target.value)}
-                className="w-full rounded-xl px-3 py-2 text-sm outline-none"
-                style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                className="ui-field"
               />
             </div>
             <div className="date-selector-actions">
               <button
                 onClick={handleSeizureDiary}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all active:scale-95"
-                style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+                className="ui-btn ui-btn--primary ui-btn--sm"
               >
                 <EyeIcon className="w-4 h-4" />
                 {t('export.open_preview')}
               </button>
               <button
                 onClick={handleSeizureDiaryPdf}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all active:scale-95"
-                style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+                className="ui-btn ui-btn--primary ui-btn--sm"
               >
                 <DownloadIcon className="w-4 h-4" />
                 {t('export.download_pdf')}

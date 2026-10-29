@@ -74,7 +74,8 @@
     "no_paralysis_areas": "Ingen lammelsesområder registreret.",
     "todds_paralysis": "Todd's parese",
     "add_paralysis_area": "Tilføj lammelsesområde",
-    "add_paralysis_areas": "Tilføj {{count}} lammelsesområde(r)"
+    "add_paralysis_areas": "Tilføj {{count}} lammelsesområde(r)",
+    "remove_area": "Fjern område"
   },
   "history": {
     "title": "Historik",
@@ -90,7 +91,9 @@
     "tab_medications": "Medicin",
     "tab_export": "Eksport",
     "tab_eeg": "EEG Diary",
-    "tab_wellbeing": "Trivsel"
+    "tab_wellbeing": "Trivsel",
+    "from_date": "Fra",
+    "to_date": "Til"
   },
   "export": {
     "title": "Eksport og rapporter",
@@ -564,7 +567,8 @@
       "per_slot_dose_help": "Angiv en særskilt dosis ({{unit}}) for hvert tidspunkt.",
       "assume_taken": "Antag at doser er taget",
       "assume_taken_help": "Doser, du ikke registrerer, gemmes som \"antaget taget\" 90 minutter efter deres tidspunkt. Du kan rette dem i Historik, og rapporter viser dem adskilt fra bekræftede doser.",
-      "stopped_on": "stoppet {{date}}"
+      "stopped_on": "stoppet {{date}}",
+      "active_ingredient_add_new": "Tilføj nyt aktivt stof…"
     },
     "reports": {
       "section": "Clinician & Reports",
@@ -734,7 +738,8 @@
     "manual_durations": "Justér varigheder manuelt",
     "remove_symptom": "Fjern",
     "drag_to_reorder": "Drag to reorder",
-    "event_datetime": "Event Date & Time"
+    "event_datetime": "Event Date & Time",
+    "event_date_time": "Dato og tid for hændelsen"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -773,7 +778,14 @@
     "notes_or_reference": "Notes / Seizure Ref",
     "seizure_type": "Seizure",
     "activity_type": "Activity",
-    "badge": "EEG"
+    "badge": "EEG",
+    "activity_label": "Aktivitet",
+    "duration_label": "Varighed",
+    "start_time_label": "Start",
+    "end_time_label": "Slut",
+    "exact_activity_label": "Detaljer",
+    "notes_label": "Noter",
+    "session_label": "Sessionsnavn"
   },
   "wellbeing": {
     "eyebrow": "Trivsel",
@@ -863,7 +875,9 @@
       "tearful_crying_help": "Gråd eller tydelig tårevædethed, uanset om personen kunne forklare hvorfor."
     },
     "load_failed": "Kunne ikke indlæse trivselsnotater.",
-    "choose_mood_error": "Vælg et humør, før du gemmer."
+    "choose_mood_error": "Vælg et humør, før du gemmer.",
+    "notes_label": "Noter",
+    "recorded_at": "Dato og tid"
   },
   "sync": {
     "wellbeing_entries_added_one": "{{count}} nyt trivselsnotat tilføjet",
@@ -1123,5 +1137,13 @@
   "medication_history": {
     "assumed": "ANTAGET",
     "confirm_taken": "Bekræft taget"
+  },
+  "app": {
+    "update_available": "Appopdatering tilgængelig",
+    "update_reload": "Genindlæs"
+  },
+  "common": {
+    "close": "Luk",
+    "section": "Sektion"
   }
 }

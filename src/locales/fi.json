@@ -74,7 +74,8 @@
     "no_paralysis_areas": "Halvausalueita ei ole kirjattu.",
     "todds_paralysis": "Toddin pareesi",
     "add_paralysis_area": "Lisää halvausalue",
-    "add_paralysis_areas": "Lisää {{count}} halvausaluetta"
+    "add_paralysis_areas": "Lisää {{count}} halvausaluetta",
+    "remove_area": "Poista alue"
   },
   "history": {
     "title": "Historia",
@@ -90,7 +91,9 @@
     "tab_medications": "Lääkkeet",
     "tab_export": "Vie",
     "tab_eeg": "EEG Diary",
-    "tab_wellbeing": "Hyvinvointi"
+    "tab_wellbeing": "Hyvinvointi",
+    "from_date": "Alkaen",
+    "to_date": "Asti"
   },
   "export": {
     "title": "Vienti & Raportit",
@@ -564,7 +567,8 @@
       "per_slot_dose_help": "Aseta oma annos ({{unit}}) kullekin ajalle.",
       "assume_taken": "Oleta annokset otetuiksi",
       "assume_taken_help": "Kirjaamattomat annokset tallennetaan \"oletettu otetuksi\" 90 minuuttia annosajan jälkeen. Voit korjata ne Historiassa, ja raportit näyttävät ne erillään vahvistetuista annoksista.",
-      "stopped_on": "lopetettu {{date}}"
+      "stopped_on": "lopetettu {{date}}",
+      "active_ingredient_add_new": "Lisää uusi vaikuttava aine…"
     },
     "reports": {
       "section": "Clinician & Reports",
@@ -734,7 +738,8 @@
     "manual_durations": "Säädä kestoja manuaalisesti",
     "remove_symptom": "Poista",
     "drag_to_reorder": "Drag to reorder",
-    "event_datetime": "Event Date & Time"
+    "event_datetime": "Event Date & Time",
+    "event_date_time": "Tapahtuman päivä ja aika"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -773,7 +778,14 @@
     "notes_or_reference": "Notes / Seizure Ref",
     "seizure_type": "Seizure",
     "activity_type": "Activity",
-    "badge": "EEG"
+    "badge": "EEG",
+    "activity_label": "Toiminta",
+    "duration_label": "Kesto",
+    "start_time_label": "Alku",
+    "end_time_label": "Loppu",
+    "exact_activity_label": "Tiedot",
+    "notes_label": "Muistiinpanot",
+    "session_label": "Istunnon nimi"
   },
   "wellbeing": {
     "eyebrow": "Hyvinvointi",
@@ -863,7 +875,9 @@
       "tearful_crying_help": "Itku tai näkyvä itkuisuus riippumatta siitä, osasiko henkilö kertoa miksi."
     },
     "load_failed": "Hyvinvointimerkintöjä ei voitu ladata.",
-    "choose_mood_error": "Valitse mieliala ennen tallentamista."
+    "choose_mood_error": "Valitse mieliala ennen tallentamista.",
+    "notes_label": "Muistiinpanot",
+    "recorded_at": "Päivä ja aika"
   },
   "sync": {
     "wellbeing_entries_added_one": "{{count}} uusi hyvinvointimerkintä lisätty",
@@ -1123,5 +1137,13 @@
   "medication_history": {
     "assumed": "OLETETTU",
     "confirm_taken": "Vahvista otetuksi"
+  },
+  "app": {
+    "update_available": "Sovelluspäivitys saatavilla",
+    "update_reload": "Lataa uudelleen"
+  },
+  "common": {
+    "close": "Sulje",
+    "section": "Osio"
   }
 }

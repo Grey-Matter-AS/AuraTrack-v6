@@ -210,7 +210,7 @@ describe('AuraTrack mobile layout', () => {
     cy.viewport(320, 568);
     cy.launchAuraTrack(richCaretakerScenario());
     cy.get('.app-header__history').click();
-    cy.contains('button', /^Export$/).scrollIntoView().click();
+    cy.openTab('Export');
 
     cy.window().then((win) => {
       const stacks = [...win.document.querySelectorAll('.date-selector-stack')].map((stack) => {

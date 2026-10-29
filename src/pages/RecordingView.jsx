@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDuration } from '../utils/formatters';
 import { CheckIcon, CloseIcon, WarningIcon } from '../components/AppIcons';
+import { Button } from '../components/ui';
 
 const ALERT_THRESHOLD = 300;  // 5 minutes
 const AUTO_STOP_AT    = 720;  // 12 minutes
@@ -13,24 +14,36 @@ function RedAlert({ elapsed, onClose, emergencyMedications = [], neurologistName
   const secs = elapsed % 60;
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 select-none overflow-y-auto"
-      style={{ backgroundColor: 'rgba(185,28,28,0.97)', backdropFilter: 'blur(4px)' }}
+      role="alertdialog"
+      aria-modal="true"
+      className="fixed inset-0 flex flex-col items-center select-none overflow-y-auto"
+      style={{
+        zIndex: 'var(--z-alert)',
+        backgroundColor: 'rgba(185,28,28,0.97)',
+        padding: 'calc(env(safe-area-inset-top) + 1rem) calc(env(safe-area-inset-right) + 1.5rem) calc(env(safe-area-inset-bottom) + 1.5rem) calc(env(safe-area-inset-left) + 1.5rem)',
+      }}
     >
-      {/* Close */}
-      <button
-        onClick={onClose}
-        className="absolute top-6 right-6 w-10 h-10 rounded-full flex items-center justify-center text-xl font-black transition-all active:scale-90"
-        style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff' }}
-      >
-        <CloseIcon className="w-5 h-5" />
-      </button>
+      {/* Close — in the layout flow so it never sits on top of the alert text */}
+      <div className="w-full flex justify-end shrink-0">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t('common.close')}
+          className="ui-icon-btn"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff', borderColor: 'transparent' }}
+        >
+          <CloseIcon className="w-5 h-5" />
+        </button>
+      </div>
 
+      {/* my-auto centres the content when it fits and lets it scroll from the top when it doesn't */}
+      <div className="my-auto w-full flex flex-col items-center py-2">
       {/* Content */}
       <p className="text-[10px] font-black tracking-[0.5em] text-red-200 uppercase mb-4">{t('alert.medical_alert')}</p>
 
-      <WarningIcon className="w-20 h-20 mb-3 text-white" />
+      <WarningIcon className="w-20 h-20 mb-3 text-[#fff]" />
 
-      <h1 className="text-4xl font-black text-white uppercase tracking-tight text-center mb-1">
+      <h1 className="text-4xl font-black text-[#fff] uppercase tracking-tight text-center mb-1">
         {t('alert.unresponsive')}
       </h1>
       <p className="text-xl font-black text-red-200 uppercase tracking-widest text-center mb-5">
@@ -65,7 +78,7 @@ function RedAlert({ elapsed, onClose, emergencyMedications = [], neurologistName
           {(neurologistName || neurologistContact) && (
             <div className="flex justify-between items-start gap-2">
               <p className="text-red-300 text-[9px] font-black uppercase tracking-widest shrink-0">{t('alert.neurologist')}</p>
-              <p className="text-white text-xs font-bold text-right">
+              <p className="text-[#fff] text-xs font-bold text-right">
                 {[neurologistName, neurologistContact].filter(Boolean).join('  ·  ')}
               </p>
             </div>
@@ -73,7 +86,7 @@ function RedAlert({ elapsed, onClose, emergencyMedications = [], neurologistName
           {emergencyContact && (
             <div className="flex justify-between items-start gap-2">
               <p className="text-red-300 text-[9px] font-black uppercase tracking-widest shrink-0">{t('alert.emergency_contact')}</p>
-              <p className="text-white text-xs font-bold text-right">{emergencyContact}</p>
+              <p className="text-[#fff] text-xs font-bold text-right">{emergencyContact}</p>
             </div>
           )}
         </div>
@@ -81,11 +94,12 @@ function RedAlert({ elapsed, onClose, emergencyMedications = [], neurologistName
 
       {/* Live elapsed */}
       <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-300 mb-1">{t('alert.elapsed')}</p>
-      <p className="text-6xl font-mono font-black text-white tabular-nums">
+      <p className="text-6xl font-mono font-black text-[#fff] tabular-nums">
         {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
       </p>
 
       <p className="text-red-300 text-[10px] mt-3 font-bold">{t('recording.auto_stop_notice')}</p>
+      </div>
     </div>
   );
 }
@@ -223,30 +237,18 @@ function RecordingView({
             </p>
           )}
           <div className="flex justify-center mt-4 gap-2 flex-wrap">
-            <button
+            <Button
+              variant={videoRecording ? 'danger' : 'secondary'}
+              size="sm"
               onClick={videoRecording ? onStopVideo : onStartVideo}
               disabled={!videoSupported && !videoRecording}
-              className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
-              style={{
-                backgroundColor: videoRecording ? '#dc2626' : 'var(--bg-raised)',
-                color: videoRecording ? '#fff' : 'var(--text-on-raised)',
-                border: `1px solid ${videoRecording ? '#991b1b' : 'var(--border)'}`,
-              }}
             >
               {videoRecording ? t('recording.stop_video', 'Stop Video') : t('recording.start_video', 'Start Video')}
-            </button>
+            </Button>
             {canSwitchCamera && (
-              <button
-                onClick={onSwitchCamera}
-                className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                style={{
-                  backgroundColor: 'var(--bg-raised)',
-                  color: 'var(--text-on-raised)',
-                  border: '1px solid var(--border)',
-                }}
-              >
+              <Button variant="secondary" size="sm" onClick={onSwitchCamera}>
                 {t('recording.switch_camera', 'Switch Camera')}
-              </button>
+              </Button>
             )}
           </div>
           {videoError && (

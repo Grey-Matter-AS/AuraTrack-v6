@@ -10,6 +10,7 @@ import { defaultScheduledTimes, diffRegimen, regimenSnapshot, scheduledDaysLabel
 import { describeChange, formLabel, regimenDoseSummary, regimenSummary } from '../utils/medicationChanges';
 import { COMMON_ANTISEIZURE_INGREDIENTS, DEFAULT_WELLBEING_FACTORS, MEDICATION_FORMS } from '../data/constants';
 import { MedicationChangeConfirm } from './MedicationChangeConfirm';
+import { Button, ButtonRow, ChipGroup, ChoiceList, DateInput, DecimalInput, Dialog, FieldRow, Inset, Section as KitSection, Select, TextInput, Toggle, useToast } from './ui';
 import {
   BellIcon,
   BellOffIcon,
@@ -40,113 +41,55 @@ const LANGUAGES = [
 
 // ─── Atom components ─────────────────────────────────────────
 
-function Section({ title, children }) {
-  return (
-    <div className="bg-[var(--bg-card)] rounded-[2rem] border border-[var(--border-subtle)] overflow-hidden">
-      <div className="px-6 py-4 border-b border-[var(--border-subtle)]">
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--text-dim)]">{title}</p>
-      </div>
-      <div className="p-6 space-y-5">{children}</div>
-    </div>
-  );
-}
+// Settings atoms are thin wrappers over the shared UI kit, so every settings screen uses the
+// same fields, chips, switches and containers as the rest of the app.
+const Section = KitSection;
 
 function Row({ label, help, children }) {
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="text-sm font-bold text-[var(--text-primary)]">{label}</p>
-          {typeof help === 'string' && help && <p className="text-[11px] text-[var(--text-dim)] mt-0.5">{help}</p>}
-          {help && typeof help !== 'string' && <div className="text-[11px] text-[var(--text-dim)] mt-0.5">{help}</div>}
-        </div>
-        <div>{children}</div>
+    <div className="flex flex-wrap justify-between items-center gap-x-4 gap-y-2">
+      <div className="min-w-0 flex-1 basis-48">
+        <p className="text-sm font-bold text-[var(--text-primary)]">{label}</p>
+        {typeof help === 'string' && help && <p className="text-[11px] text-[var(--text-dim)] mt-0.5">{help}</p>}
+        {help && typeof help !== 'string' && <div className="text-[11px] text-[var(--text-dim)] mt-0.5">{help}</div>}
       </div>
+      <div className="shrink-0 max-w-full">{children}</div>
     </div>
   );
 }
 
 function FieldLabel({ children }) {
-  return <p className="text-[11px] font-black uppercase tracking-widest text-[var(--text-dim)] mb-1.5">{children}</p>;
+  return <p className="ui-label">{children}</p>;
 }
 
 function TextField({ label, value, onChange, type = 'text', placeholder }) {
-  return (
-    <div>
-      {label && <FieldLabel>{label}</FieldLabel>}
-      <input
-        type={type}
-        value={value || ''}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
-        style={{
-          backgroundColor: 'var(--bg-input)',
-          border: '1px solid var(--border)',
-          color: 'var(--text-primary)',
-        }}
-      />
-    </div>
-  );
+  if (type === 'date' || type === 'time') {
+    return <DateInput type={type} label={label} value={value || ''} onChange={onChange} placeholder={placeholder} />;
+  }
+  return <TextInput type={type} label={label} value={value || ''} onChange={onChange} placeholder={placeholder} />;
 }
 
 function Segments({ options, value, onChange }) {
   return (
-    <div className="flex gap-2 flex-wrap">
-      {options.map(opt => {
-        const v = typeof opt === 'object' ? opt.value : opt;
-        const l = typeof opt === 'object' ? opt.label : String(opt);
-        const active = value === v;
-        return (
-          <button
-            key={v}
-            onClick={() => onChange(v)}
-            className="flex-1 min-w-[56px] py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all"
-            style={{
-              backgroundColor: active ? 'var(--action-blue)' : 'var(--bg-raised)',
-              color: 'var(--text-on-raised)',
-              border: active ? '2px solid transparent' : '2px solid var(--border)',
-              opacity: active ? 1 : 0.7,
-            }}
-          >
-            {l}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function Toggle({ value, onChange, label }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={value}
-      aria-label={label}
-      onClick={() => onChange(!value)}
-      className="relative w-14 h-8 rounded-full transition-all shrink-0"
-      style={{
-        backgroundColor: value ? 'var(--accent)' : 'var(--bg-input)',
-        border: value ? '1px solid transparent' : '1px solid var(--border)',
-      }}
-    >
-      <span
-        className="absolute top-1 w-6 h-6 rounded-full shadow transition-all"
-        style={{ left: value ? '1.75rem' : '0.25rem', backgroundColor: value ? '#fff' : 'var(--text-dim)' }}
-      />
-    </button>
+    <ChipGroup
+      fill
+      value={value}
+      onChange={onChange}
+      options={options.map(opt => (typeof opt === 'object' ? opt : { value: opt, label: String(opt) }))}
+    />
   );
 }
 
 function ActionBtn({ label, sub, onClick, icon, variant = 'default' }) {
   const isDanger = variant === 'danger';
-  const bg = isDanger ? '#dc2626' : 'var(--bg-raised)';
-  const color = isDanger ? '#ffffff' : 'var(--text-on-raised)';
+  const bg = isDanger ? 'var(--danger)' : 'var(--bg-raised)';
+  const color = isDanger ? 'var(--on-action)' : 'var(--text-on-raised)';
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`w-full flex flex-col items-center justify-center rounded-2xl font-black uppercase tracking-widest transition-all active:scale-95 ${isDanger ? 'gap-2 px-4 py-6 min-h-[9rem] text-[11px]' : 'gap-1 py-5 text-[10px]'}`}
-      style={{ backgroundColor: bg, color, border: isDanger ? '1px solid rgba(127,29,29,0.9)' : '1px solid var(--border)' }}
+      className={`w-full min-w-0 flex flex-col items-center justify-center rounded-2xl font-black uppercase tracking-widest transition-all active:scale-95 ${isDanger ? 'gap-2 px-4 py-6 min-h-[9rem] text-[11px]' : 'gap-1 px-3 py-5 text-[10px]'}`}
+      style={{ backgroundColor: bg, color, border: isDanger ? '1px solid var(--danger-border)' : '1px solid var(--border)', overflowWrap: 'anywhere' }}
     >
       {icon && (
         <span
@@ -170,6 +113,8 @@ const FREQ_OPTIONS = [
   { value: 'PRN', labelKey: 'settings.medications.frequency_prn' },
 ];
 const UNIT_OPTIONS = ['mg', 'g', 'mcg', 'ml', 'IU'];
+// Ingredient names are shown with an initial capital (e.g. "Levetiracetam")
+const capitalise = (text) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : text);
 const stripLeadingEmoji = (text) => String(text || '').replace(/^[^\p{Letter}\p{Number}]+/u, '').trim();
 const frequencyShortLabel = (frequency, t) => t(`settings.medications.frequency_short_${String(frequency || '').toLowerCase()}`, frequency);
 
@@ -197,11 +142,9 @@ const EMPTY_MED = { name: '', dose: '', unit: 'mg', frequency: 'BD', isRescue: f
 // with a reason, so a rename can't silently turn one medicine into another.
 function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitle = null, lockedName = false, knownIngredients = [], knownForms = [], onDifferentMedicine }) {
   const { t } = useTranslation();
-  const selectStyle = { backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' };
   const isPRN = form.frequency === 'PRN';
   const [nameUnlocked, setNameUnlocked] = useState(false);
   const [askNameReason, setAskNameReason] = useState(false);
-  const [customForm, setCustomForm] = useState(false);
   const [perSlot, setPerSlot] = useState(Object.keys(form.slotDoses || {}).length > 0);
 
   const handleFreqChange = (freq) => {
@@ -227,7 +170,6 @@ function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitl
   const setSlotDose = (time, value) => setForm(f => ({ ...f, slotDoses: { ...(f.slotDoses || {}), [time]: value } }));
 
   const formOptions = [...MEDICATION_FORMS, ...knownForms.filter(f => !MEDICATION_FORMS.includes(f))];
-  const formSelectValue = customForm ? '__new' : (form.form || '');
 
   const scheduledDays = form.scheduledDays ?? ALL_DAYS;
   const isDaily = scheduledDays.length === 7;
@@ -260,155 +202,102 @@ function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitl
   const times = form.scheduledTimes || defaultScheduledTimes(form.frequency);
 
   return (
-    <div className="space-y-3 p-4 rounded-2xl" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+    <Inset className="space-y-4">
       <FieldLabel>{formTitle || t('settings.medications.add_form_title')}</FieldLabel>
       {lockedName && !nameUnlocked ? (
         <div className="space-y-2">
-          <div className="flex gap-2 items-center">
-            <input
-              type="text"
-              value={form.name}
-              readOnly
-              className="flex-1 min-w-0 rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ ...selectStyle, opacity: 0.7 }}
-            />
-            <button
-              onClick={() => setAskNameReason(a => !a)}
-              className="px-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shrink-0"
-              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-            >
+          <div className="ui-row ui-row--split items-center">
+            <TextInput value={form.name} readOnly aria-label={t('settings.medications.name_placeholder')} />
+            <Button variant="secondary" size="md" onClick={() => setAskNameReason(a => !a)} aria-expanded={askNameReason}>
               {t('medication_changes.change_name')}
-            </button>
+            </Button>
           </div>
           {askNameReason ? (
             <div className="space-y-2">
               <p className="text-[11px] font-bold" style={{ color: 'var(--text-dim)' }}>{t('medication_changes.name_reason_prompt')}</p>
-              {['typo', 'brand', 'different'].map(reason => (
-                <button
-                  key={reason}
-                  onClick={() => chooseNameReason(reason)}
-                  className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold active:scale-[0.98] transition-all"
-                  style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-                >
-                  {t(`medication_changes.name_reason_${reason}`)}
-                </button>
-              ))}
+              <ChoiceList
+                value={null}
+                onChange={chooseNameReason}
+                options={['typo', 'brand', 'different'].map(reason => ({ value: reason, label: t(`medication_changes.name_reason_${reason}`) }))}
+              />
             </div>
           ) : (
-            <p className="text-[11px]" style={{ color: 'var(--text-faint)' }}>{t('medication_changes.name_locked_help')}</p>
+            <p className="ui-help">{t('medication_changes.name_locked_help')}</p>
           )}
         </div>
       ) : (
-        <input
-          type="text"
+        <TextInput
           value={form.name}
-          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          onChange={name => setForm(f => ({ ...f, name }))}
           placeholder={t('settings.medications.name_placeholder')}
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-          style={selectStyle}
+          aria-label={t('settings.medications.name_placeholder')}
         />
       )}
-      <input
-        type="text"
-        list="med-ingredient-options"
-        value={form.activeIngredient || ''}
-        onChange={e => setForm(f => ({ ...f, activeIngredient: e.target.value }))}
-        placeholder={t('settings.medications.active_ingredient_placeholder')}
+      <Select
         aria-label={t('settings.medications.active_ingredient')}
-        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-        style={selectStyle}
+        placeholder={t('settings.medications.active_ingredient')}
+        value={form.activeIngredient || ''}
+        onChange={activeIngredient => setForm(f => ({ ...f, activeIngredient: capitalise(activeIngredient) }))}
+        options={knownIngredients.map(name => ({ value: name, label: name }))}
+        allowCustom
+        customLabel={t('settings.medications.active_ingredient_add_new')}
+        customPlaceholder={t('settings.medications.active_ingredient_placeholder')}
       />
-      <datalist id="med-ingredient-options">
-        {knownIngredients.map(name => <option key={name} value={name} />)}
-      </datalist>
-      <select
-        value={formSelectValue}
-        onChange={e => {
-          const value = e.target.value;
-          setCustomForm(value === '__new');
-          setForm(f => ({ ...f, form: value === '__new' ? '' : value }));
-        }}
+      <Select
         aria-label={t('settings.medications.form')}
-        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-        style={selectStyle}
-      >
-        <option value="">{t('settings.medications.form')}</option>
-        {formOptions.map(f => <option key={f} value={f}>{formLabel(f, t)}</option>)}
-        <option value="__new">{t('settings.medications.form_add_new')}</option>
-      </select>
-      {customForm && (
-        <input
-          type="text"
-          value={form.form || ''}
-          onChange={e => setForm(f => ({ ...f, form: e.target.value }))}
-          placeholder={t('settings.medications.form_custom_placeholder')}
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-          style={selectStyle}
-        />
-      )}
-      <div className="flex gap-2">
-        <input
-          type="number"
+        placeholder={t('settings.medications.form')}
+        value={form.form || ''}
+        onChange={value => setForm(f => ({ ...f, form: value }))}
+        options={formOptions.map(f => ({ value: f, label: formLabel(f, t) }))}
+        allowCustom
+        customLabel={t('settings.medications.form_add_new')}
+        customPlaceholder={t('settings.medications.form_custom_placeholder')}
+      />
+      <FieldRow split>
+        <DecimalInput
           value={form.dose}
-          onChange={e => setForm(f => ({ ...f, dose: e.target.value }))}
+          onChange={dose => setForm(f => ({ ...f, dose }))}
           placeholder={t('settings.medications.dose_placeholder')}
-          className="flex-1 rounded-xl px-4 py-3 text-sm outline-none"
-          style={selectStyle}
-          min="0"
+          aria-label={t('settings.medications.dose_placeholder')}
         />
-        <select
+        <Select
+          aria-label={t('medication_changes.field_unit')}
           value={form.unit}
-          onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
-          className="rounded-xl px-3 py-3 text-sm outline-none"
-          style={selectStyle}
-        >
-          {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
-        </select>
-      </div>
-      <select
+          onChange={unit => setForm(f => ({ ...f, unit }))}
+          options={UNIT_OPTIONS.map(u => ({ value: u, label: u }))}
+        />
+      </FieldRow>
+      <Select
+        aria-label={t('medication_changes.field_frequency')}
         value={form.frequency}
-        onChange={e => handleFreqChange(e.target.value)}
-        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-        style={selectStyle}
-      >
-        {FREQ_OPTIONS.map(o => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
-      </select>
+        onChange={handleFreqChange}
+        options={FREQ_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey) }))}
+      />
 
-      {/* Scheduled times — one per dose slot */}
+      {/* Scheduled times — one per dose slot (label above; time and optional per-slot dose side by side) */}
       {!isPRN && times.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <FieldLabel>{t('settings.medications.scheduled_times')}</FieldLabel>
           {times.map((time, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <p className="text-xs font-bold w-24 shrink-0" style={{ color: 'var(--text-dim)' }}>{getSlotLabel(i, form.frequency, t)}</p>
-              <input
-                type="time"
-                value={time}
-                onChange={e => updateTime(i, e.target.value)}
-                className="flex-1 min-w-0 rounded-xl px-3 py-2.5 text-sm outline-none"
-                style={selectStyle}
-              />
-              {perSlot && (
-                <input
-                  type="number"
-                  min="0"
-                  value={form.slotDoses?.[time] ?? ''}
-                  onChange={e => setSlotDose(time, e.target.value)}
-                  aria-label={t('medication_changes.field_slot_dose', { time })}
-                  className="w-20 rounded-xl px-2 py-2.5 text-sm outline-none text-center"
-                  style={selectStyle}
-                />
-              )}
+            <div key={i}>
+              <p className="text-xs font-bold mb-1.5" style={{ color: 'var(--text-dim)' }}>{getSlotLabel(i, form.frequency, t)}</p>
+              <FieldRow min="8rem">
+                <DateInput type="time" value={time} onChange={value => updateTime(i, value)} aria-label={getSlotLabel(i, form.frequency, t)} />
+                {perSlot && (
+                  <DecimalInput
+                    value={form.slotDoses?.[time] ?? ''}
+                    onChange={value => setSlotDose(time, value)}
+                    placeholder={`${t('settings.medications.dose_placeholder')} (${form.unit})`}
+                    aria-label={t('medication_changes.field_slot_dose', { time })}
+                  />
+                )}
+              </FieldRow>
             </div>
           ))}
           {times.length > 1 && (
-            <div className="flex items-center justify-between pt-1">
-              <div>
-                <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('settings.medications.per_slot_dose')}</p>
-                <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>{t('settings.medications.per_slot_dose_help', { unit: form.unit })}</p>
-              </div>
+            <Row label={t('settings.medications.per_slot_dose')} help={t('settings.medications.per_slot_dose_help', { unit: form.unit })}>
               <Toggle value={perSlot} onChange={togglePerSlot} label={t('settings.medications.per_slot_dose')} />
-            </div>
+            </Row>
           )}
         </div>
       )}
@@ -417,79 +306,43 @@ function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitl
       {!isPRN && (
         <div className="space-y-2">
           <FieldLabel>{t('settings.medications.active_days')}</FieldLabel>
-          <div className="flex gap-1.5 flex-wrap">
-            <button
-              onClick={setDaily}
-              className="px-3 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
-              style={{
-                backgroundColor: isDaily ? 'var(--action-blue)' : 'var(--bg-raised)',
-                color: isDaily ? '#fff' : 'var(--text-on-raised)',
-                border: isDaily ? '1px solid var(--action-blue-border)' : '1px solid var(--border)',
-              }}
-            >
-              {t('settings.medications.daily')}
-            </button>
-            {DAY_LABEL_KEYS.map((labelKey, day) => {
-              const active = scheduledDays.includes(day);
-              return (
-                <button
-                  key={day}
-                  onClick={() => toggleDay(day)}
-                  className="px-3 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
-                  style={{
-                    backgroundColor: active ? 'var(--action-blue)' : 'var(--bg-raised)',
-                    color: active ? '#fff' : 'var(--text-on-raised)',
-                    border: active ? '1px solid var(--action-blue-border)' : '1px solid var(--border)',
-                  }}
-                >
-                  {t(labelKey)}
-                </button>
-              );
-            })}
+          <div className="ui-chip-group">
+            <button type="button" aria-pressed={isDaily} onClick={setDaily} className="ui-chip">{t('settings.medications.daily')}</button>
+            {DAY_LABEL_KEYS.map((labelKey, day) => (
+              <button
+                key={day}
+                type="button"
+                aria-pressed={!isDaily && scheduledDays.includes(day)}
+                onClick={() => toggleDay(day)}
+                className="ui-chip"
+              >
+                {t(labelKey)}
+              </button>
+            ))}
           </div>
         </div>
       )}
 
       {/* Reminder toggle */}
       {!isPRN && (
-        <div className="flex items-center justify-between pt-1">
-          <div>
-            <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('settings.medications.dose_reminders')}</p>
-            <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>{t('settings.medications.dose_reminders_help')}</p>
-          </div>
+        <Row label={t('settings.medications.dose_reminders')} help={t('settings.medications.dose_reminders_help')}>
           <Toggle value={form.reminderEnabled ?? false} onChange={v => setForm(f => ({ ...f, reminderEnabled: v }))} label={t('settings.medications.dose_reminders')} />
-        </div>
+        </Row>
       )}
 
       {/* Show in emergency toggle */}
-      <div className="flex items-center justify-between pt-1">
-        <div>
-          <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('settings.medications.show_emergency')}</p>
-          <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>{t('settings.medications.show_emergency_help')}</p>
-        </div>
+      <Row label={t('settings.medications.show_emergency')} help={t('settings.medications.show_emergency_help')}>
         <Toggle value={form.showInEmergency ?? false} onChange={v => setForm(f => ({ ...f, showInEmergency: v }))} label={t('settings.medications.show_emergency')} />
-      </div>
+      </Row>
 
-      <div className="flex gap-2 pt-1">
-        <button
-          onClick={onSave}
-          disabled={!form.name.trim() || !form.dose}
-          className="flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-40"
-          style={{ backgroundColor: '#16a34a', color: '#fff', border: '1px solid #15803d' }}
-        >
-          {saveLabel}
-        </button>
-        <button
-          onClick={onCancel}
-          className="flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-        >
-          {t('settings.medications.cancel')}
-        </button>
-      </div>
-    </div>
+      <ButtonRow>
+        <Button variant="success" onClick={onSave} disabled={!form.name.trim() || !form.dose}>{saveLabel}</Button>
+        <Button variant="secondary" onClick={onCancel}>{t('settings.medications.cancel')}</Button>
+      </ButtonRow>
+    </Inset>
   );
 }
+
 
 // Form values → medication fields. Per-slot doses are kept only for the current times.
 function formToFields(form) {
@@ -530,10 +383,11 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
 
   const activeMeds = medications.filter(m => m.active);
   const stoppedMeds = medications.filter(m => !m.active);
-  const knownIngredients = [...new Set([
+  // Built-in list plus the user's own ingredients, capitalised and de-duplicated ignoring case
+  const knownIngredients = [...new Map([
     ...COMMON_ANTISEIZURE_INGREDIENTS,
-    ...medications.map(m => (m.activeIngredient || '').trim()).filter(Boolean),
-  ])].sort((a, b) => a.localeCompare(b));
+    ...medications.map(m => capitalise((m.activeIngredient || '').trim())).filter(Boolean),
+  ].map(name => [name.toLowerCase(), name])).values()].sort((a, b) => a.localeCompare(b));
   const knownForms = [...new Set(medications.map(m => m.form).filter(Boolean))];
 
   const closeEdit = () => { setEditingId(null); setEditForm(null); };
@@ -563,7 +417,7 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
       scheduledDays: med.scheduledDays ?? ALL_DAYS,
       reminderEnabled: med.reminderEnabled ?? false,
       showInEmergency: med.showInEmergency ?? false,
-      activeIngredient: med.activeIngredient ?? '',
+      activeIngredient: capitalise(med.activeIngredient ?? ''),
       form: med.form ?? '',
       slotDoses: Object.fromEntries(Object.entries(med.slotDoses ?? {}).map(([time, dose]) => [time, String(dose)])),
       nameReason: null,
@@ -606,7 +460,7 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
         closeEdit();
         flash(t('settings.medications.updated'));
       } catch {
-        flash(t('settings.medications.update_failed'));
+        flash(t('settings.medications.update_failed'), 'error');
       }
       return;
     }
@@ -666,7 +520,7 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
       setPending(null);
     } catch (err) {
       console.error('Failed to save medication change:', err);
-      flash(t('settings.medications.update_failed'));
+      flash(t('settings.medications.update_failed'), 'error');
     }
   };
 
@@ -676,7 +530,7 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
       setDeleteConfirm(null);
       flash(t('settings.medications.removed'));
     } catch {
-      flash(t('settings.data.delete_failed'));
+      flash(t('settings.data.delete_failed'), 'error');
     }
   };
 
@@ -706,16 +560,30 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
           onCancel={() => setPending(null)}
         >
           {pending.kind === 'stop' && (
-            <button
-              onClick={() => { setDeleteConfirm(pending.med.id); setPending(null); }}
-              className="w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest"
-              style={{ backgroundColor: 'transparent', color: 'var(--status-missed-text)', border: '1px dashed var(--border)' }}
-            >
+            <Button variant="ghost" fullWidth style={{ color: 'var(--status-missed-text)' }} onClick={() => { setDeleteConfirm(pending.med.id); setPending(null); }}>
               {t('medication_changes.delete_mistake')}
-            </button>
+            </Button>
           )}
         </MedicationChangeConfirm>
       )}
+
+      {deleteConfirm != null && (() => {
+        const target = medications.find(m => m.id === deleteConfirm);
+        return target ? (
+          <Dialog
+            tone="danger"
+            title={t('settings.medications.remove')}
+            message={t('medication_changes.delete_confirm', { name: target.name })}
+            onClose={() => setDeleteConfirm(null)}
+            actions={(
+              <>
+                <Button variant="danger" fullWidth onClick={() => handleDelete(target.id)}>{t('settings.medications.remove')}</Button>
+                <Button variant="secondary" fullWidth onClick={() => setDeleteConfirm(null)}>{t('settings.medications.cancel')}</Button>
+              </>
+            )}
+          />
+        ) : null;
+      })()}
 
       {medications.length === 0 && !showForm && (
         <p className="text-xs italic text-center py-3" style={{ color: 'var(--text-faint)' }}>{t('settings.medications.none_recorded')}</p>
@@ -737,18 +605,10 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
                 knownForms={knownForms}
                 onDifferentMedicine={() => setEditForm(f => ({ ...f, replaceMode: true, name: '', activeIngredient: '', form: '' }))}
               />
-            ) : deleteConfirm === m.id ? (
-              <div className="rounded-2xl p-3 space-y-2" style={{ backgroundColor: '#7f1d1d', border: '1px solid #dc2626' }}>
-                <p className="text-white text-xs font-bold">{t('medication_changes.delete_confirm', { name: m.name })}</p>
-                <div className="flex gap-2">
-                  <button onClick={() => handleDelete(m.id)} className="flex-1 py-2 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest">{t('settings.medications.remove')}</button>
-                  <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2 rounded-xl text-xs font-bold" style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}>{t('settings.medications.cancel')}</button>
-                </div>
-              </div>
             ) : (
-              <div className="p-3 rounded-2xl" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
+              <Inset className="!p-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0 basis-36" style={{ overflowWrap: 'anywhere' }}>
                     <p className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>
 	                      {m.name}
 	                      {m.showInEmergency && (
@@ -777,20 +637,20 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
                       </p>
                     )}
                   </div>
-                  <div className="flex gap-1.5 ml-2 shrink-0">
+                  <div className="flex gap-1.5 shrink-0">
                     <button
                       onClick={() => startEdit(m)}
-                      className="app-icon-action app-icon-action--accent !min-w-[32px] !min-h-[32px] !p-0"
+                      className="ui-icon-btn ui-icon-btn--accent"
                       aria-label={t('settings.medications.edit_label', { name: m.name })}
                     ><EditIcon className="w-4 h-4" /></button>
                     <button
                       onClick={() => handleStop(m)}
-                      className="app-icon-action app-icon-action--danger !min-w-[32px] !min-h-[32px] !p-0"
+                      className="ui-icon-btn ui-icon-btn--danger"
                       aria-label={t('medication_changes.stop_label', { name: m.name })}
                     ><CloseIcon className="w-4 h-4" /></button>
                   </div>
                 </div>
-              </div>
+              </Inset>
             )}
           </div>
         ))}
@@ -800,16 +660,8 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
         <div className="space-y-2">
           <FieldLabel>{t('medication_changes.stopped_list')}</FieldLabel>
           {stoppedMeds.map(m => (
-            deleteConfirm === m.id ? (
-              <div key={m.id} className="rounded-2xl p-3 space-y-2" style={{ backgroundColor: '#7f1d1d', border: '1px solid #dc2626' }}>
-                <p className="text-white text-xs font-bold">{t('medication_changes.delete_confirm', { name: m.name })}</p>
-                <div className="flex gap-2">
-                  <button onClick={() => handleDelete(m.id)} className="flex-1 py-2 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest">{t('settings.medications.remove')}</button>
-                  <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2 rounded-xl text-xs font-bold" style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}>{t('settings.medications.cancel')}</button>
-                </div>
-              </div>
-            ) : (
-              <div key={m.id} className="p-3 rounded-2xl flex items-center justify-between gap-2" style={{ backgroundColor: 'var(--bg-raised)', border: '1px dashed var(--border)', opacity: 0.75 }}>
+            (
+              <Inset key={m.id} className="!p-3 flex flex-wrap items-center justify-between gap-2" style={{ borderStyle: 'dashed', opacity: 0.8 }}>
                 <div className="min-w-0">
                   <p className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{m.name}</p>
                   <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
@@ -820,18 +672,17 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
                 <div className="flex gap-1.5 shrink-0">
                   <button
                     onClick={() => handleRestart(m)}
-                    className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                    style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+                    className="ui-btn ui-btn--primary ui-btn--sm"
                   >
                     {t('medication_changes.restart')}
                   </button>
                   <button
                     onClick={() => setDeleteConfirm(m.id)}
-                    className="app-icon-action app-icon-action--danger !min-w-[32px] !min-h-[32px] !p-0"
+                    className="ui-icon-btn ui-icon-btn--danger"
                     aria-label={t('settings.medications.remove_label', { name: m.name })}
                   ><TrashIcon className="w-4 h-4" /></button>
                 </div>
-              </div>
+              </Inset>
             )
           ))}
         </div>
@@ -842,8 +693,7 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
       ) : (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95"
-          style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+          className="ui-btn ui-btn--primary ui-btn--md ui-btn--full"
         >
           {t('settings.medications.add_btn')}
         </button>
@@ -855,12 +705,10 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
         <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
           {t('settings.medications.start_date_help')}
         </p>
-        <input
-          type="date"
+        <DateInput
           value={settings?.medicationStartDate || ''}
-          onChange={e => onUpdate?.('medicationStartDate', e.target.value)}
-          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-          style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+          onChange={value => onUpdate?.('medicationStartDate', value)}
+          aria-label={t('settings.medications.start_date')}
         />
       </div>
 
@@ -889,8 +737,7 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
           {notificationPermission !== 'granted' && notificationPermission !== 'denied' && (
             <button
               onClick={onRequestNotificationPermission}
-              className="ml-3 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shrink-0"
-              style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+              className="ui-btn ui-btn--primary ui-btn--sm ml-3 shrink-0"
             >
               {t('settings.medications.reminder_enable')}
             </button>
@@ -910,7 +757,6 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
   const { t } = useTranslation();
   const fileInputRef = useRef();
   const [storageInfo, setStorageInfo] = useState(null);
-  const [statusMsg, setStatusMsg] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [backupModal, setBackupModal] = useState({ mode: null, fileName: '', fileText: '' });
@@ -928,7 +774,9 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
     }
   }, []);
 
-  const flash = (msg) => { setStatusMsg(msg); setTimeout(() => setStatusMsg(''), 4000); };
+  // Settings messages use the app-wide toasts so they show on every settings tab
+  const showToast = useToast();
+  const flash = (msg, tone = 'success') => showToast(msg, tone);
   const summarizeImportResult = (result) => {
     const parts = [];
     if (result.settings) parts.push(t('settings.data.import_summary_settings', { count: result.settings }));
@@ -962,7 +810,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
       flash(t('settings.data.imported', { summary: summarizeImportResult(result) }));
     } catch (err) {
       console.error('Import failed:', err);
-      flash(t('settings.data.import_failed'));
+      flash(t('settings.data.import_failed'), 'error');
     }
   };
 
@@ -1003,7 +851,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
       flash(t('settings.data.all_deleted'));
     } catch (err) {
       console.error('Failed to clear data:', err);
-      flash(t('settings.data.delete_failed'));
+      flash(t('settings.data.delete_failed'), 'error');
     }
   };
 
@@ -1192,8 +1040,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
               i18n.changeLanguage(e.target.value);
               onUpdate('language', e.target.value);
             }}
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-            style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            className="ui-field"
           >
             {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
           </select>
@@ -1214,8 +1061,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
           <select
             value={settings.dateFormat}
             onChange={e => onUpdate('dateFormat', e.target.value)}
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-            style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            className="ui-field"
           >
             <option value="locale">{t('settings.display.date_system')}</option>
             <option value="ISO">ISO  — 2025-05-14</option>
@@ -1297,8 +1143,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
                       <input
                         value={factor.label || ''}
                         onChange={e => updateWellbeingFactor(index, { label: e.target.value })}
-                        className="min-w-0 flex-1 rounded-xl px-3 py-2 text-xs font-bold outline-none"
-                        style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                        className="ui-field"
                       />
                       <Toggle
                         value={factor.active !== false}
@@ -1310,8 +1155,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
                       <select
                         value={factor.type || 'boolean'}
                         onChange={e => updateWellbeingFactor(index, { type: e.target.value })}
-                        className="rounded-xl px-3 py-2 text-xs outline-none"
-                        style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                        className="ui-field"
                       >
                         <option value="boolean">{t('settings.recording.factor_type_boolean', 'Present / absent')}</option>
                         <option value="scale">{t('settings.recording.factor_type_scale', 'Scale 0-3')}</option>
@@ -1321,8 +1165,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
                         value={factor.unit || ''}
                         onChange={e => updateWellbeingFactor(index, { unit: e.target.value })}
                         placeholder={t('settings.recording.factor_unit_placeholder', 'Unit')}
-                        className="w-20 rounded-xl px-3 py-2 text-xs outline-none"
-                        style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                        className="ui-field w-20"
                       />
                     </div>
                     <textarea
@@ -1330,12 +1173,11 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
                       onChange={e => updateWellbeingFactor(index, { help: e.target.value })}
                       placeholder={t('settings.recording.factor_help_placeholder', 'Tooltip/helper text')}
                       rows={2}
-                      className="w-full rounded-xl px-3 py-2 text-xs outline-none resize-none"
-                      style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                      className="ui-field"
                     />
                     <button
                       onClick={() => removeWellbeingFactor(index)}
-                      className="app-icon-action app-icon-action--danger !min-h-[36px] !px-3 !text-[10px]"
+                      className="ui-btn ui-btn--danger ui-btn--sm"
                     >
                       {t('settings.recording.remove_factor', 'Remove factor')}
                     </button>
@@ -1345,15 +1187,13 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
               <div className="grid grid-cols-2 gap-2 mt-3">
                 <button
                   onClick={addWellbeingFactor}
-                  className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest"
-                  style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+                  className="ui-btn ui-btn--secondary ui-btn--md"
                 >
                   {t('settings.recording.add_factor', 'Add factor')}
                 </button>
                 <button
                   onClick={() => onUpdate('wellbeingFactorDefinitions', DEFAULT_WELLBEING_FACTORS)}
-                  className="rounded-xl py-3 text-[10px] font-black uppercase tracking-widest"
-                  style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+                  className="ui-btn ui-btn--secondary ui-btn--md"
                 >
                   {t('settings.recording.reset_factors', 'Reset factors')}
                 </button>
@@ -1375,8 +1215,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
                   onUpdate('quickNoteLabels', updated);
                 }}
                 placeholder={t('settings.recording.button_n', { n: i + 1 })}
-                className="rounded-xl px-3 py-2.5 text-xs font-bold text-center outline-none transition-all"
-                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                className="ui-field text-center"
               />
             ))}
           </div>
@@ -1411,8 +1250,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
             {storagePersistence?.supported && !storagePersistence?.persisted && (
               <button
                 onClick={() => storagePersistence.requestPersistence?.({ userInitiated: true })}
-                className="rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
-                style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+                className="ui-btn ui-btn--secondary ui-btn--sm"
               >
                 {persistenceActionLabel}
               </button>
@@ -1495,13 +1333,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
         </div>
         <input ref={fileInputRef} type="file" accept=".atbak,.json,application/json" className="hidden" onChange={handleImport} />
 
-        {statusMsg && (
-          <p
-            className={`text-center text-xs py-2 font-bold rounded-xl ${statusMsg.includes('fail') || statusMsg.includes('No') || statusMsg.includes('mislyk') || statusMsg.includes('Ingen') ? 'app-alert app-alert--danger' : 'app-status-badge app-status-badge--success w-full'}`}
-          >
-            {statusMsg}
-          </p>
-        )}
+
 
         {/* Danger Zone */}
         <div className="border-t mt-2 pt-5 space-y-3" style={{ borderColor: 'rgba(185,28,28,0.3)' }}>
@@ -1511,10 +1343,10 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
             <div className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: '#7f1d1d', border: '1px solid #dc2626' }}>
               <p className="text-white text-sm font-bold">{t('settings.data.clear_confirm')}</p>
               <div className="flex gap-3">
-                <button onClick={handleClearAllData} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest">
+                <button onClick={handleClearAllData} className="ui-btn ui-btn--danger ui-btn--md flex-1">
                   {t('settings.data.clear_yes')}
                 </button>
-                <button onClick={() => setShowClearConfirm(false)} className="flex-1 py-3 rounded-xl font-bold text-xs" style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}>
+                <button onClick={() => setShowClearConfirm(false)} className="ui-btn ui-btn--secondary ui-btn--md flex-1">
                   {t('settings.data.cancel')}
                 </button>
               </div>
@@ -1544,8 +1376,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
             onChange={e => onUpdate('reportNotes', e.target.value)}
             placeholder={t('settings.reports.notes_placeholder')}
             rows={4}
-            className="w-full rounded-[1.5rem] px-5 py-4 text-sm outline-none resize-none transition-all"
-            style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            className="ui-field"
           />
         </div>
       </Section>}
@@ -1569,10 +1400,10 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
             <div className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: '#7f1d1d', border: '1px solid #dc2626' }}>
               <p className="text-white text-sm font-bold">{t('settings.data.reset_confirm')}</p>
               <div className="flex gap-3">
-                <button onClick={handleResetSettings} className="flex-1 py-3 bg-red-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest">
+                <button onClick={handleResetSettings} className="ui-btn ui-btn--danger ui-btn--md flex-1">
                   {t('settings.data.reset_yes')}
                 </button>
-                <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 rounded-xl font-bold text-xs" style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}>
+                <button onClick={() => setShowResetConfirm(false)} className="ui-btn ui-btn--secondary ui-btn--md flex-1">
                   {t('settings.data.cancel')}
                 </button>
               </div>

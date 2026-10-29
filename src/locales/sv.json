@@ -74,7 +74,8 @@
     "no_paralysis_areas": "Inga förlamningsområden registrerade.",
     "todds_paralysis": "Todds pares",
     "add_paralysis_area": "Lägg till förlamningsområde",
-    "add_paralysis_areas": "Lägg till {{count}} förlamningsområde(n)"
+    "add_paralysis_areas": "Lägg till {{count}} förlamningsområde(n)",
+    "remove_area": "Ta bort område"
   },
   "history": {
     "title": "Historik",
@@ -90,7 +91,9 @@
     "tab_medications": "Mediciner",
     "tab_export": "Exportera",
     "tab_eeg": "EEG Diary",
-    "tab_wellbeing": "Välbefinnande"
+    "tab_wellbeing": "Välbefinnande",
+    "from_date": "Från",
+    "to_date": "Till"
   },
   "export": {
     "title": "Export & Rapporter",
@@ -564,7 +567,8 @@
       "per_slot_dose_help": "Ange en egen dos ({{unit}}) för varje tid.",
       "assume_taken": "Anta att doser tagits",
       "assume_taken_help": "Doser du inte loggar registreras som \"antagen tagen\" 90 minuter efter sin tid. Du kan rätta dem i Historik, och rapporter visar dem separat från bekräftade doser.",
-      "stopped_on": "utsatt {{date}}"
+      "stopped_on": "utsatt {{date}}",
+      "active_ingredient_add_new": "Lägg till ny substans…"
     },
     "reports": {
       "section": "Clinician & Reports",
@@ -734,7 +738,8 @@
     "manual_durations": "Justera varaktigheter manuellt",
     "remove_symptom": "Ta bort",
     "drag_to_reorder": "Drag to reorder",
-    "event_datetime": "Event Date & Time"
+    "event_datetime": "Event Date & Time",
+    "event_date_time": "Datum och tid för händelsen"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -773,7 +778,14 @@
     "notes_or_reference": "Notes / Seizure Ref",
     "seizure_type": "Seizure",
     "activity_type": "Activity",
-    "badge": "EEG"
+    "badge": "EEG",
+    "activity_label": "Aktivitet",
+    "duration_label": "Längd",
+    "start_time_label": "Start",
+    "end_time_label": "Slut",
+    "exact_activity_label": "Detaljer",
+    "notes_label": "Anteckningar",
+    "session_label": "Sessionsnamn"
   },
   "wellbeing": {
     "eyebrow": "Välbefinnande",
@@ -863,7 +875,9 @@
       "tearful_crying_help": "Gråt eller synliga tårar, oavsett om personen kunde förklara varför."
     },
     "load_failed": "Kunde inte läsa in välbefinnandeposter.",
-    "choose_mood_error": "Välj ett humör innan du sparar."
+    "choose_mood_error": "Välj ett humör innan du sparar.",
+    "notes_label": "Anteckningar",
+    "recorded_at": "Datum och tid"
   },
   "sync": {
     "wellbeing_entries_added_one": "{{count}} ny välbefinnandepost lades till",
@@ -1123,5 +1137,13 @@
   "medication_history": {
     "assumed": "ANTAGEN",
     "confirm_taken": "Bekräfta tagen"
+  },
+  "app": {
+    "update_available": "Appuppdatering tillgänglig",
+    "update_reload": "Ladda om"
+  },
+  "common": {
+    "close": "Stäng",
+    "section": "Avsnitt"
   }
 }

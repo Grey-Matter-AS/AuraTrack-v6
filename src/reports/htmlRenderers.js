@@ -518,10 +518,11 @@ function buildPreviewStyles(documentStyles) {
     }
     .auratrack-print-preview-toolbar {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: calc(env(safe-area-inset-top) + 12px) 16px 12px;
+      padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 16px) 12px calc(env(safe-area-inset-left) + 16px);
       background: #111827;
       color: #fff;
     }

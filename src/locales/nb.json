@@ -74,7 +74,8 @@
     "no_paralysis_areas": "Ingen lammelsesområder registrert.",
     "todds_paralysis": "Todd's parese",
     "add_paralysis_area": "Legg til lammelsesområde",
-    "add_paralysis_areas": "Legg til {{count}} lammelsesområde(r)"
+    "add_paralysis_areas": "Legg til {{count}} lammelsesområde(r)",
+    "remove_area": "Fjern område"
   },
   "history": {
     "title": "Historikk",
@@ -90,7 +91,9 @@
     "tab_medications": "Medisiner",
     "tab_export": "Eksporter",
     "tab_eeg": "EEG Diary",
-    "tab_wellbeing": "Velvære"
+    "tab_wellbeing": "Velvære",
+    "from_date": "Fra",
+    "to_date": "Til"
   },
   "export": {
     "title": "Eksporter & rapporter",
@@ -564,7 +567,8 @@
       "per_slot_dose_help": "Angi en egen dose ({{unit}}) for hvert tidspunkt.",
       "assume_taken": "Anta at doser er tatt",
       "assume_taken_help": "Doser du ikke registrerer, lagres som «antatt tatt» 90 minutter etter tidspunktet. Du kan rette dem i Historikk, og rapporter viser dem atskilt fra bekreftede doser.",
-      "stopped_on": "seponert {{date}}"
+      "stopped_on": "seponert {{date}}",
+      "active_ingredient_add_new": "Legg til nytt virkestoff…"
     },
     "reports": {
       "section": "Clinician & Reports",
@@ -734,7 +738,8 @@
     "manual_durations": "Juster varigheter manuelt",
     "remove_symptom": "Fjern",
     "drag_to_reorder": "Drag to reorder",
-    "event_datetime": "Event Date & Time"
+    "event_datetime": "Event Date & Time",
+    "event_date_time": "Dato og tid for hendelsen"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -773,7 +778,14 @@
     "notes_or_reference": "Notes / Seizure Ref",
     "seizure_type": "Seizure",
     "activity_type": "Activity",
-    "badge": "EEG"
+    "badge": "EEG",
+    "activity_label": "Aktivitet",
+    "duration_label": "Varighet",
+    "start_time_label": "Start",
+    "end_time_label": "Slutt",
+    "exact_activity_label": "Detaljer",
+    "notes_label": "Notater",
+    "session_label": "Øktnavn"
   },
   "wellbeing": {
     "eyebrow": "Velvære",
@@ -863,7 +875,9 @@
       "tearful_crying_help": "Gråt eller synlig tårevåthet, uansett om personen kunne forklare hvorfor."
     },
     "load_failed": "Kunne ikke laste velværeoppføringer.",
-    "choose_mood_error": "Velg et humør før du lagrer."
+    "choose_mood_error": "Velg et humør før du lagrer.",
+    "notes_label": "Notater",
+    "recorded_at": "Dato og tid"
   },
   "sync": {
     "wellbeing_entries_added_one": "{{count}} ny velværeoppføring lagt til",
@@ -1123,5 +1137,13 @@
   "medication_history": {
     "assumed": "ANTATT",
     "confirm_taken": "Bekreft tatt"
+  },
+  "app": {
+    "update_available": "Appoppdatering tilgjengelig",
+    "update_reload": "Last inn på nytt"
+  },
+  "common": {
+    "close": "Lukk",
+    "section": "Seksjon"
   }
 }

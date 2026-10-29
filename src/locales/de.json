@@ -74,7 +74,8 @@
     "no_paralysis_areas": "Keine Lähmungsbereiche erfasst.",
     "todds_paralysis": "Todd-Lähmung",
     "add_paralysis_area": "Lähmungsbereich hinzufügen",
-    "add_paralysis_areas": "{{count}} Lähmungsbereich(e) hinzufügen"
+    "add_paralysis_areas": "{{count}} Lähmungsbereich(e) hinzufügen",
+    "remove_area": "Bereich entfernen"
   },
   "history": {
     "title": "Verlauf",
@@ -90,7 +91,9 @@
     "tab_medications": "Medikamente",
     "tab_export": "Exportieren",
     "tab_eeg": "EEG Diary",
-    "tab_wellbeing": "Wohlbefinden"
+    "tab_wellbeing": "Wohlbefinden",
+    "from_date": "Von",
+    "to_date": "Bis"
   },
   "export": {
     "title": "Export & Berichte",
@@ -564,7 +567,8 @@
       "per_slot_dose_help": "Für jede Zeit eine eigene Dosis ({{unit}}) festlegen.",
       "assume_taken": "Dosen als eingenommen annehmen",
       "assume_taken_help": "Nicht erfasste Dosen werden 90 Minuten nach ihrer Zeit als „angenommen eingenommen“ gespeichert. Du kannst sie im Verlauf korrigieren; Berichte zeigen sie getrennt von bestätigten Dosen.",
-      "stopped_on": "abgesetzt {{date}}"
+      "stopped_on": "abgesetzt {{date}}",
+      "active_ingredient_add_new": "Neuen Wirkstoff hinzufügen…"
     },
     "reports": {
       "section": "Clinician & Reports",
@@ -734,7 +738,8 @@
     "manual_durations": "Dauern manuell anpassen",
     "remove_symptom": "Entfernen",
     "drag_to_reorder": "Drag to reorder",
-    "event_datetime": "Event Date & Time"
+    "event_datetime": "Event Date & Time",
+    "event_date_time": "Datum & Uhrzeit des Ereignisses"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -773,7 +778,14 @@
     "notes_or_reference": "Notes / Seizure Ref",
     "seizure_type": "Seizure",
     "activity_type": "Activity",
-    "badge": "EEG"
+    "badge": "EEG",
+    "activity_label": "Aktivität",
+    "duration_label": "Dauer",
+    "start_time_label": "Beginn",
+    "end_time_label": "Ende",
+    "exact_activity_label": "Details",
+    "notes_label": "Notizen",
+    "session_label": "Sitzungsname"
   },
   "wellbeing": {
     "eyebrow": "Wohlbefinden",
@@ -863,7 +875,9 @@
       "tearful_crying_help": "Weinen oder sichtbare Tränen, unabhängig davon, ob die Person erklären konnte warum."
     },
     "load_failed": "Wohlbefindens-Einträge konnten nicht geladen werden.",
-    "choose_mood_error": "Wähle vor dem Speichern eine Stimmung aus."
+    "choose_mood_error": "Wähle vor dem Speichern eine Stimmung aus.",
+    "notes_label": "Notizen",
+    "recorded_at": "Datum und Uhrzeit"
   },
   "sync": {
     "wellbeing_entries_added_one": "{{count}} neuer Wohlbefindens-Eintrag hinzugefügt",
@@ -1123,5 +1137,13 @@
   "medication_history": {
     "assumed": "ANGENOMMEN",
     "confirm_taken": "Einnahme bestätigen"
+  },
+  "app": {
+    "update_available": "App-Update verfügbar",
+    "update_reload": "Neu laden"
+  },
+  "common": {
+    "close": "Schließen",
+    "section": "Bereich"
   }
 }

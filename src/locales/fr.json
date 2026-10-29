@@ -74,7 +74,8 @@
     "no_paralysis_areas": "Aucune zone de paralysie enregistrée.",
     "todds_paralysis": "Paralysie de Todd",
     "add_paralysis_area": "Ajouter une zone de paralysie",
-    "add_paralysis_areas": "Ajouter {{count}} zone(s) de paralysie"
+    "add_paralysis_areas": "Ajouter {{count}} zone(s) de paralysie",
+    "remove_area": "Retirer la zone"
   },
   "history": {
     "title": "Historique",
@@ -90,7 +91,9 @@
     "tab_medications": "Médicaments",
     "tab_export": "Exporter",
     "tab_eeg": "EEG Diary",
-    "tab_wellbeing": "Bien-être"
+    "tab_wellbeing": "Bien-être",
+    "from_date": "Du",
+    "to_date": "Au"
   },
   "export": {
     "title": "Export & Rapports",
@@ -564,7 +567,8 @@
       "per_slot_dose_help": "Définir une dose ({{unit}}) pour chaque heure.",
       "assume_taken": "Considérer les prises comme faites",
       "assume_taken_help": "Les prises non saisies sont enregistrées comme « présumées prises » 90 minutes après l'heure prévue. Vous pouvez les corriger dans l'historique ; les rapports les distinguent des prises confirmées.",
-      "stopped_on": "arrêté le {{date}}"
+      "stopped_on": "arrêté le {{date}}",
+      "active_ingredient_add_new": "Ajouter un principe actif…"
     },
     "reports": {
       "section": "Clinician & Reports",
@@ -734,7 +738,8 @@
     "manual_durations": "Ajuster les durées manuellement",
     "remove_symptom": "Supprimer",
     "drag_to_reorder": "Drag to reorder",
-    "event_datetime": "Event Date & Time"
+    "event_datetime": "Event Date & Time",
+    "event_date_time": "Date et heure de l'événement"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -773,7 +778,14 @@
     "notes_or_reference": "Notes / Seizure Ref",
     "seizure_type": "Seizure",
     "activity_type": "Activity",
-    "badge": "EEG"
+    "badge": "EEG",
+    "activity_label": "Activité",
+    "duration_label": "Durée",
+    "start_time_label": "Début",
+    "end_time_label": "Fin",
+    "exact_activity_label": "Détails",
+    "notes_label": "Notes",
+    "session_label": "Nom de la session"
   },
   "wellbeing": {
     "eyebrow": "Bien-être",
@@ -863,7 +875,9 @@
       "tearful_crying_help": "Pleurs ou larmes visibles, que la personne puisse expliquer pourquoi ou non."
     },
     "load_failed": "Impossible de charger les entrées de bien-être.",
-    "choose_mood_error": "Choisissez une humeur avant d’enregistrer."
+    "choose_mood_error": "Choisissez une humeur avant d’enregistrer.",
+    "notes_label": "Notes",
+    "recorded_at": "Date et heure"
   },
   "sync": {
     "wellbeing_entries_added_one": "{{count}} nouvelle entrée de bien-être ajoutée",
@@ -1123,5 +1137,13 @@
   "medication_history": {
     "assumed": "PRÉSUMÉ",
     "confirm_taken": "Confirmer la prise"
+  },
+  "app": {
+    "update_available": "Mise à jour disponible",
+    "update_reload": "Recharger"
+  },
+  "common": {
+    "close": "Fermer",
+    "section": "Section"
   }
 }

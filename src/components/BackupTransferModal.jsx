@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CloseIcon, DownloadIcon, EyeIcon, UploadIcon } from './AppIcons';
+import { DownloadIcon, EyeIcon, UploadIcon } from './AppIcons';
+import { BottomSheet, Button, Inset, TextInput } from './ui';
 import {
   MIN_BACKUP_PASSPHRASE_LENGTH,
   collectCanonicalBackupPayload,
@@ -18,9 +19,6 @@ function StepText({ children }) {
   return <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{children}</p>;
 }
 
-function Label({ children }) {
-  return <p className="text-[10px] font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>{children}</p>;
-}
 
 export function BackupTransferModal({
   isOpen,
@@ -147,119 +145,67 @@ export function BackupTransferModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/70 p-3 sm:items-center sm:p-6">
-      <div
-        className="w-full max-w-md rounded-[2rem] border p-5 shadow-2xl sm:p-6"
-        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}
-      >
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <p className="mb-1 text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'var(--text-faint)' }}>
-              {isExport ? t('backup.modal.export_eyebrow', 'Encrypted backup') : t('backup.modal.import_eyebrow', 'Secure restore')}
-            </p>
-            <h3 className="text-base font-black uppercase tracking-widest" style={{ color: 'var(--text-primary)' }}>
-              {title}
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="app-icon-action app-icon-action--primary !rounded-full !p-2"
-            aria-label={t('backup.modal.close', 'Close')}
-          >
-            <CloseIcon className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div
-            className="rounded-2xl p-4"
-            style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}
-          >
-            <div className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-widest" style={{ color: 'var(--text-primary)' }}>
-              {icon}
-              {isExport ? t('backup.modal.export_panel_title', 'Portable encrypted file') : t('backup.modal.import_panel_title', 'Decrypt in memory only')}
-            </div>
-            {isExport ? (
-              <>
-                <StepText>{t('backup.modal.export_body', 'AuraTrack will encrypt the backup before saving it. The file name can be changed in the save dialog.')}</StepText>
-                <StepText>{t('backup.modal.export_warning', 'If you forget this passphrase, the backup cannot be recovered.')}</StepText>
-              </>
-            ) : (
-              <>
-                <StepText>{t('backup.modal.import_body', 'AuraTrack will decrypt this backup in memory, import it, and will not write a plaintext copy to device storage.')}</StepText>
-                <StepText>{t('backup.modal.import_file', 'Selected file: {{fileName}}', { fileName: fileName || t('backup.modal.file_unknown', 'unknown file') })}</StepText>
-              </>
-            )}
-          </div>
-
-          <div>
-            <Label>{t('backup.modal.passphrase_label', 'Passphrase')}</Label>
-            <input
-              type={showSecret ? 'text' : 'password'}
-              value={passphrase}
-              onChange={event => setPassphrase(event.target.value)}
-              autoComplete={isExport ? 'new-password' : 'current-password'}
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-              placeholder={t('backup.modal.passphrase_placeholder', 'Enter backup passphrase')}
-            />
-          </div>
-
-          {isExport && (
-            <div>
-              <Label>{t('backup.modal.confirm_label', 'Confirm passphrase')}</Label>
-              <input
-                type={showSecret ? 'text' : 'password'}
-                value={confirmPassphrase}
-                onChange={event => setConfirmPassphrase(event.target.value)}
-                autoComplete="new-password"
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                placeholder={t('backup.modal.confirm_placeholder', 'Re-enter backup passphrase')}
-              />
-            </div>
-          )}
-
-          <div className="flex items-center justify-between gap-3">
-            <button
-              onClick={() => setShowSecret(value => !value)}
-              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
-              style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-            >
-              <EyeIcon className="w-4 h-4" />
-              {showSecret ? t('backup.modal.hide', 'Hide') : t('backup.modal.show', 'Show')}
-            </button>
-            <p className="text-right text-[11px]" style={{ color: 'var(--text-dim)' }}>
-              {guidance}
-            </p>
-          </div>
-
-          {error && (
-            <p className="app-alert app-alert--danger rounded-xl px-4 py-3 text-sm font-bold">
-              {error}
-            </p>
-          )}
-
-          <div className="flex gap-3">
-            <button
-              onClick={isExport ? handleExport : handleImport}
-              disabled={busy}
-              className="flex-1 rounded-2xl py-3 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-60"
-              style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
-            >
+    <BottomSheet
+      title={isExport ? t('backup.modal.export_eyebrow', 'Encrypted backup') : t('backup.modal.import_eyebrow', 'Secure restore')}
+      onClose={busy ? undefined : onClose}
+      dismissible={!busy}
+      footer={(
+        <>
+          {error && <p className="app-alert app-alert--danger rounded-xl px-4 py-3 text-sm font-bold">{error}</p>}
+          <div className="ui-button-row">
+            <Button variant="primary" onClick={isExport ? handleExport : handleImport} disabled={busy}>
               {busy ? t('backup.modal.working', 'Working...') : submitLabel}
-            </button>
-            <button
-              onClick={onClose}
-              disabled={busy}
-              className="rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-60"
-              style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-            >
-              {t('backup.modal.cancel', 'Cancel')}
-            </button>
+            </Button>
+            <Button variant="secondary" onClick={onClose} disabled={busy}>{t('backup.modal.cancel', 'Cancel')}</Button>
           </div>
+        </>
+      )}
+    >
+      <h3 className="text-base font-black uppercase tracking-widest">{title}</h3>
+      <Inset className="space-y-2">
+        <div className="flex items-center gap-2 text-sm font-black uppercase tracking-widest">
+          {icon}
+          {isExport ? t('backup.modal.export_panel_title', 'Portable encrypted file') : t('backup.modal.import_panel_title', 'Decrypt in memory only')}
         </div>
+        {isExport ? (
+          <>
+            <StepText>{t('backup.modal.export_body', 'AuraTrack will encrypt the backup before saving it. The file name can be changed in the save dialog.')}</StepText>
+            <StepText>{t('backup.modal.export_warning', 'If you forget this passphrase, the backup cannot be recovered.')}</StepText>
+          </>
+        ) : (
+          <>
+            <StepText>{t('backup.modal.import_body', 'AuraTrack will decrypt this backup in memory, import it, and will not write a plaintext copy to device storage.')}</StepText>
+            <StepText>{t('backup.modal.import_file', 'Selected file: {{fileName}}', { fileName: fileName || t('backup.modal.file_unknown', 'unknown file') })}</StepText>
+          </>
+        )}
+      </Inset>
+
+      <TextInput
+        type={showSecret ? 'text' : 'password'}
+        label={t('backup.modal.passphrase_label', 'Passphrase')}
+        value={passphrase}
+        onChange={setPassphrase}
+        autoComplete={isExport ? 'new-password' : 'current-password'}
+        placeholder={t('backup.modal.passphrase_placeholder', 'Enter backup passphrase')}
+      />
+
+      {isExport && (
+        <TextInput
+          type={showSecret ? 'text' : 'password'}
+          label={t('backup.modal.confirm_label', 'Confirm passphrase')}
+          value={confirmPassphrase}
+          onChange={setConfirmPassphrase}
+          autoComplete="new-password"
+          placeholder={t('backup.modal.confirm_placeholder', 'Re-enter backup passphrase')}
+        />
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button variant="secondary" size="sm" icon={<EyeIcon className="w-4 h-4" />} onClick={() => setShowSecret(value => !value)}>
+          {showSecret ? t('backup.modal.hide', 'Hide') : t('backup.modal.show', 'Show')}
+        </Button>
+        <p className="flex-1 basis-40 text-right text-[11px]" style={{ color: 'var(--text-dim)' }}>{guidance}</p>
       </div>
-    </div>
+    </BottomSheet>
   );
 }

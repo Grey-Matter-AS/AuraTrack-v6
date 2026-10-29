@@ -24,8 +24,7 @@ export default function SettingsView({ settings, onUpdate, onReset, onBack, pwa,
       <div className="flex items-center gap-4 mb-4 shrink-0">
         <button
           onClick={onBack}
-          className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+          className="ui-btn ui-btn--secondary ui-btn--sm"
         >
           {t('nav.back')}
         </button>

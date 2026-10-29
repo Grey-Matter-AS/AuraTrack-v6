@@ -29,6 +29,7 @@ import AboutView from './pages/AboutView';
 import HelpView from './pages/HelpView';
 import SyncModal from './components/SyncModal';
 import { MedicationConflictDialog } from './components/MedicationConflictDialog';
+import { Button, ToastProvider } from './components/ui';
 import { HelpIcon, HistoryIcon, SettingsIcon } from './components/AppIcons';
 
 function Header({ onSettings, onHistory, onHelp }) {
@@ -42,25 +43,22 @@ function Header({ onSettings, onHistory, onHelp }) {
       <div className="app-header__nav">
         <button
           onClick={onHistory}
-          className="app-toolbar-btn app-header__nav-btn app-header__history gap-2 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+          className="ui-btn ui-btn--secondary ui-btn--sm app-header__nav-btn app-header__history"
         >
           <HistoryIcon className="w-4 h-4 shrink-0" />
-          {t('nav.history')}
+          <span className="app-header__label">{t('nav.history')}</span>
         </button>
         <div className="app-header__actions">
           <button
             onClick={onSettings}
-            className="app-toolbar-btn app-header__nav-btn app-header__settings gap-2 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+            className="ui-btn ui-btn--secondary ui-btn--sm app-header__nav-btn app-header__settings"
           >
             <SettingsIcon className="w-4 h-4 shrink-0" />
-            {t('nav.settings')}
+            <span className="app-header__label">{t('nav.settings')}</span>
           </button>
           <button
             onClick={onHelp}
-            className="app-toolbar-btn app-header__help text-[12px] font-black active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+            className="ui-btn ui-btn--secondary ui-btn--sm app-header__help"
             aria-label={t('nav.help_label')}
           >
             <HelpIcon className="w-4.5 h-4.5" />
@@ -78,7 +76,7 @@ function App() {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [detailEventId, setDetailEventId] = useState(null);
   const [fullHistory, setFullHistory] = useState([]);
-  const [toastMsg, setToastMsg] = useState('');
+  const toastApi = useRef(null);
   const [todayLogs, setTodayLogs] = useState([]);
   const [allMedLogs, setAllMedLogs] = useState([]);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -107,9 +105,9 @@ function App() {
   const storagePersistence = usePersistentStorage();
   const stoppingRef = useRef(false);
 
-  const showToast = useCallback((msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 5000);
+  // Most App messages are failures; success messages pass tone 'success'
+  const showToast = useCallback((msg, tone = 'error') => {
+    toastApi.current?.(msg, tone, 5000);
   }, []);
 
   const refreshEvents = useCallback(async () => {
@@ -199,7 +197,7 @@ function App() {
   const handleBackupSuccess = useCallback(async () => {
     await updateSettings('lastSuccessfulBackupAt', Date.now());
     await updateSettings('lastBackupReminderDismissedAt', 0);
-    showToast(t('toast.encrypted_backup_saved'));
+    showToast(t('toast.encrypted_backup_saved'), 'success');
   }, [showToast, t, updateSettings]);
 
   useEffect(() => {
@@ -454,7 +452,7 @@ function App() {
         const med = meds.medications.find(m => m.id === d.medicationId);
         return med ? med.name : '';
       }).filter(Boolean);
-      showToast(t('toast.doses_logged', { names: names.join(', ') }));
+      showToast(t('toast.doses_logged', { names: names.join(', ') }), 'success');
     } catch (err) {
       console.error('Failed to save dose logs:', err);
       showToast(t('toast.save_dose_logs_failed'));
@@ -464,11 +462,19 @@ function App() {
   return (
     <div
       className="flex flex-col h-dvh w-full font-sans overflow-hidden select-none"
-      style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', paddingTop: 'env(safe-area-inset-top)' }}
+      style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)', paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
       data-theme={settings.theme}
       data-accent={settings.accentColor}
       data-font-size={settings.fontSize}
     >
+      {/* Inside the themed root so toasts pick up theme and accent */}
+      <ToastProvider apiRef={toastApi}>
+      {pwa.needRefresh && (
+        <div className="ui-update-bar" role="status">
+          <span>{t('app.update_available')}</span>
+          <Button variant="secondary" size="sm" onClick={() => pwa.updateServiceWorker()}>{t('app.update_reload')}</Button>
+        </div>
+      )}
       {showHeader && <Header onHistory={() => setStatus('HISTORY')} onSettings={() => { setSettingsInitialTab('identity'); setStatus('SETTINGS'); }} onHelp={goToHelp} />}
 
       {status === 'RECORDING' && wakeLockUnsupported && (
@@ -480,7 +486,7 @@ function App() {
 
       <div
         data-scroll-region={status === 'RECORDING' ? 'recording' : 'app'}
-        className={`flex-1 flex flex-col items-center px-3 pb-8 ${status === 'RECORDING' ? 'overflow-y-auto' : 'overflow-hidden'}`}
+        className={`flex-1 min-h-0 flex flex-col items-center px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] ${status === 'RECORDING' ? 'overflow-y-auto' : 'overflow-hidden'}`}
       >
         {status === 'IDLE'         && <IdleView history={recentHistory} fullHistory={fullHistory} onStart={handleStart} onManualEntry={() => setShowManualEntry(true)} onEdit={handleEdit} onDelete={setItemToDelete} onViewDetail={goToDetail} medicationGroups={medicationGroups} allActiveMedications={allActiveMedications} onSaveDoses={handleSaveDoses} durationFormat={settings.durationFormat} dateFormat={settings.dateFormat} timeFormat={settings.timeFormat} eegSession={eeg.activeSession} eegCurrentActivity={eeg.currentActivity} onStartEegSession={eeg.startSession} onEndEegSession={eeg.endSession} onStartEegActivity={eeg.startActivity} onStopEegActivity={eeg.stopActivity} onOpenEegDiary={() => { setHistoryInitialTab('eeg'); setStatus('HISTORY'); }} eegDiaryEnabled={settings.eegDiaryEnabled} wellbeing={wellbeing} wellbeingEnabled={settings.wellbeingEnabled} />}
         {status === 'RECORDING'    && <RecordingView elapsed={timer.elapsed} startTime={timer.startTime} laps={timer.laps} onLap={timer.recordLap} onStop={handleStop} onEmergencyStop={handleEmergencyStop} onQuickNote={l => wizard.addQuickNote(l, timer.elapsed)} userMode={settings.userMode} quickNoteLabels={activeQuickNoteLabels} emergencyMedications={emergencyMedications} neurologistName={settings.neurologistName} neurologistContact={settings.neurologistContact} emergencyContact={settings.emergencyContact} durationFormat={settings.durationFormat} onStartVideo={async () => { const result = await video.start({ seizureStartTime: timer.startTime, seizureStartLabel: timer.startTime ? new Date(timer.startTime).toLocaleString() : new Date().toLocaleString(), preferredFacingMode: settings.userMode === 'CARETAKER' ? 'environment' : 'user' }); if (!result?.ok) showToast(video.error || t('toast.video_start_failed')); }} onStopVideo={async () => { await video.stop(); }} onSwitchCamera={async () => { const result = await video.switchCamera(); if (!result?.ok && result?.reason !== 'single_camera') showToast(video.error || t('toast.video_switch_failed')); }} videoRecording={video.isRecording} videoSupported={video.isSupported} videoError={video.error} previewStream={video.previewStream} canSwitchCamera={video.canSwitchCamera} />}
@@ -491,6 +497,13 @@ function App() {
         {status === 'HELP'         && <HelpView onBack={() => setStatus('IDLE')} onAbout={goToAbout} />}
         {status === 'ABOUT'        && <AboutView onBack={() => setStatus(previousStatus)} />}
       </div>
+
+      {/* In the layout flow (not floating), so it takes its own space and never covers content */}
+      {pwa.isVisible && (
+        <div className="shrink-0 w-full app-width-shell mx-auto px-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}>
+          <PWAInstallBanner isVisible={pwa.isVisible} isIOS={pwa.isIOS} install={pwa.install} dismiss={pwa.dismiss} showManualInstructions={pwa.showManualInstructions} dismissManual={pwa.dismissManual} />
+        </div>
+      )}
 
       {itemToDelete && <DeleteModal onConfirm={handleDeleteConfirm} onCancel={() => setItemToDelete(null)} />}
       {showManualEntry && <ManualEntrySheet onConfirm={handleManualCreate} onClose={() => setShowManualEntry(false)} />}
@@ -517,24 +530,7 @@ function App() {
       />
 
       <MedicationConflictDialog />
-      <PWAInstallBanner isVisible={pwa.isVisible} isIOS={pwa.isIOS} install={pwa.install} dismiss={pwa.dismiss} showManualInstructions={pwa.showManualInstructions} dismissManual={pwa.dismissManual} />
-      {toastMsg && (
-        <div
-          className="fixed bottom-6 left-4 right-4 z-50 py-3 px-5 rounded-2xl text-sm font-bold text-center"
-          style={{ backgroundColor: '#dc2626', color: '#fff', boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}
-        >
-          {toastMsg}
-        </div>
-      )}
-      {pwa.needRefresh && (
-        <div
-          className="fixed top-0 left-0 right-0 z-50 py-2 px-4 flex items-center justify-between text-xs font-bold"
-          style={{ backgroundColor: 'var(--action-blue)', color: '#fff' }}
-        >
-          <span>App update available</span>
-          <button onClick={() => pwa.updateServiceWorker()} className="underline">Reload</button>
-        </div>
-      )}
+      </ToastProvider>
     </div>
   );
 }

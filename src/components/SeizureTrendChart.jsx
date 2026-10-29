@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Card, ChipGroup, IconButton } from './ui';
 import { BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 
 const TIME_WINDOWS = [
@@ -104,25 +105,16 @@ export default function SeizureTrendChart({ allEvents, medicationChanges = [] })
   const canZoomOut = windowIndex < TIME_WINDOWS.length - 1;
 
   return (
-    <div
-      className="mb-4 shrink-0 p-4 rounded-2xl"
-      style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-    >
+    <Card className="mb-4 shrink-0">
       {/* Zoom control row */}
       <div className="flex items-center justify-between mb-3 gap-2">
         {/* Zoom out: more time, fewer bars */}
-        <button
-          onClick={() => setWindowIndex(i => Math.min(i + 1, TIME_WINDOWS.length - 1))}
-          disabled={!canZoomOut}
-          className="w-11 h-11 rounded-xl font-black text-lg flex items-center justify-center active:scale-95 transition-all disabled:opacity-25"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-          title="Zoom out"
-        >
+        <IconButton label="Zoom out" onClick={() => setWindowIndex(i => Math.min(i + 1, TIME_WINDOWS.length - 1))} disabled={!canZoomOut} className="text-lg font-black disabled:opacity-25">
           −
-        </button>
+        </IconButton>
 
         {/* Current window info */}
-        <div className="flex-1 text-center">
+        <div className="flex-1 min-w-0 text-center">
           <p className="text-xs font-black uppercase tracking-widest leading-tight" style={{ color: 'var(--text-primary)' }}>
             {description}
           </p>
@@ -132,33 +124,20 @@ export default function SeizureTrendChart({ allEvents, medicationChanges = [] })
         </div>
 
         {/* Zoom in: less time, more detail */}
-        <button
-          onClick={() => setWindowIndex(i => Math.max(i - 1, 0))}
-          disabled={!canZoomIn}
-          className="w-11 h-11 rounded-xl font-black text-lg flex items-center justify-center active:scale-95 transition-all disabled:opacity-25"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-          title="Zoom in"
-        >
+        <IconButton label="Zoom in" onClick={() => setWindowIndex(i => Math.max(i - 1, 0))} disabled={!canZoomIn} className="text-lg font-black disabled:opacity-25">
           +
-        </button>
+        </IconButton>
       </div>
 
       {/* Chart type toggle */}
-      <div className="flex rounded-xl overflow-hidden mb-3" style={{ border: '1px solid var(--border)' }}>
-        {['bar', 'line'].map(type => (
-          <button
-            key={type}
-            onClick={() => setChartType(type)}
-            className="flex-1 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all"
-            style={{
-              backgroundColor: chartType === type ? 'var(--accent)' : 'var(--bg-raised)',
-              color: chartType === type ? '#fff' : 'var(--text-dim)',
-            }}
-          >
-            {type}
-          </button>
-        ))}
-      </div>
+      <ChipGroup
+        fill
+        className="mb-3"
+        label="Chart type"
+        value={chartType}
+        onChange={setChartType}
+        options={['bar', 'line'].map(type => ({ value: type, label: type }))}
+      />
 
       {/* Chart */}
       <ResponsiveContainer width="100%" height={120}>
@@ -236,6 +215,6 @@ export default function SeizureTrendChart({ allEvents, medicationChanges = [] })
           />
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

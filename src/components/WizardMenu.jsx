@@ -22,7 +22,7 @@ export function WizardMenu({
         {onBack ? (
           <button
             onClick={onBack}
-            className="app-icon-action app-icon-action--primary !px-5 !py-3"
+            className="ui-btn ui-btn--secondary ui-btn--sm"
           >
             ← BACK
           </button>
@@ -57,8 +57,7 @@ export function WizardMenu({
           <button
             onClick={onConfirmSelection}
             disabled={selectedOptions.length === 0}
-            className="w-full mt-4 py-5 px-8 text-center rounded-[2rem] text-xs font-black uppercase tracking-widest active:scale-[0.97] transition-all shadow-lg disabled:opacity-50 disabled:active:scale-100"
-            style={{ backgroundColor: '#16a34a', color: '#fff', border: '2px solid #15803d' }}
+            className="ui-btn ui-btn--success ui-btn--lg ui-btn--full mt-4"
           >
             {confirmLabel}
           </button>
@@ -66,8 +65,7 @@ export function WizardMenu({
         {onPrimaryAction && primaryActionLabel && (
           <button
             onClick={onPrimaryAction}
-            className="w-full mt-4 py-5 px-8 text-center rounded-[2rem] text-xs font-black uppercase tracking-widest active:scale-[0.97] transition-all shadow-lg inline-flex items-center justify-center gap-2"
-            style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '2px solid var(--action-blue-border)' }}
+            className="ui-btn ui-btn--primary ui-btn--lg ui-btn--full mt-4"
           >
             {primaryActionIcon}
             <span className="app-chip-text">{primaryActionLabel}</span>
@@ -76,8 +74,7 @@ export function WizardMenu({
         {onSkip && (
           <button
             onClick={onSkip}
-            className="w-full mt-4 py-5 px-8 text-center rounded-[2rem] text-xs font-black uppercase tracking-widest active:scale-[0.97] transition-all shadow-lg"
-            style={{ backgroundColor: '#334155', color: '#facc15', border: '2px solid #f59e0b' }}
+            className="ui-btn ui-btn--warning ui-btn--lg ui-btn--full mt-4"
           >
             {skipLabel}
           </button>

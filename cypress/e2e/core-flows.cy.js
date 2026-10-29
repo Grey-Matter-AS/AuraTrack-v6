@@ -27,26 +27,26 @@ describe('AuraTrack core flows', () => {
     cy.contains('button', 'Clear').click();
     cy.contains('Tonic-Clonic').should('be.visible');
 
-    cy.contains('button', /^Medications$/).scrollIntoView().click();
+    cy.openTab('Medications');
     cy.contains('Lamotrigine').should('be.visible');
     cy.contains('Diazepam').should('be.visible');
 
-    cy.contains('button', /^Wellbeing$/).scrollIntoView().click();
+    cy.openTab('Wellbeing');
     cy.contains('Correlation overview').should('be.visible');
     cy.contains('Calm').should('be.visible');
     cy.contains('Sleep quality: Restful').should('be.visible');
 
-    cy.contains('button', /^EEG Diary$/).scrollIntoView().click();
+    cy.openTab('EEG Diary');
     cy.contains('Home EEG Session').should('be.visible');
     cy.contains(/Seizure reference/i).should('be.visible');
 
-    cy.contains('button', /^Export$/).scrollIntoView().click();
+    cy.openTab('Export');
     cy.contains('Neurologist Report').should('exist');
     cy.contains('Seizure Diary (Monthly)').scrollIntoView().should('be.visible');
     cy.get('input[type="month"]').should('have.value', '2026-06');
 
     cy.contains('button', 'SETTINGS').click();
-    cy.contains('button', /^Medications$/).click();
+    cy.openTab('Medications');
     cy.contains('Lamotrigine').should('be.visible');
     cy.contains('Diazepam').should('be.visible');
   });
@@ -55,11 +55,11 @@ describe('AuraTrack core flows', () => {
     cy.launchAuraTrack(richCaretakerScenario());
 
     cy.contains('button', 'HISTORY').click();
-    cy.contains('button', /^Export$/).scrollIntoView().click();
+    cy.openTab('Export');
     cy.get('input[type="date"]').eq(0).clear().type('2026-06-06');
     cy.get('input[type="date"]').eq(1).clear().type('2026-06-07');
     cy.contains('p', 'Neurologist Report')
-      .closest('div.rounded-2xl')
+      .closest('.ui-card')
       .within(() => {
         cy.contains('button', 'Open Preview').click();
       });
@@ -73,7 +73,7 @@ describe('AuraTrack core flows', () => {
     cy.launchAuraTrack();
 
     cy.contains('button', 'SETTINGS').click();
-    cy.contains('button', /^Medications$/).click();
+    cy.openTab('Medications');
     cy.contains('button', '+ Add Medication').click();
 
     cy.get('input[placeholder="Drug name (e.g. Levetiracetam)"]').type('Test Med');

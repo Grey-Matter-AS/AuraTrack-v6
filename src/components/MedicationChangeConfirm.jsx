@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CloseIcon } from './AppIcons';
+import { BottomSheet, Button, DateInput, FieldRow, Inset, Select, TextArea } from './ui';
 
 const localDateKey = (date) => {
   const pad = (n) => String(n).padStart(2, '0');
@@ -49,99 +49,49 @@ export function MedicationChangeConfirm({ title, medicationName, lines = [], slo
     }
   };
 
-  const inputStyle = { backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' };
+  const slotOptions = slots.length
+    ? [...slots].sort().map(s => ({ value: s, label: t('medication_changes.dose_at', { time: s }) }))
+    : [{ value: '', label: t('medication_changes.no_dose_time') }];
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ backgroundColor: 'rgba(0,0,0,0.65)' }}
-      onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
-    >
-      <div
-        className="w-full max-w-md rounded-t-[2rem] flex flex-col overflow-hidden max-h-[90dvh]"
-        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
-      >
-        <div className="flex items-center justify-between px-6 pt-6 shrink-0">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'var(--text-dim)' }}>{title}</p>
-          <button onClick={onCancel} className="app-icon-action app-icon-action--primary !min-w-[36px] !min-h-[36px] !p-0">
-            <CloseIcon className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-4 pb-2 space-y-4">
-          <div className="rounded-2xl p-4 space-y-1" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-            <p className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{medicationName}</p>
-            {lines.map((line, i) => (
-              <p key={i} className="text-xs font-bold" style={{ color: 'var(--text-dim)' }}>{line}</p>
-            ))}
-          </div>
-
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>
-              {t('medication_changes.effective_from')}
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="date"
-                max={maxDate}
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                aria-label={t('medication_changes.effective_date')}
-                className="w-full rounded-xl px-3 py-2.5 text-sm font-bold outline-none"
-                style={inputStyle}
-              />
-              <select
-                value={slot}
-                onChange={e => setSlot(e.target.value)}
-                aria-label={t('medication_changes.effective_dose_time')}
-                className="w-full rounded-xl px-3 py-2.5 text-sm font-bold outline-none"
-                style={inputStyle}
-              >
-                {!slots.length && <option value="">{t('medication_changes.no_dose_time')}</option>}
-                {[...slots].sort().map(s => (
-                  <option key={s} value={s}>{t('medication_changes.dose_at', { time: s })}</option>
-                ))}
-              </select>
-            </div>
-            <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-faint)' }}>{t('medication_changes.effective_help')}</p>
-          </div>
-
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>
-              {t('medication_changes.note_label')}
-            </p>
-            <textarea
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              maxLength={500}
-              rows={2}
-              placeholder={t('medication_changes.note_placeholder')}
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
-              style={inputStyle}
-            />
-          </div>
-
-          {children}
-        </div>
-
-        <div className="px-6 pb-6 pt-2 space-y-3 shrink-0">
-          <button
-            onClick={handleConfirm}
-            disabled={saving || !date}
-            className="w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest active:scale-95 transition-all shadow-lg disabled:opacity-40"
-            style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
-          >
+    <BottomSheet
+      title={title}
+      onClose={onCancel}
+      footer={(
+        <>
+          <Button variant="primary" size="lg" fullWidth disabled={saving || !date} onClick={handleConfirm}>
             {confirmLabel || t('medication_changes.confirm')}
-          </button>
-          <button
-            onClick={onCancel}
-            className="w-full py-3 rounded-2xl font-black text-xs uppercase tracking-widest"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
-          >
-            {t('medication_changes.cancel')}
-          </button>
-        </div>
+          </Button>
+          <Button variant="secondary" fullWidth onClick={onCancel}>{t('medication_changes.cancel')}</Button>
+        </>
+      )}
+    >
+      <Inset className="space-y-1">
+        <p className="text-sm font-black">{medicationName}</p>
+        {lines.map((line, i) => (
+          <p key={i} className="text-xs font-bold" style={{ color: 'var(--text-dim)' }}>{line}</p>
+        ))}
+      </Inset>
+
+      <div>
+        <p className="ui-label">{t('medication_changes.effective_from')}</p>
+        <FieldRow>
+          <DateInput max={maxDate} value={date} onChange={setDate} aria-label={t('medication_changes.effective_date')} />
+          <Select options={slotOptions} value={slot} onChange={setSlot} aria-label={t('medication_changes.effective_dose_time')} />
+        </FieldRow>
+        <p className="ui-help">{t('medication_changes.effective_help')}</p>
       </div>
-    </div>
+
+      <TextArea
+        label={t('medication_changes.note_label')}
+        value={note}
+        onChange={setNote}
+        maxLength={500}
+        rows={2}
+        placeholder={t('medication_changes.note_placeholder')}
+      />
+
+      {children}
+    </BottomSheet>
   );
 }

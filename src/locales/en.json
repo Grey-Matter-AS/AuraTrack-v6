@@ -74,7 +74,8 @@
     "no_paralysis_areas": "No paralysis areas logged.",
     "todds_paralysis": "Todd's paralysis",
     "add_paralysis_area": "Add Paralysis Area",
-    "add_paralysis_areas": "Add {{count}} paralysis area(s)"
+    "add_paralysis_areas": "Add {{count}} paralysis area(s)",
+    "remove_area": "Remove area"
   },
   "history": {
     "title": "History",
@@ -90,7 +91,9 @@
     "tab_medications": "Medications",
     "tab_wellbeing": "Wellbeing",
     "tab_export": "Export",
-    "tab_eeg": "EEG Diary"
+    "tab_eeg": "EEG Diary",
+    "from_date": "From",
+    "to_date": "To"
   },
   "export": {
     "title": "Export & Reports",
@@ -568,7 +571,8 @@
       "per_slot_dose_help": "Set a separate dose ({{unit}}) for each time.",
       "assume_taken": "Assume doses taken",
       "assume_taken_help": "Doses you don't log are recorded as \"assumed taken\" 90 minutes after their time. You can correct them in History, and reports show them separately from confirmed doses.",
-      "stopped_on": "stopped {{date}}"
+      "stopped_on": "stopped {{date}}",
+      "active_ingredient_add_new": "Add new ingredient…"
     },
     "reports": {
       "section": "Clinician & Reports",
@@ -786,7 +790,8 @@
     "manual_durations": "Adjust durations manually",
     "remove_symptom": "Remove",
     "drag_to_reorder": "Drag to reorder",
-    "event_datetime": "Event Date & Time"
+    "event_datetime": "Event Date & Time",
+    "event_date_time": "Event date & time"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -825,7 +830,14 @@
     "notes_or_reference": "Notes / Seizure Ref",
     "seizure_type": "Seizure",
     "activity_type": "Activity",
-    "badge": "EEG"
+    "badge": "EEG",
+    "activity_label": "Activity",
+    "duration_label": "Duration",
+    "start_time_label": "Start",
+    "end_time_label": "End",
+    "exact_activity_label": "Details",
+    "notes_label": "Notes",
+    "session_label": "Session label"
   },
   "wellbeing": {
     "eyebrow": "Wellbeing",
@@ -915,7 +927,9 @@
       "tearful_crying_help": "Crying or visibly tearful, whether or not the person could describe why."
     },
     "load_failed": "Failed to load wellbeing entries.",
-    "choose_mood_error": "Choose a mood before saving."
+    "choose_mood_error": "Choose a mood before saving.",
+    "notes_label": "Notes",
+    "recorded_at": "Date and time"
   },
   "sync": {
     "wellbeing_entries_added_one": "{{count}} new wellbeing entry added",
@@ -1127,5 +1141,13 @@
   "medication_history": {
     "assumed": "ASSUMED",
     "confirm_taken": "Confirm taken"
+  },
+  "app": {
+    "update_available": "App update available",
+    "update_reload": "Reload"
+  },
+  "common": {
+    "close": "Close",
+    "section": "Section"
   }
 }

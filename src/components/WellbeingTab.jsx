@@ -4,6 +4,7 @@ import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Too
 import { formatEventDate, formatEventTime } from '../utils/formatters';
 import { WellbeingEntrySheet } from './WellbeingEntrySheet';
 import { EditIcon, TrashIcon } from './AppIcons';
+import { Card, ChipGroup, EmptyState } from './ui';
 
 const WINDOWS = [
   { label: '7D', days: 7 },
@@ -104,24 +105,15 @@ function WellbeingChart({ events, entries, factorDefinitions, t }) {
   const activeFactors = factorDefinitions.filter(factor => effectiveSelectedFactors.includes(factor.id));
 
   return (
-    <div className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-      <div className="flex items-center justify-between gap-2">
+    <Card className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-dim)' }}>{t('wellbeing.chart_title', 'Correlation overview')}</p>
-        <div className="flex gap-1">
-          {WINDOWS.map((option, index) => (
-            <button
-              key={option.label}
-              onClick={() => setWindowIndex(index)}
-              className="rounded-lg px-2 py-1 text-[9px] font-black"
-              style={{
-                backgroundColor: index === windowIndex ? 'var(--accent)' : 'var(--bg-raised)',
-                color: index === windowIndex ? '#fff' : 'var(--text-on-raised)',
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <ChipGroup
+          label={t('wellbeing.chart_title', 'Correlation overview')}
+          value={windowIndex}
+          onChange={setWindowIndex}
+          options={WINDOWS.map((option, index) => ({ value: index, label: option.label }))}
+        />
       </div>
       <ResponsiveContainer width="100%" height={160}>
         <LineChart data={data} margin={{ top: 4, right: 4, left: -22, bottom: 0 }}>
@@ -152,19 +144,16 @@ function WellbeingChart({ events, entries, factorDefinitions, t }) {
           <Bar name={t('wellbeing.seizures', 'Seizures')} dataKey="seizures" fill="var(--accent)" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
-      <div className="flex flex-wrap gap-2">
+      <div className="ui-chip-group">
         {factorDefinitions.slice(0, 8).map(factor => {
           const active = effectiveSelectedFactors.includes(factor.id);
           return (
             <button
               key={factor.id}
+              type="button"
+              aria-pressed={active}
               onClick={() => setSelectedFactors(prev => active ? prev.filter(id => id !== factor.id) : [...prev, factor.id].slice(-3))}
-              className="rounded-full px-3 py-1 text-[9px] font-black uppercase tracking-widest"
-              style={{
-                backgroundColor: active ? 'var(--accent)' : 'var(--bg-raised)',
-                color: active ? '#fff' : 'var(--text-on-raised)',
-                border: active ? '1px solid transparent' : '1px solid var(--border)',
-              }}
+              className="ui-chip"
               title={factor.helpKey ? t(factor.helpKey, factor.help || factorLabel(factor, t, factor.id)) : (factor.help || factorLabel(factor, t, factor.id))}
             >
               {factorLabel(factor, t, factor.id)}
@@ -175,7 +164,7 @@ function WellbeingChart({ events, entries, factorDefinitions, t }) {
       <p className="text-[10px] leading-snug" style={{ color: 'var(--text-faint)' }}>
         {t('wellbeing.chart_help', 'This view helps spot patterns. It does not prove that any factor caused a seizure.')}
       </p>
-    </div>
+    </Card>
   );
 }
 
@@ -206,34 +195,33 @@ export function WellbeingTab({ events = [], wellbeing, settings = {} }) {
       <div className="flex flex-col gap-2">
         <button
           onClick={() => setEditing({})}
-          className="w-full rounded-xl py-3 text-xs font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+          className="ui-btn ui-btn--primary ui-btn--md ui-btn--full"
         >
           {t('wellbeing.log_wellbeing', 'Log wellbeing')}
         </button>
-        <div className="flex gap-2 date-time-row">
+        <div className="ui-row">
           <input
             type="date"
             value={fromDate}
             max={toDate || undefined}
             onChange={e => setFromDate(e.target.value)}
-            className="flex-1 rounded-xl px-3 py-2 text-xs outline-none"
-            style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+            aria-label={t('history.from_date', 'From')}
+            className="ui-field"
           />
           <input
             type="date"
             value={toDate}
             min={fromDate || undefined}
             onChange={e => setToDate(e.target.value)}
-            className="flex-1 rounded-xl px-3 py-2 text-xs outline-none"
-            style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+            aria-label={t('history.to_date', 'To')}
+            className="ui-field"
           />
         </div>
         <select
           value={factorFilter}
           onChange={e => setFactorFilter(e.target.value)}
-          className="w-full rounded-xl px-3 py-2 text-xs outline-none"
-          style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+          aria-label={t('wellbeing.all_context_factors', 'All context factors')}
+          className="ui-field"
         >
           <option value="">{t('wellbeing.all_context_factors', 'All context factors')}</option>
           {factorDefinitions.map(factor => <option key={factor.id} value={factor.id}>{factorLabel(factor, t, factor.id)}</option>)}
@@ -241,14 +229,12 @@ export function WellbeingTab({ events = [], wellbeing, settings = {} }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="border-2 border-dashed rounded-3xl py-8 text-center" style={{ borderColor: 'var(--border)' }}>
-          <p className="italic text-sm" style={{ color: 'var(--text-faint)' }}>{t('wellbeing.no_entries', 'No wellbeing entries found.')}</p>
-        </div>
+        <EmptyState>{t('wellbeing.no_entries', 'No wellbeing entries found.')}</EmptyState>
       ) : (
         filtered.map(entry => (
-          <div key={entry.id} className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-            <div className="flex justify-between gap-3">
-              <div className="min-w-0">
+          <Card key={entry.id} className="space-y-3">
+            <div className="flex flex-wrap justify-between gap-3">
+              <div className="min-w-0 flex-1 basis-40">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-black" style={{ color: 'var(--text-primary)' }}>{entry.primaryMood}</p>
                   <span className="app-status-badge app-status-badge--neutral">
@@ -265,14 +251,14 @@ export function WellbeingTab({ events = [], wellbeing, settings = {} }) {
               <div className="flex gap-2 shrink-0">
                 <button
                   onClick={() => setEditing(entry)}
-                  className="app-icon-action app-icon-action--accent !w-10 !h-10 !p-0"
+                  className="ui-icon-btn ui-icon-btn--accent"
                   aria-label={t('wellbeing.edit_entry_label', 'Edit wellbeing entry')}
                 >
                   <EditIcon className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => wellbeing.deleteEntry(entry.id)}
-                  className="app-icon-action app-icon-action--danger !w-10 !h-10 !p-0"
+                  className="ui-icon-btn ui-icon-btn--danger"
                   aria-label={t('wellbeing.delete_entry_label', 'Delete wellbeing entry')}
                 >
                   <TrashIcon className="w-4 h-4" />
@@ -288,8 +274,8 @@ export function WellbeingTab({ events = [], wellbeing, settings = {} }) {
                 ))}
               </div>
             )}
-            {entry.notes && <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{entry.notes}</p>}
-          </div>
+            {entry.notes && <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere' }}>{entry.notes}</p>}
+          </Card>
         ))
       )}
 

@@ -5,12 +5,12 @@ import i18n from '../i18n';
 import { useP2PSync } from '../hooks/useP2PSync';
 import { useLANSync } from '../hooks/useLANSync';
 import { BackupTransferModal } from './BackupTransferModal';
+import { BottomSheet, Button, ChoiceList } from './ui';
 import {
   ActivityIcon,
   CalendarIcon,
   CheckIcon,
   ClipboardListIcon,
-  CloseIcon,
   DownloadIcon,
   GlobeIcon,
   LoaderIcon,
@@ -113,28 +113,20 @@ function RoleSelector({ role, onChange, locked = false }) {
       <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-dim)' }}>
         {i18n.t('sync.device_role')}
       </p>
-      <div className="grid grid-cols-2 gap-2">
-        {options.map(option => {
-          const selected = role === option.id;
-          return (
+      <div className="ui-row">
+        {options.map(option => (
           <button
-              key={option.id}
-              onClick={() => !locked && onChange(option.id)}
-              disabled={locked}
-              className="rounded-2xl px-3 py-3 text-left transition-all disabled:opacity-90"
-              style={selected
-                ? { backgroundColor: 'var(--action-blue)', border: '1px solid var(--action-blue-border)' }
-                : { backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}
-            >
-              <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: selected ? '#fff' : 'var(--text-on-raised)' }}>
-                {option.label}
-              </p>
-              <p className="text-[10px] mt-1" style={{ color: selected ? 'rgba(255,255,255,0.88)' : 'var(--text-on-raised-muted)' }}>
-                {option.sub}
-              </p>
-            </button>
-          );
-        })}
+            key={option.id}
+            type="button"
+            aria-pressed={role === option.id}
+            onClick={() => !locked && onChange(option.id)}
+            disabled={locked}
+            className="ui-choice disabled:opacity-90"
+          >
+            <span className="block text-[11px] font-black uppercase tracking-widest">{option.label}</span>
+            <span className="ui-choice__detail">{option.sub}</span>
+          </button>
+        ))}
       </div>
       {locked && (
         <p className="text-[10px]" style={{ color: 'var(--text-dim)' }}>
@@ -165,8 +157,8 @@ function DonePanel({ result, onClose }) {
           </div>
       }
       <button onClick={onClose}
-        className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-        style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}>
+        className="ui-btn ui-btn--primary ui-btn--md ui-btn--full"
+       >
         {i18n.t('backup.modal.close')}
       </button>
     </div>
@@ -181,14 +173,14 @@ function ErrorPanel({ error, onRetry, onClose }) {
       <div className="flex gap-3">
         {onRetry && (
           <button onClick={onRetry}
-            className="flex-1 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}>
+            className="ui-btn ui-btn--primary ui-btn--md flex-1"
+           >
             {i18n.t('settings.data.persistence_retry')}
           </button>
         )}
         <button onClick={onClose}
-          className="flex-1 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}>
+          className="ui-btn ui-btn--secondary ui-btn--md flex-1"
+         >
           {i18n.t('backup.modal.close')}
         </button>
       </div>
@@ -252,8 +244,8 @@ function QRScanner({ onScan, onCancel, prompt = i18n.t('sync.scan_qr_prompt') })
     <div className="space-y-4 text-center">
       <p className="app-alert app-alert--danger rounded-xl px-4 py-3 text-sm">{camError}</p>
       <button onClick={onCancel}
-        className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest"
-        style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}>
+        className="ui-btn ui-btn--secondary ui-btn--md ui-btn--full"
+       >
         {i18n.t('nav.back').replace(/^[^\p{Letter}\p{Number}]+/u, '').trim()}
       </button>
     </div>
@@ -271,8 +263,8 @@ function QRScanner({ onScan, onCancel, prompt = i18n.t('sync.scan_qr_prompt') })
           style={{ borderColor: 'var(--accent)' }} />
       </div>
       <button onClick={onCancel}
-        className="w-full py-2 rounded-xl text-[10px] font-black uppercase tracking-widest"
-        style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}>
+        className="ui-btn ui-btn--secondary ui-btn--sm ui-btn--full"
+       >
         {i18n.t('backup.modal.cancel')}
       </button>
     </div>
@@ -322,15 +314,15 @@ function EasySyncPanel({ connectToken, role, onDone, onScanSenderQR }) {
       <StatusRow icon={<GlobeIcon className="w-5 h-5" />} text={i18n.t('sync.easy_metadata')} />
       {role === 'sender' ? (
         <button onClick={p2p.startAsHost}
-          className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}>
+          className="ui-btn ui-btn--primary ui-btn--md ui-btn--full"
+         >
           {i18n.t('sync.start_sender_setup')}
         </button>
       ) : (
         <>
           <button onClick={onScanSenderQR}
-            className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}>
+            className="ui-btn ui-btn--primary ui-btn--md ui-btn--full"
+           >
             {i18n.t('sync.scan_sender_qr')}
           </button>
           <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
@@ -385,13 +377,13 @@ function EasySyncPanel({ connectToken, role, onDone, onScanSenderQR }) {
         </p>
         <PinDisplay pin={p2p.remotePin} />
         <button onClick={p2p.confirmPin}
-          className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: '#16a34a', color: '#fff', border: '1px solid #15803d' }}>
+          className="ui-btn ui-btn--success ui-btn--md ui-btn--full"
+         >
           <CheckIcon className="w-4 h-4 inline-block mr-2 align-[-2px]" /> {i18n.t('sync.pins_match_start')}
         </button>
         <button onClick={p2p.reset}
-          className="w-full rounded-2xl py-3 text-[10px] font-black uppercase tracking-widest"
-          style={{ backgroundColor: '#334155', color: '#facc15', border: '1px solid #f59e0b' }}>
+          className="ui-btn ui-btn--warning ui-btn--md ui-btn--full"
+         >
           {i18n.t('sync.pins_no_match_cancel')}
         </button>
       </div>
@@ -465,15 +457,15 @@ function PrivateSyncPanel({ offerSDP, role, onDone, onScanSenderQR }) {
       <StatusRow icon={<WifiIcon className="w-5 h-5" />} text={i18n.t('sync.private_scans')} />
       {role === 'sender' ? (
         <button onClick={lan.startAsHost}
-          className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}>
+          className="ui-btn ui-btn--primary ui-btn--md ui-btn--full"
+         >
           {i18n.t('sync.start_sender_setup')}
         </button>
       ) : (
         <>
           <button onClick={onScanSenderQR}
-            className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}>
+            className="ui-btn ui-btn--primary ui-btn--md ui-btn--full"
+           >
             {i18n.t('sync.scan_sender_qr')}
           </button>
           <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
@@ -507,8 +499,8 @@ function PrivateSyncPanel({ offerSDP, role, onDone, onScanSenderQR }) {
         {i18n.t('sync.after_receiver_scan')}
       </p>
       <button onClick={() => setScanning(true)}
-        className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-        style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}>
+        className="ui-btn ui-btn--secondary ui-btn--md ui-btn--full"
+       >
         {i18n.t('sync.scan_receiver_answer_qr')}
       </button>
     </div>
@@ -534,13 +526,13 @@ function PrivateSyncPanel({ offerSDP, role, onDone, onScanSenderQR }) {
       {!lan.isHost && (
         <>
           <button onClick={lan.confirmPin}
-            className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-            style={{ backgroundColor: '#16a34a', color: '#fff', border: '1px solid #15803d' }}>
+            className="ui-btn ui-btn--success ui-btn--md ui-btn--full"
+           >
             <CheckIcon className="w-4 h-4 inline-block mr-2 align-[-2px]" /> {i18n.t('sync.pins_match_start')}
           </button>
           <button onClick={lan.reset}
-            className="w-full rounded-2xl py-3 text-[10px] font-black uppercase tracking-widest"
-            style={{ backgroundColor: '#334155', color: '#facc15', border: '1px solid #f59e0b' }}>
+            className="ui-btn ui-btn--warning ui-btn--md ui-btn--full"
+           >
             {i18n.t('sync.pins_no_match_cancel')}
           </button>
         </>
@@ -641,20 +633,13 @@ function ManualFilePanel({ role, onDone, onBackupSuccess }) {
           : i18n.t('sync.manual_receiver_intro')}
       </p>
       <div className="space-y-2">
-        <button onClick={() => setBackupModal({ mode: 'export', fileName: '', fileText: '' })}
-          className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
-          style={role === 'sender'
-            ? { backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }
-            : { backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}>
-          <DownloadIcon className="w-4 h-4" /> {i18n.t('backup.modal.export_cta')}
-        </button>
-        <button onClick={handleImportClick}
-          className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
-          style={role === 'receiver'
-            ? { backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }
-            : { backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}>
-          <UploadIcon className="w-4 h-4" /> {i18n.t('sync.import_backup_file')}
-        </button>
+        <Button variant={role === 'sender' ? 'primary' : 'secondary'} fullWidth icon={<DownloadIcon className="w-4 h-4" />}
+          onClick={() => setBackupModal({ mode: 'export', fileName: '', fileText: '' })}>
+          {i18n.t('backup.modal.export_cta')}
+        </Button>
+        <Button variant={role === 'receiver' ? 'primary' : 'secondary'} fullWidth icon={<UploadIcon className="w-4 h-4" />} onClick={handleImportClick}>
+          {i18n.t('sync.import_backup_file')}
+        </Button>
         <input ref={fileRef} type="file" accept=".atbak,.json,application/json" className="hidden" onChange={handleImport} />
       </div>
       {status && (
@@ -663,8 +648,8 @@ function ManualFilePanel({ role, onDone, onBackupSuccess }) {
         </p>
       )}
       <button onClick={onDone}
-        className="w-full rounded-2xl py-3 text-[10px] font-black uppercase tracking-widest"
-        style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}>
+        className="ui-btn ui-btn--secondary ui-btn--md ui-btn--full"
+       >
         {i18n.t('sync.done')}
       </button>
     </div>
@@ -754,94 +739,59 @@ export default function SyncModal({ isOpen, onClose, connectToken, offerSDP, onB
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-      style={{ backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}>
-      <div className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-3xl overflow-hidden"
-        style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4"
-          style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-          <div>
-            <h2 className="text-[11px] font-black uppercase tracking-widest"
-              style={{ color: 'var(--text-primary)' }}>{i18n.t('sync.title')}</h2>
-            {mode && !isLinked && (
-              <button onClick={() => {
-                setMode(null);
-                setScanningReceiverQR(false);
-                clearScannedRouting();
-              }}
-                className="text-[10px] font-bold mt-0.5"
-                style={{ color: 'var(--text-secondary)' }}>
-                {i18n.t('nav.back')}
-              </button>
-            )}
-          </div>
-          <button onClick={onClose}
-            className="w-8 h-8 rounded-xl text-sm font-black flex items-center justify-center active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}>
-            <CloseIcon className="w-4 h-4" />
-          </button>
+    <BottomSheet title={i18n.t('sync.title')} onClose={onClose}>
+      {mode && !isLinked && (
+        <div>
+          <Button variant="ghost" size="sm" onClick={() => {
+            setMode(null);
+            setScanningReceiverQR(false);
+            clearScannedRouting();
+          }}>
+            {i18n.t('nav.back')}
+          </Button>
         </div>
+      )}
 
-        {/* Mode selector */}
-        {!mode && !scanningReceiverQR && (
-          <div className="p-4 space-y-4">
-            <RoleSelector role={role} onChange={setRole} locked={false} />
-            {role === 'receiver' && (
-              <button onClick={startReceiverScan}
-                className="w-full py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all"
-                style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}>
-                {i18n.t('sync.scan_sender_qr')}
-              </button>
-            )}
-            {scanError && (
-              <p className="app-alert app-alert--danger rounded-xl px-4 py-3 text-[11px] font-bold text-center">
-                {scanError}
-              </p>
-            )}
-            {MODES.map(m => (
-              <button key={m.id} onClick={() => setMode(m.id)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl active:scale-95 transition-all"
-                style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-                <div className="text-left">
-                  <p className="text-[11px] font-black uppercase tracking-widest"
-                    style={{ color: 'var(--text-on-raised)' }}>{i18n.t(m.labelKey)}</p>
-                  <p className="text-[10px]" style={{ color: 'var(--text-on-raised-muted)' }}>{i18n.t(m.subKey)}</p>
-                </div>
-                <span style={{ color: 'var(--text-on-raised-muted)' }}>›</span>
-              </button>
-            ))}
-          </div>
-        )}
+      {/* Mode selector */}
+      {!mode && !scanningReceiverQR && (
+        <>
+          <RoleSelector role={role} onChange={setRole} locked={false} />
+          {role === 'receiver' && (
+            <Button variant="primary" fullWidth onClick={startReceiverScan}>{i18n.t('sync.scan_sender_qr')}</Button>
+          )}
+          {scanError && (
+            <p className="app-alert app-alert--danger rounded-xl px-4 py-3 text-[11px] font-bold text-center">{scanError}</p>
+          )}
+          <ChoiceList
+            value={null}
+            onChange={setMode}
+            options={MODES.map(m => ({ value: m.id, label: `${i18n.t(m.labelKey)} ›`, detail: i18n.t(m.subKey) }))}
+          />
+        </>
+      )}
 
-        {/* Mode content */}
-        {scanningReceiverQR && (
-          <div className="p-5 pb-8">
-            <QRScanner
-              onScan={handleReceiverScan}
-              onCancel={() => setScanningReceiverQR(false)}
-              prompt={i18n.t('sync.scan_sender_prompt')}
-            />
-          </div>
-        )}
-        {mode && (
-          !scanningReceiverQR && <div className="p-5 pb-8 space-y-5">
-            <RoleSelector role={role} onChange={(nextRole) => {
-              setRole(nextRole);
-              if (nextRole !== 'receiver') clearScannedRouting();
-            }} locked={isReceiverLocked} />
-            {scanError && (
-              <p className="app-alert app-alert--danger rounded-xl px-4 py-3 text-[11px] font-bold text-center">
-                {scanError}
-              </p>
-            )}
-            {mode === 'easy'    && <EasySyncPanel connectToken={effectiveConnectToken} role={role} onDone={onClose} onScanSenderQR={startReceiverScan} />}
-            {mode === 'private' && <PrivateSyncPanel offerSDP={effectiveOfferSDP} role={role} onDone={onClose} onScanSenderQR={startReceiverScan} />}
-            {mode === 'manual'  && <ManualFilePanel role={role} onDone={onClose} onBackupSuccess={onBackupSuccess} />}
-          </div>
-        )}
-      </div>
-    </div>
+      {/* Mode content */}
+      {scanningReceiverQR && (
+        <QRScanner
+          onScan={handleReceiverScan}
+          onCancel={() => setScanningReceiverQR(false)}
+          prompt={i18n.t('sync.scan_sender_prompt')}
+        />
+      )}
+      {mode && !scanningReceiverQR && (
+        <>
+          <RoleSelector role={role} onChange={(nextRole) => {
+            setRole(nextRole);
+            if (nextRole !== 'receiver') clearScannedRouting();
+          }} locked={isReceiverLocked} />
+          {scanError && (
+            <p className="app-alert app-alert--danger rounded-xl px-4 py-3 text-[11px] font-bold text-center">{scanError}</p>
+          )}
+          {mode === 'easy'    && <EasySyncPanel connectToken={effectiveConnectToken} role={role} onDone={onClose} onScanSenderQR={startReceiverScan} />}
+          {mode === 'private' && <PrivateSyncPanel offerSDP={effectiveOfferSDP} role={role} onDone={onClose} onScanSenderQR={startReceiverScan} />}
+          {mode === 'manual'  && <ManualFilePanel role={role} onDone={onClose} onBackupSuccess={onBackupSuccess} />}
+        </>
+      )}
+    </BottomSheet>
   );
 }
