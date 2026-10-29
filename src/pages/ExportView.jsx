@@ -31,7 +31,12 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
     () => new Date().toISOString().slice(0, 10)
   );
   const today = new Date().toISOString().slice(0, 10);
-  const { medications, getLogsForPeriod } = useMedications();
+  const { medications, changes: medicationChanges, getLogsForPeriod } = useMedications();
+  const changesInSelectedRange = () => {
+    const fromMs = new Date(fromDate).setHours(0, 0, 0, 0);
+    const toMs = new Date(toDate).setHours(23, 59, 59, 999);
+    return medicationChanges.filter(change => change.effectiveAt >= fromMs && change.effectiveAt <= toMs);
+  };
   const [diaryMonth, setDiaryMonth] = useState(
     () => new Date().toISOString().slice(0, 7)  // 'YYYY-MM'
   );
@@ -61,24 +66,24 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
 
   const handleSimplePdfReport = async () => {
     const events = await getEvents();
-    setPrintPreview(buildEventTablePreview(events));
+    setPrintPreview(buildEventTablePreview(events, changesInSelectedRange()));
   };
 
   const handleSimplePdfDownload = async () => {
     const events = await getEvents();
-    await exportEventLogPDF(events);
+    await exportEventLogPDF(events, changesInSelectedRange());
   };
 
   const handleSeizureDiary = async () => {
     const all = await db.events.orderBy('startTime').toArray();
     const [year, month] = diaryMonth.split('-').map(Number);
-    setPrintPreview(buildSeizureDiaryPreview(all, settings, medications, month, year));
+    setPrintPreview(buildSeizureDiaryPreview(all, settings, medications, month, year, medicationChanges));
   };
 
   const handleSeizureDiaryPdf = async () => {
     const all = await db.events.orderBy('startTime').toArray();
     const [year, month] = diaryMonth.split('-').map(Number);
-    await exportSeizureDiaryPDF(all, settings, medications, month, year);
+    await exportSeizureDiaryPDF(all, settings, medications, month, year, medicationChanges);
   };
 
   const handleNeurologistReport = async () => {
@@ -87,7 +92,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
     const toMs   = new Date(toDate).setHours(23, 59, 59, 999);
     const medLogs = await getLogsForPeriod(fromMs, toMs);
     const wellbeingEntries = await getWellbeingEntriesForPeriod(fromMs, toMs);
-    setPrintPreview(buildNeurologistReportPreview(events, settings, medications, medLogs, { fromDate, toDate, fromMs, toMs }, wellbeingEntries));
+    setPrintPreview(buildNeurologistReportPreview(events, settings, medications, medLogs, { fromDate, toDate, fromMs, toMs }, wellbeingEntries, medicationChanges));
   };
 
   const handleNeurologistReportPdf = async () => {
@@ -96,7 +101,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
     const toMs   = new Date(toDate).setHours(23, 59, 59, 999);
     const medLogs = await getLogsForPeriod(fromMs, toMs);
     const wellbeingEntries = await getWellbeingEntriesForPeriod(fromMs, toMs);
-    await exportNeurologistReportPDF(events, settings, medications, medLogs, { fromDate, toDate, fromMs, toMs }, wellbeingEntries);
+    await exportNeurologistReportPDF(events, settings, medications, medLogs, { fromDate, toDate, fromMs, toMs }, wellbeingEntries, medicationChanges);
   };
 
   const ContentWrapper = isEmbedded ? 'div' : ScrollFade;
@@ -204,7 +209,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
               const logs   = await getLogsForPeriod(fromMs, toMs);
               const eegBundle = await getEegBundle();
               const wellbeingEntries = await getWellbeingEntriesForPeriod(fromMs, toMs);
-              await exportToCSV(events, medications, logs, eegBundle.sessions, eegBundle.allActivities, wellbeingEntries);
+              await exportToCSV(events, medications, logs, eegBundle.sessions, eegBundle.allActivities, wellbeingEntries, changesInSelectedRange());
             },
           }]}
         />

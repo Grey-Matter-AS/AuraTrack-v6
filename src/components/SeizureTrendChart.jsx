@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useTranslation } from 'react-i18next';
+import { BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 
 const TIME_WINDOWS = [
   { label: '1D',  description: 'Last 24 Hours',  days: 1   },
@@ -31,6 +32,8 @@ function buildBuckets(events, days) {
       hEnd.setHours(hEnd.getHours() + 1);
       return {
         label: `${h.getHours()}:00`,
+        start: h.getTime(),
+        end: hEnd.getTime(),
         count: filtered.filter(e => e.startTime >= h.getTime() && e.startTime < hEnd.getTime()).length,
       };
     });
@@ -45,6 +48,8 @@ function buildBuckets(events, days) {
       const dayEnd   = new Date(d); dayEnd.setHours(23, 59, 59, 999);
       return {
         label: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+        start: dayStart.getTime(),
+        end: dayEnd.getTime() + 1,
         count: filtered.filter(e => e.startTime >= dayStart.getTime() && e.startTime <= dayEnd.getTime()).length,
       };
     });
@@ -59,6 +64,8 @@ function buildBuckets(events, days) {
     const wEnd = new Date(wStart.getTime() + 7 * 864e5);
     return {
       label: wStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
+      start: wStart.getTime(),
+      end: wEnd.getTime(),
       count: filtered.filter(e => e.startTime >= wStart.getTime() && e.startTime < wEnd.getTime()).length,
     };
   });
@@ -76,7 +83,8 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-export default function SeizureTrendChart({ allEvents }) {
+export default function SeizureTrendChart({ allEvents, medicationChanges = [] }) {
+  const { t } = useTranslation();
   const [windowIndex, setWindowIndex] = useState(5); // default: 1 Month
   const [chartType, setChartType] = useState('bar');
 
@@ -84,6 +92,13 @@ export default function SeizureTrendChart({ allEvents }) {
   const data  = useMemo(() => buildBuckets(allEvents, days), [allEvents, days]);
   const total = data.reduce((s, d) => s + d.count, 0);
   const tickInterval = data.length > 20 ? Math.floor(data.length / 6) : 0;
+  // Buckets in which a medication change took effect — drawn as dashed markers
+  const changeLabels = data
+    .filter(bucket => medicationChanges.some(c => !c.isBaseline && c.effectiveAt >= bucket.start && c.effectiveAt < bucket.end))
+    .map(bucket => bucket.label);
+  const changeMarkers = changeLabels.map(label => (
+    <ReferenceLine key={`med-change-${label}`} x={label} stroke="var(--status-late-text)" strokeDasharray="3 3" strokeWidth={1.5} />
+  ));
 
   const canZoomIn  = windowIndex > 0;
   const canZoomOut = windowIndex < TIME_WINDOWS.length - 1;
@@ -164,6 +179,7 @@ export default function SeizureTrendChart({ allEvents }) {
               width={22}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--border-subtle)' }} />
+            {changeMarkers}
             <Bar dataKey="count" radius={[3, 3, 0, 0]}>
               {data.map((entry, i) => (
                 <Cell key={i} fill={entry.count > 0 ? 'var(--accent)' : 'var(--bg-raised)'} />
@@ -188,6 +204,7 @@ export default function SeizureTrendChart({ allEvents }) {
               width={22}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
+            {changeMarkers}
             <Line
               type="monotone"
               dataKey="count"
@@ -199,6 +216,11 @@ export default function SeizureTrendChart({ allEvents }) {
           </LineChart>
         )}
       </ResponsiveContainer>
+      {changeLabels.length > 0 && (
+        <p className="text-[9px] font-bold mt-1" style={{ color: 'var(--status-late-text)' }}>
+          ┆ {t('medication_changes.chart_marker')}
+        </p>
+      )}
 
       {/* Zoom level indicator dots */}
       <div className="flex justify-center gap-1 mt-2">

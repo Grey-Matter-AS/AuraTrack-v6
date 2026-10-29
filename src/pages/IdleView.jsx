@@ -9,6 +9,19 @@ import { formatDuration } from '../utils/formatters';
 import { WellbeingEntrySheet } from '../components/WellbeingEntrySheet';
 import { ActivityIcon } from '../components/AppIcons';
 
+// Shared sizing for the two home-screen circle buttons — sized so both fit side by side on a ~393px phone
+const circleButtonStyle = {
+  width: 'min(11rem, 36vmin)',
+  height: 'min(11rem, 36vmin)',
+  fontSize: 'min(1.25rem, 4vmin)',
+  lineHeight: 0.95,
+  borderWidth: 'min(10px, 1.8vmin)',
+  borderStyle: 'solid',
+  borderColor: '#1e293b',
+  hyphens: 'none',
+  overflowWrap: 'break-word',
+};
+
 function EegSessionSheet({ onClose, onStart }) {
   const { t } = useTranslation();
   const [durationPreset, setDurationPreset] = useState('24h');
@@ -254,30 +267,24 @@ export default function IdleView({
 
       {/* Zone 1: START button — viewport-relative size, decoupled from font-size scaling */}
       <div className="w-full py-3 sm:py-6 shrink-0 flex flex-col items-center gap-4">
-        <button
-          onClick={onStart}
-          className="bg-red-600 active:scale-95 active:bg-red-500 transition-all rounded-full shadow-[0_0_60px_rgba(225,29,72,0.4)] flex items-center justify-center text-white font-black ring-4 ring-red-900/20 text-center px-3"
-          style={{
-            width: 'min(15rem, 38vmin)',
-            height: 'min(15rem, 38vmin)',
-            fontSize: 'min(1.75rem, 5.6vmin)',
-            lineHeight: 0.95,
-            borderWidth: 'min(12px, 2vmin)',
-            borderStyle: 'solid',
-            borderColor: '#1e293b',
-          }}
-        >
-          {t('idle.start')}
-        </button>
-        {onManualEntry && (
+        <div className="w-full flex justify-center items-center gap-4">
           <button
-            onClick={onManualEntry}
-            className="rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
-            style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+            onClick={onStart}
+            className="bg-red-600 active:scale-95 active:bg-red-500 transition-all rounded-full shadow-[0_0_60px_rgba(225,29,72,0.4)] flex items-center justify-center text-white font-black ring-4 ring-red-900/20 text-center px-2"
+            style={{ ...circleButtonStyle, color: '#fff' }}
           >
-            {t('idle.log_past')}
+            {t('idle.start')}
           </button>
-        )}
+          {onManualEntry && (
+            <button
+              onClick={onManualEntry}
+              className="bg-amber-500 active:scale-95 active:bg-amber-400 transition-all rounded-full shadow-[0_0_60px_rgba(245,158,11,0.4)] flex items-center justify-center text-black font-black ring-4 ring-amber-900/20 text-center px-2"
+              style={circleButtonStyle}
+            >
+              {t('idle.log_past')}
+            </button>
+          )}
+        </div>
         {!eegSession && eegDiaryEnabled && (
           <button
             onClick={() => setShowSessionSheet(true)}

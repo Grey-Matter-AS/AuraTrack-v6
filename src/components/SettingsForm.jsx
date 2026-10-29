@@ -6,8 +6,10 @@ import { mergeRemoteData } from '../utils/syncHelpers';
 import { useMedications } from '../hooks/useMedications';
 import { BackupTransferModal } from './BackupTransferModal';
 import { parseBackupFileText } from '../utils/backupFiles';
-import { defaultScheduledTimes, scheduledDaysLabel } from '../utils/medicationSchedule';
-import { DEFAULT_WELLBEING_FACTORS } from '../data/constants';
+import { defaultScheduledTimes, diffRegimen, regimenSnapshot, scheduledDaysLabel } from '../utils/medicationSchedule';
+import { describeChange, formLabel, regimenDoseSummary, regimenSummary } from '../utils/medicationChanges';
+import { COMMON_ANTISEIZURE_INGREDIENTS, DEFAULT_WELLBEING_FACTORS, MEDICATION_FORMS } from '../data/constants';
+import { MedicationChangeConfirm } from './MedicationChangeConfirm';
 import {
   BellIcon,
   BellOffIcon,
@@ -191,14 +193,41 @@ const DAY_LABEL_KEYS = [
 
 const EMPTY_MED = { name: '', dose: '', unit: 'mg', frequency: 'BD', isRescue: false, scheduledTimes: ['08:00', '20:00'], scheduledDays: ALL_DAYS, reminderEnabled: false, showInEmergency: false };
 
-function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitle = null }) {
+// lockedName: editing an existing medication — the name can only change through "Change name"
+// with a reason, so a rename can't silently turn one medicine into another.
+function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitle = null, lockedName = false, knownIngredients = [], knownForms = [], onDifferentMedicine }) {
   const { t } = useTranslation();
   const selectStyle = { backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' };
   const isPRN = form.frequency === 'PRN';
+  const [nameUnlocked, setNameUnlocked] = useState(false);
+  const [askNameReason, setAskNameReason] = useState(false);
+  const [customForm, setCustomForm] = useState(false);
+  const [perSlot, setPerSlot] = useState(Object.keys(form.slotDoses || {}).length > 0);
 
   const handleFreqChange = (freq) => {
-    setForm(f => ({ ...f, frequency: freq, isRescue: freq === 'PRN', scheduledTimes: defaultScheduledTimes(freq) }));
+    setPerSlot(false);
+    setForm(f => ({ ...f, frequency: freq, isRescue: freq === 'PRN', scheduledTimes: defaultScheduledTimes(freq), slotDoses: {} }));
   };
+
+  const chooseNameReason = (reason) => {
+    setAskNameReason(false);
+    if (reason === 'different') { onDifferentMedicine?.(); return; }
+    setForm(f => ({ ...f, nameReason: reason }));
+    setNameUnlocked(true);
+  };
+
+  const togglePerSlot = (on) => {
+    setPerSlot(on);
+    setForm(f => ({
+      ...f,
+      slotDoses: on ? Object.fromEntries((f.scheduledTimes || []).map(time => [time, f.dose])) : {},
+    }));
+  };
+
+  const setSlotDose = (time, value) => setForm(f => ({ ...f, slotDoses: { ...(f.slotDoses || {}), [time]: value } }));
+
+  const formOptions = [...MEDICATION_FORMS, ...knownForms.filter(f => !MEDICATION_FORMS.includes(f))];
+  const formSelectValue = customForm ? '__new' : (form.form || '');
 
   const scheduledDays = form.scheduledDays ?? ALL_DAYS;
   const isDaily = scheduledDays.length === 7;
@@ -216,8 +245,15 @@ function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitl
   const updateTime = (i, val) => {
     setForm(f => {
       const times = [...(f.scheduledTimes || [])];
+      const previous = times[i];
       times[i] = val;
-      return { ...f, scheduledTimes: times };
+      // A per-slot dose follows its slot when the time is edited
+      const slotDoses = { ...(f.slotDoses || {}) };
+      if (previous in slotDoses) {
+        slotDoses[val] = slotDoses[previous];
+        delete slotDoses[previous];
+      }
+      return { ...f, scheduledTimes: times, slotDoses };
     });
   };
 
@@ -226,14 +262,90 @@ function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitl
   return (
     <div className="space-y-3 p-4 rounded-2xl" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
       <FieldLabel>{formTitle || t('settings.medications.add_form_title')}</FieldLabel>
+      {lockedName && !nameUnlocked ? (
+        <div className="space-y-2">
+          <div className="flex gap-2 items-center">
+            <input
+              type="text"
+              value={form.name}
+              readOnly
+              className="flex-1 min-w-0 rounded-xl px-4 py-3 text-sm outline-none"
+              style={{ ...selectStyle, opacity: 0.7 }}
+            />
+            <button
+              onClick={() => setAskNameReason(a => !a)}
+              className="px-3 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shrink-0"
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
+            >
+              {t('medication_changes.change_name')}
+            </button>
+          </div>
+          {askNameReason ? (
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold" style={{ color: 'var(--text-dim)' }}>{t('medication_changes.name_reason_prompt')}</p>
+              {['typo', 'brand', 'different'].map(reason => (
+                <button
+                  key={reason}
+                  onClick={() => chooseNameReason(reason)}
+                  className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold active:scale-[0.98] transition-all"
+                  style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+                >
+                  {t(`medication_changes.name_reason_${reason}`)}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px]" style={{ color: 'var(--text-faint)' }}>{t('medication_changes.name_locked_help')}</p>
+          )}
+        </div>
+      ) : (
+        <input
+          type="text"
+          value={form.name}
+          onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+          placeholder={t('settings.medications.name_placeholder')}
+          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+          style={selectStyle}
+        />
+      )}
       <input
         type="text"
-        value={form.name}
-        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-        placeholder={t('settings.medications.name_placeholder')}
+        list="med-ingredient-options"
+        value={form.activeIngredient || ''}
+        onChange={e => setForm(f => ({ ...f, activeIngredient: e.target.value }))}
+        placeholder={t('settings.medications.active_ingredient_placeholder')}
+        aria-label={t('settings.medications.active_ingredient')}
         className="w-full rounded-xl px-4 py-3 text-sm outline-none"
         style={selectStyle}
       />
+      <datalist id="med-ingredient-options">
+        {knownIngredients.map(name => <option key={name} value={name} />)}
+      </datalist>
+      <select
+        value={formSelectValue}
+        onChange={e => {
+          const value = e.target.value;
+          setCustomForm(value === '__new');
+          setForm(f => ({ ...f, form: value === '__new' ? '' : value }));
+        }}
+        aria-label={t('settings.medications.form')}
+        className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+        style={selectStyle}
+      >
+        <option value="">{t('settings.medications.form')}</option>
+        {formOptions.map(f => <option key={f} value={f}>{formLabel(f, t)}</option>)}
+        <option value="__new">{t('settings.medications.form_add_new')}</option>
+      </select>
+      {customForm && (
+        <input
+          type="text"
+          value={form.form || ''}
+          onChange={e => setForm(f => ({ ...f, form: e.target.value }))}
+          placeholder={t('settings.medications.form_custom_placeholder')}
+          className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+          style={selectStyle}
+        />
+      )}
       <div className="flex gap-2">
         <input
           type="number"
@@ -268,16 +380,36 @@ function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitl
           <FieldLabel>{t('settings.medications.scheduled_times')}</FieldLabel>
           {times.map((time, i) => (
             <div key={i} className="flex items-center gap-3">
-              <p className="text-xs font-bold w-32 shrink-0" style={{ color: 'var(--text-dim)' }}>{getSlotLabel(i, form.frequency, t)}</p>
+              <p className="text-xs font-bold w-24 shrink-0" style={{ color: 'var(--text-dim)' }}>{getSlotLabel(i, form.frequency, t)}</p>
               <input
                 type="time"
                 value={time}
                 onChange={e => updateTime(i, e.target.value)}
-                className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none"
+                className="flex-1 min-w-0 rounded-xl px-3 py-2.5 text-sm outline-none"
                 style={selectStyle}
               />
+              {perSlot && (
+                <input
+                  type="number"
+                  min="0"
+                  value={form.slotDoses?.[time] ?? ''}
+                  onChange={e => setSlotDose(time, e.target.value)}
+                  aria-label={t('medication_changes.field_slot_dose', { time })}
+                  className="w-20 rounded-xl px-2 py-2.5 text-sm outline-none text-center"
+                  style={selectStyle}
+                />
+              )}
             </div>
           ))}
+          {times.length > 1 && (
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{t('settings.medications.per_slot_dose')}</p>
+                <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>{t('settings.medications.per_slot_dose_help', { unit: form.unit })}</p>
+              </div>
+              <Toggle value={perSlot} onChange={togglePerSlot} label={t('settings.medications.per_slot_dose')} />
+            </div>
+          )}
         </div>
       )}
 
@@ -359,35 +491,64 @@ function MedForm({ form, setForm, onSave, onCancel, saveLabel = 'Save', formTitl
   );
 }
 
+// Form values → medication fields. Per-slot doses are kept only for the current times.
+function formToFields(form) {
+  const times = form.frequency === 'PRN' ? [] : (form.scheduledTimes ?? defaultScheduledTimes(form.frequency));
+  const slotDoses = {};
+  for (const time of times) {
+    const n = parseFloat(form.slotDoses?.[time]);
+    if (Number.isFinite(n)) slotDoses[time] = n;
+  }
+  return {
+    name: form.name.trim(),
+    dose: parseFloat(form.dose),
+    unit: form.unit,
+    frequency: form.frequency,
+    isRescue: form.frequency === 'PRN',
+    scheduledTimes: form.scheduledTimes ?? defaultScheduledTimes(form.frequency),
+    scheduledDays: form.frequency === 'PRN' ? ALL_DAYS : (form.scheduledDays ?? ALL_DAYS),
+    reminderEnabled: form.reminderEnabled ?? false,
+    showInEmergency: form.showInEmergency ?? false,
+    activeIngredient: (form.activeIngredient || '').trim(),
+    form: (form.form || '').trim(),
+    slotDoses,
+  };
+}
+
+const medSlots = (med) => (med.isRescue || med.frequency === 'PRN' ? [] : (med.scheduledTimes ?? defaultScheduledTimes(med.frequency)));
+
 function MedicationSection({ flash, notificationPermission, onRequestNotificationPermission, settings, onUpdate }) {
   const { t } = useTranslation();
-  const { medications, addMedication, updateMedication, deleteMedication } = useMedications();
+  const { medications, addMedication, updateMedication, stopMedication, restartMedication, replaceMedication, deleteMedication } = useMedications();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_MED);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  // A change waiting for confirmation: { kind: add|change|replace|stop|restart, med?, fields?, ... }
+  const [pending, setPending] = useState(null);
 
-  const handleAdd = async () => {
+  const activeMeds = medications.filter(m => m.active);
+  const stoppedMeds = medications.filter(m => !m.active);
+  const knownIngredients = [...new Set([
+    ...COMMON_ANTISEIZURE_INGREDIENTS,
+    ...medications.map(m => (m.activeIngredient || '').trim()).filter(Boolean),
+  ])].sort((a, b) => a.localeCompare(b));
+  const knownForms = [...new Set(medications.map(m => m.form).filter(Boolean))];
+
+  const closeEdit = () => { setEditingId(null); setEditForm(null); };
+
+  const handleAdd = () => {
     if (!form.name.trim() || !form.dose) return;
-    try {
-      await addMedication({
-        name: form.name.trim(),
-        dose: parseFloat(form.dose),
-        unit: form.unit,
-        frequency: form.frequency,
-        isRescue: form.frequency === 'PRN',
-        scheduledTimes: form.scheduledTimes ?? defaultScheduledTimes(form.frequency),
-        scheduledDays: form.frequency === 'PRN' ? ALL_DAYS : (form.scheduledDays ?? ALL_DAYS),
-        reminderEnabled: form.reminderEnabled ?? false,
-        showInEmergency: form.showInEmergency ?? false,
-      });
-      setForm(EMPTY_MED);
-      setShowForm(false);
-      flash(t('settings.medications.added'));
-    } catch {
-      flash(t('settings.medications.add_failed'));
-    }
+    const fields = formToFields(form);
+    setPending({
+      kind: 'add',
+      title: t('medication_changes.title_add'),
+      name: fields.name,
+      lines: [regimenSummary(regimenSnapshot(fields), t)],
+      slots: medSlots(fields),
+      fields,
+    });
   };
 
   const startEdit = (med) => {
@@ -402,40 +563,127 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
       scheduledDays: med.scheduledDays ?? ALL_DAYS,
       reminderEnabled: med.reminderEnabled ?? false,
       showInEmergency: med.showInEmergency ?? false,
+      activeIngredient: med.activeIngredient ?? '',
+      form: med.form ?? '',
+      slotDoses: Object.fromEntries(Object.entries(med.slotDoses ?? {}).map(([time, dose]) => [time, String(dose)])),
+      nameReason: null,
+      replaceMode: false,
     });
   };
 
   const handleUpdate = async () => {
     if (!editForm.name.trim() || !editForm.dose) return;
-    try {
-      await updateMedication(editingId, {
-        name: editForm.name.trim(),
-        dose: parseFloat(editForm.dose),
-        unit: editForm.unit,
-        frequency: editForm.frequency,
-        isRescue: editForm.frequency === 'PRN',
-        scheduledTimes: editForm.scheduledTimes ?? defaultScheduledTimes(editForm.frequency),
-        scheduledDays: editForm.frequency === 'PRN' ? ALL_DAYS : (editForm.scheduledDays ?? ALL_DAYS),
-        reminderEnabled: editForm.reminderEnabled ?? false,
-        showInEmergency: editForm.showInEmergency ?? false,
+    const med = medications.find(m => m.id === editingId);
+    const fields = formToFields(editForm);
+    const oldIngredient = (med.activeIngredient || '').toLowerCase();
+    const ingredientChanged = oldIngredient && oldIngredient !== fields.activeIngredient.toLowerCase();
+
+    // A different active ingredient is a different medicine: stop the old one, start the new one
+    if (editForm.replaceMode || ingredientChanged) {
+      setPending({
+        kind: 'replace',
+        title: t('medication_changes.title_replace'),
+        name: med.name,
+        lines: [
+          ...(ingredientChanged && !editForm.replaceMode ? [t('medication_changes.ingredient_changed')] : []),
+          t('medication_changes.replace_line', { old: med.name, new: fields.name }),
+          regimenSummary(regimenSnapshot(fields), t),
+        ],
+        slots: medSlots(fields),
+        med,
+        fields,
       });
-      setEditingId(null);
-      setEditForm(null);
-      flash(t('settings.medications.updated'));
-    } catch {
+      return;
+    }
+
+    const from = regimenSnapshot(med);
+    const to = regimenSnapshot({ ...med, ...fields });
+    const changedFields = diffRegimen(from, to).map(f => (f === 'name' && editForm.nameReason === 'brand' ? 'brand' : f));
+    if (!changedFields.length) {
+      // Only reminder / emergency display changed — nothing clinical to record
+      try {
+        await updateMedication(editingId, fields);
+        closeEdit();
+        flash(t('settings.medications.updated'));
+      } catch {
+        flash(t('settings.medications.update_failed'));
+      }
+      return;
+    }
+    setPending({
+      kind: 'change',
+      title: t('medication_changes.title_change'),
+      name: med.name,
+      lines: describeChange({ type: 'changed', from, to, changedFields }, t),
+      slots: medSlots({ ...med, ...fields }),
+      med,
+      fields,
+      nameReason: editForm.nameReason,
+    });
+  };
+
+  const handleStop = (med) => setPending({
+    kind: 'stop',
+    title: t('medication_changes.title_stop'),
+    name: med.name,
+    lines: [regimenSummary(regimenSnapshot(med), t)],
+    slots: medSlots(med),
+    med,
+  });
+
+  const handleRestart = (med) => setPending({
+    kind: 'restart',
+    title: t('medication_changes.title_restart'),
+    name: med.name,
+    lines: [regimenSummary(regimenSnapshot(med), t)],
+    slots: medSlots(med),
+    med,
+  });
+
+  const confirmPending = async (opts) => {
+    const { kind, med, fields, nameReason } = pending;
+    try {
+      if (kind === 'add') {
+        await addMedication(fields, opts);
+        setForm(EMPTY_MED);
+        setShowForm(false);
+        flash(t('settings.medications.added'));
+      } else if (kind === 'change') {
+        await updateMedication(med.id, fields, { ...opts, nameReason });
+        closeEdit();
+        flash(t('settings.medications.updated'));
+      } else if (kind === 'replace') {
+        await replaceMedication(med.id, fields, opts);
+        closeEdit();
+        flash(t('medication_changes.replaced_flash'));
+      } else if (kind === 'stop') {
+        await stopMedication(med.id, opts);
+        flash(t('medication_changes.stopped_flash'));
+      } else if (kind === 'restart') {
+        await restartMedication(med.id, {}, opts);
+        flash(t('medication_changes.restarted_flash'));
+      }
+      setPending(null);
+    } catch (err) {
+      console.error('Failed to save medication change:', err);
       flash(t('settings.medications.update_failed'));
     }
   };
 
-	  const handleDelete = async (id) => {
-	    try {
-	      await deleteMedication(id);
+  const handleDelete = async (id) => {
+    try {
+      await deleteMedication(id);
       setDeleteConfirm(null);
       flash(t('settings.medications.removed'));
     } catch {
       flash(t('settings.data.delete_failed'));
-	    }
-	  };
+    }
+  };
+
+  const toggleAssumeTaken = async (value) => {
+    await onUpdate?.('assumeDosesTaken', value);
+    await onUpdate?.('assumeDosesTakenSince', value ? new Date().toISOString() : '');
+  };
 
 	  const reminderStatusLabel = notificationPermission === 'granted'
 	    ? t('settings.medications.reminder_granted')
@@ -448,18 +696,50 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
     <Section title={t('settings.medications.section')}>
       <p className="text-[11px] text-[var(--text-dim)] -mt-2">{t('settings.medications.section_desc')}</p>
 
+      {pending && (
+        <MedicationChangeConfirm
+          title={pending.title}
+          medicationName={pending.name}
+          lines={pending.lines}
+          slots={pending.slots}
+          onConfirm={confirmPending}
+          onCancel={() => setPending(null)}
+        >
+          {pending.kind === 'stop' && (
+            <button
+              onClick={() => { setDeleteConfirm(pending.med.id); setPending(null); }}
+              className="w-full py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest"
+              style={{ backgroundColor: 'transparent', color: 'var(--status-missed-text)', border: '1px dashed var(--border)' }}
+            >
+              {t('medication_changes.delete_mistake')}
+            </button>
+          )}
+        </MedicationChangeConfirm>
+      )}
+
       {medications.length === 0 && !showForm && (
         <p className="text-xs italic text-center py-3" style={{ color: 'var(--text-faint)' }}>{t('settings.medications.none_recorded')}</p>
       )}
 
       <div className="space-y-2">
-        {medications.map(m => (
+        {activeMeds.map(m => (
           <div key={m.id}>
             {editingId === m.id ? (
-              <MedForm form={editForm} setForm={setEditForm} onSave={handleUpdate} onCancel={() => { setEditingId(null); setEditForm(null); }} saveLabel={t('settings.medications.update')} formTitle={t('settings.medications.edit_form_title')} />
+              <MedForm
+                form={editForm}
+                setForm={setEditForm}
+                onSave={handleUpdate}
+                onCancel={closeEdit}
+                saveLabel={t('settings.medications.update')}
+                formTitle={editForm.replaceMode ? t('medication_changes.replace_form_title', { name: m.name }) : t('settings.medications.edit_form_title')}
+                lockedName={!editForm.replaceMode}
+                knownIngredients={knownIngredients}
+                knownForms={knownForms}
+                onDifferentMedicine={() => setEditForm(f => ({ ...f, replaceMode: true, name: '', activeIngredient: '', form: '' }))}
+              />
             ) : deleteConfirm === m.id ? (
               <div className="rounded-2xl p-3 space-y-2" style={{ backgroundColor: '#7f1d1d', border: '1px solid #dc2626' }}>
-                <p className="text-white text-xs font-bold">{t('settings.medications.remove_confirm', { name: m.name })}</p>
+                <p className="text-white text-xs font-bold">{t('medication_changes.delete_confirm', { name: m.name })}</p>
                 <div className="flex gap-2">
                   <button onClick={() => handleDelete(m.id)} className="flex-1 py-2 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest">{t('settings.medications.remove')}</button>
                   <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2 rounded-xl text-xs font-bold" style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}>{t('settings.medications.cancel')}</button>
@@ -478,8 +758,13 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
 	                      )}
                     </p>
                     <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-                      {m.dose}{m.unit} · {m.frequency} — {frequencyShortLabel(m.frequency, t)}
+                      {regimenDoseSummary(regimenSnapshot(m))} · {m.frequency} — {frequencyShortLabel(m.frequency, t)}
                     </p>
+                    {(m.activeIngredient || m.form) && (
+                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }}>
+                        {[m.activeIngredient, formLabel(m.form, t)].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
                     {m.scheduledTimes && m.scheduledTimes.length > 0 && (
                       <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-faint)' }}>
 	                        {m.scheduledTimes.join(' · ')}
@@ -499,9 +784,9 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
                       aria-label={t('settings.medications.edit_label', { name: m.name })}
                     ><EditIcon className="w-4 h-4" /></button>
                     <button
-                      onClick={() => setDeleteConfirm(m.id)}
+                      onClick={() => handleStop(m)}
                       className="app-icon-action app-icon-action--danger !min-w-[32px] !min-h-[32px] !p-0"
-                      aria-label={t('settings.medications.remove_label', { name: m.name })}
+                      aria-label={t('medication_changes.stop_label', { name: m.name })}
                     ><CloseIcon className="w-4 h-4" /></button>
                   </div>
                 </div>
@@ -511,8 +796,49 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
         ))}
       </div>
 
+      {stoppedMeds.length > 0 && (
+        <div className="space-y-2">
+          <FieldLabel>{t('medication_changes.stopped_list')}</FieldLabel>
+          {stoppedMeds.map(m => (
+            deleteConfirm === m.id ? (
+              <div key={m.id} className="rounded-2xl p-3 space-y-2" style={{ backgroundColor: '#7f1d1d', border: '1px solid #dc2626' }}>
+                <p className="text-white text-xs font-bold">{t('medication_changes.delete_confirm', { name: m.name })}</p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleDelete(m.id)} className="flex-1 py-2 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest">{t('settings.medications.remove')}</button>
+                  <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2 rounded-xl text-xs font-bold" style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)' }}>{t('settings.medications.cancel')}</button>
+                </div>
+              </div>
+            ) : (
+              <div key={m.id} className="p-3 rounded-2xl flex items-center justify-between gap-2" style={{ backgroundColor: 'var(--bg-raised)', border: '1px dashed var(--border)', opacity: 0.75 }}>
+                <div className="min-w-0">
+                  <p className="text-sm font-black" style={{ color: 'var(--text-primary)' }}>{m.name}</p>
+                  <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
+                    {regimenDoseSummary(regimenSnapshot(m))}
+                    {m.stoppedAt ? ` · ${t('settings.medications.stopped_on', { date: new Date(m.stoppedAt).toLocaleDateString() })}` : ''}
+                  </p>
+                </div>
+                <div className="flex gap-1.5 shrink-0">
+                  <button
+                    onClick={() => handleRestart(m)}
+                    className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
+                    style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
+                  >
+                    {t('medication_changes.restart')}
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(m.id)}
+                    className="app-icon-action app-icon-action--danger !min-w-[32px] !min-h-[32px] !p-0"
+                    aria-label={t('settings.medications.remove_label', { name: m.name })}
+                  ><TrashIcon className="w-4 h-4" /></button>
+                </div>
+              </div>
+            )
+          ))}
+        </div>
+      )}
+
       {showForm ? (
-        <MedForm form={form} setForm={setForm} onSave={handleAdd} onCancel={() => { setShowForm(false); setForm(EMPTY_MED); }} saveLabel={t('settings.medications.add')} formTitle={t('settings.medications.add_form_title')} />
+        <MedForm form={form} setForm={setForm} onSave={handleAdd} onCancel={() => { setShowForm(false); setForm(EMPTY_MED); }} saveLabel={t('settings.medications.add')} formTitle={t('settings.medications.add_form_title')} knownIngredients={knownIngredients} knownForms={knownForms} />
       ) : (
         <button
           onClick={() => setShowForm(true)}
@@ -536,6 +862,13 @@ function MedicationSection({ flash, notificationPermission, onRequestNotificatio
           className="w-full rounded-xl px-4 py-3 text-sm outline-none"
           style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
         />
+      </div>
+
+      {/* Assume doses taken */}
+      <div className="border-t pt-4 mt-2" style={{ borderColor: 'var(--border-subtle)' }}>
+        <Row label={t('settings.medications.assume_taken')} help={t('settings.medications.assume_taken_help')}>
+          <Toggle value={settings?.assumeDosesTaken === true} onChange={toggleAssumeTaken} label={t('settings.medications.assume_taken')} />
+        </Row>
       </div>
 
       {/* Notification permissions */}
@@ -602,6 +935,9 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
     if (result.events) parts.push(t('settings.data.import_summary_events', { count: result.events }));
     if (result.medications) parts.push(t('settings.data.import_summary_medications', { count: result.medications }));
     if (result.logs) parts.push(t('settings.data.import_summary_logs', { count: result.logs }));
+    if (result.medicationChanges) parts.push(t('settings.data.import_summary_med_changes', { count: result.medicationChanges }));
+    if (result.medicationsUpdated) parts.push(t('settings.data.import_summary_meds_updated', { count: result.medicationsUpdated }));
+    if (result.medicationsDeleted) parts.push(t('settings.data.import_summary_meds_deleted', { count: result.medicationsDeleted }));
     if (result.eegSessions) parts.push(t('settings.data.import_summary_eeg_sessions', { count: result.eegSessions }));
     if (result.eegActivities) parts.push(t('settings.data.import_summary_eeg_activities', { count: result.eegActivities }));
     if (result.wellbeingEntries) parts.push(t('settings.data.import_summary_wellbeing', { count: result.wellbeingEntries, defaultValue: '{{count}} wellbeing entries' }));
@@ -660,6 +996,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
         db.events.clear(),
         db.medications.clear().catch(() => {}),
         db.medicationLogs.clear().catch(() => {}),
+        db.medicationChanges.clear().catch(() => {}),
         db.wellbeingEntries?.clear?.().catch(() => {}),
       ]);
       setShowClearConfirm(false);

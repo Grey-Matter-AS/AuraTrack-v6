@@ -1,4 +1,5 @@
 import Dexie from 'dexie';
+import { regimenSnapshot } from '../utils/medicationSchedule';
 
 export const db = new Dexie('AuraTrackDB');
 
@@ -91,4 +92,48 @@ db.version(10).stores({
   eegSessions: '++id, uuid, startTime, status, actualEndTime',
   eegActivities: '++id, uuid, sessionId, kind, startTime, endTime, linkedEventId, isEdited',
   wellbeingEntries: '++id, uuid, recordedAt, dayKey, primaryMood, intensity, isEdited'
+});
+
+// v11: medication change history. Every existing medication gets a baseline 'started' record
+// so reports have a start point; the date comes from the medicationStartDate setting, else the
+// earliest dose log, else now.
+db.version(11).stores({
+  events: '++id, uuid, startTime, date, type, isComplete, isEdited, notes, eegSessionId, videoAttached',
+  settings: 'key',
+  medications: '++id, uuid',
+  medicationLogs: '++id, uuid, medicationId, medicationUuid, takenAt, scheduledTime',
+  medicationChanges: '++id, uuid, medicationId, medicationUuid, effectiveAt, type',
+  eegSessions: '++id, uuid, startTime, status, actualEndTime',
+  eegActivities: '++id, uuid, sessionId, kind, startTime, endTime, linkedEventId, isEdited',
+  wellbeingEntries: '++id, uuid, recordedAt, dayKey, primaryMood, intensity, isEdited'
+}).upgrade(async tx => {
+  const medsTable = tx.table('medications');
+  const logsTable = tx.table('medicationLogs');
+  const changesTable = tx.table('medicationChanges');
+  const startSetting = await tx.table('settings').get('medicationStartDate').catch(() => null);
+  const settingStart = startSetting?.value ? new Date(`${startSetting.value}T00:00:00`).getTime() : NaN;
+  const now = Date.now();
+
+  for (const med of await medsTable.toArray()) {
+    const logs = await logsTable.where('medicationId').equals(med.id).toArray();
+    const earliestLog = logs.reduce((min, log) => Math.min(min, log.takenAt ?? Infinity), Infinity);
+    const startedAt = Number.isFinite(settingStart)
+      ? settingStart
+      : Number.isFinite(earliestLog) ? earliestLog : now;
+    await medsTable.update(med.id, { startedAt: med.startedAt ?? startedAt });
+    await changesTable.add({
+      uuid: makeUUID(),
+      medicationId: med.id,
+      medicationUuid: med.uuid ?? null,
+      medicationName: med.name,
+      type: 'started',
+      effectiveAt: med.startedAt ?? startedAt,
+      recordedAt: now,
+      from: null,
+      to: regimenSnapshot(med),
+      changedFields: [],
+      note: '',
+      isBaseline: true,
+    });
+  }
 });

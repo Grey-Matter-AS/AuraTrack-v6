@@ -59,6 +59,12 @@ export async function downloadEventLogPdf(data) {
     }),
   });
 
+  if (data.medicationChanges?.length) {
+    const cursorY = ensurePageRoom(doc, doc.lastAutoTable.finalY + 24, 80);
+    drawSectionTitle(doc, t('export.docs.medication_changes'), margin, cursorY, pageWidth - margin);
+    drawMedicationChangesTable(doc, data.medicationChanges, t, margin, cursorY + 10);
+  }
+
   return savePdfDocument(doc, `auratrack-event-log-${dateStamp()}.pdf`);
 }
 
@@ -149,9 +155,31 @@ export async function downloadNeurologistReportPdf(data) {
       alternateRowStyles: { fillColor: [252, 252, 253] },
       headStyles: { fillColor: COLORS.slate, textColor: 255, fontStyle: 'bold' },
       head: [[t('export.docs.drug'), t('export.docs.dose'), t('export.docs.frequency')]],
-      body: data.medications.map(med => [med.name, med.doseLabel, `${med.frequency} - ${med.frequencyLabel}`]),
+      body: data.medications.map(med => [
+        [med.name, med.detail, med.stoppedLabel].filter(Boolean).join('\n'),
+        med.doseLabel,
+        `${med.frequency} - ${med.frequencyLabel}`,
+      ]),
     });
-    cursorY = doc.lastAutoTable.finalY + 16;
+    cursorY = doc.lastAutoTable.finalY + 14;
+    if (data.stats.medicationLogsCount > 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(55, 65, 81);
+      const adherenceLines = [
+        `${t('export.docs.doses_logged', { count: data.stats.medicationLogsCount })}${data.stats.expectedDoses > 0 ? ` ${t('export.docs.expected_doses', { count: data.stats.expectedDoses })}` : ''}.`,
+        t('export.docs.adherence_line', data.stats.adherence),
+        ...(data.stats.adherence.assumed > 0 ? [t('export.docs.assumed_note')] : []),
+      ].flatMap(line => doc.splitTextToSize(line, pageWidth - margin * 2));
+      doc.text(adherenceLines, margin, cursorY);
+      cursorY += adherenceLines.length * 10 + 8;
+    }
+  }
+
+  if (data.medicationChanges?.length) {
+    cursorY = ensurePageRoom(doc, cursorY, 80);
+    drawSectionTitle(doc, t('export.docs.medication_changes'), margin, cursorY, pageWidth - margin);
+    cursorY = drawMedicationChangesTable(doc, data.medicationChanges, t, margin, cursorY + 10) + 16;
   }
 
   cursorY = ensurePageRoom(doc, cursorY, 100);
@@ -444,6 +472,14 @@ export async function downloadSeizureDiaryPdf(data) {
     doc.text(split, margin, footerY);
     footerY += split.length * 9 + 4;
   }
+  if (data.medicationChangesLines?.length) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(55, 65, 81);
+    const split = doc.splitTextToSize(`${t('export.docs.medication_changes')}: ${data.medicationChangesLines.join(' | ')}`, pageWidth - margin * 2);
+    doc.text(split, margin, footerY);
+    footerY += split.length * 9 + 4;
+  }
 
   doc.setFontSize(8);
   doc.setTextColor(156, 163, 175);
@@ -506,6 +542,31 @@ export async function downloadEegDiaryPdf(data) {
 
   addPageNumbers(doc);
   return savePdfDocument(doc, `auratrack-eeg-diary-${dateStamp()}.pdf`);
+}
+
+// Returns the y position below the table
+function drawMedicationChangesTable(doc, rows, t, margin, startY) {
+  autoTable(doc, {
+    startY,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 5, overflow: 'linebreak', valign: 'top', textColor: COLORS.ink },
+    alternateRowStyles: { fillColor: [252, 252, 253] },
+    headStyles: { fillColor: COLORS.slate, textColor: 255, fontStyle: 'bold' },
+    columnStyles: {
+      0: { cellWidth: 72 },
+      1: { cellWidth: 110 },
+      3: { cellWidth: 110 },
+    },
+    head: [[t('export.docs.change_when'), t('export.docs.drug'), t('export.docs.change_what'), t('export.docs.notes')]],
+    body: rows.map(row => [
+      `${row.dateLabel}\n${row.timeLabel}`,
+      [row.medication, row.medicationDetail].filter(Boolean).join('\n'),
+      [row.typeLabel, ...row.lines].join('\n'),
+      row.note,
+    ]),
+  });
+  return doc.lastAutoTable.finalY;
 }
 
 function drawSectionTitle(doc, title, x, y, lineEndX) {

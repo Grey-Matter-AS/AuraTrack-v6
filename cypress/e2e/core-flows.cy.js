@@ -79,14 +79,15 @@ describe('AuraTrack core flows', () => {
     cy.get('input[placeholder="Drug name (e.g. Levetiracetam)"]').type('Test Med');
     cy.get('input[placeholder="Dose"]').type('50');
     cy.contains('button', /^Add$/).click();
+    cy.contains('button', 'Confirm & record').click();
 
     cy.contains('Test Med').should('be.visible');
 
     cy.contains('button', 'BACK').click();
-    cy.contains('button', '+ Log Past Seizure').click();
+    cy.contains('button', 'Log Past Seizure').click();
 
-    cy.get('input[type="number"]').eq(0).clear().type('1');
-    cy.get('input[type="number"]').eq(1).clear().type('30');
+    cy.get('input[inputmode="numeric"]').eq(0).click().type('1');
+    cy.get('input[inputmode="numeric"]').eq(1).click().type('30');
     cy.contains('button', 'Continue').click();
 
     cy.contains('Step 1: Seizure Type').should('be.visible');

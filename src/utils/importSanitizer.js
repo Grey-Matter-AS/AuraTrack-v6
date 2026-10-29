@@ -6,6 +6,7 @@ export const CANONICAL_BACKUP_VERSION = 1;
 const MAX_EVENTS = 5000;
 const MAX_MEDICATIONS = 500;
 const MAX_LOGS = 20000;
+const MAX_MED_CHANGES = 5000;
 const MAX_EEG_SESSIONS = 1000;
 const MAX_EEG_ACTIVITIES = 20000;
 const MAX_WELLBEING_ENTRIES = 20000;
@@ -17,7 +18,8 @@ const MAX_JSON_DEPTH = 5;
 const MAX_JSON_KEYS = 50;
 
 const FREQS = new Set(['OD', 'BD', 'TDS', 'QDS', 'PRN']);
-const LOG_STATUSES = new Set(['taken', 'missed', 'late']);
+const LOG_STATUSES = new Set(['taken', 'missed', 'late', 'assumed']);
+const MED_CHANGE_TYPES = new Set(['started', 'changed', 'stopped', 'correction']);
 const EEG_SESSION_STATUSES = new Set(['ACTIVE', 'COMPLETED']);
 const EEG_ACTIVITY_KINDS = new Set(['ACTIVITY', 'SEIZURE_REFERENCE']);
 
@@ -164,6 +166,40 @@ export function sanitizeEvent(raw) {
   };
 }
 
+const sanitizeSlotDoses = (raw) => {
+  if (!raw || typeof raw !== 'object') return {};
+  return Object.entries(raw).slice(0, 8).reduce((acc, [time, dose]) => {
+    const n = asFiniteNumber(dose);
+    if (validTime(time) && n != null && n >= 0) acc[time] = n;
+    return acc;
+  }, {});
+};
+
+const sanitizeScheduledDays = (raw) => Array.isArray(raw)
+  ? [...new Set(raw.map(Number).filter(d => Number.isInteger(d) && d >= 0 && d <= 6))]
+  : [0, 1, 2, 3, 4, 5, 6];
+
+// The clinically relevant snapshot stored in a medication change record (from / to)
+const sanitizeRegimen = (raw) => {
+  if (!raw || typeof raw !== 'object') return null;
+  return {
+    name: asString(raw.name),
+    activeIngredient: asString(raw.activeIngredient),
+    form: asString(raw.form, 60),
+    dose: asFiniteNumber(raw.dose, 0),
+    unit: asString(raw.unit, 20) || 'mg',
+    slotDoses: sanitizeSlotDoses(raw.slotDoses),
+    frequency: FREQS.has(raw.frequency) ? raw.frequency : 'OD',
+    scheduledTimes: Array.isArray(raw.scheduledTimes) ? raw.scheduledTimes.filter(validTime).slice(0, 8) : [],
+    scheduledDays: sanitizeScheduledDays(raw.scheduledDays),
+  };
+};
+
+const optionalTimestamp = (key, value) => {
+  const n = asFiniteNumber(value);
+  return n != null ? { [key]: n } : {};
+};
+
 export function sanitizeMedication(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const name = asString(raw.name);
@@ -179,12 +215,16 @@ export function sanitizeMedication(raw) {
     scheduledTimes: Array.isArray(raw.scheduledTimes)
       ? raw.scheduledTimes.filter(validTime).slice(0, 8)
       : [],
-    scheduledDays: Array.isArray(raw.scheduledDays)
-      ? [...new Set(raw.scheduledDays.map(Number).filter(d => Number.isInteger(d) && d >= 0 && d <= 6))]
-      : [0, 1, 2, 3, 4, 5, 6],
+    scheduledDays: sanitizeScheduledDays(raw.scheduledDays),
+    activeIngredient: asString(raw.activeIngredient),
+    form: asString(raw.form, 60),
+    slotDoses: sanitizeSlotDoses(raw.slotDoses),
     reminderEnabled: asBool(raw.reminderEnabled),
     showInEmergency: asBool(raw.showInEmergency),
     active: asBool(raw.active, true),
+    ...optionalTimestamp('startedAt', raw.startedAt),
+    ...optionalTimestamp('stoppedAt', raw.stoppedAt),
+    ...optionalTimestamp('deletedAt', raw.deletedAt),
   };
 }
 
@@ -201,9 +241,33 @@ export function sanitizeMedicationLog(raw) {
     scheduledTime: validTime(raw.scheduledTime) ? raw.scheduledTime : null,
     takenAt,
     status: LOG_STATUSES.has(raw.status) ? raw.status : 'taken',
+    doseSnapshot: asFiniteNumber(raw.doseSnapshot),
+    unitSnapshot: asString(raw.unitSnapshot, 20),
     note: asString(raw.note, 500),
     isEdited: asBool(raw.isEdited),
     ...(asFiniteNumber(raw.lastModified) ? { lastModified: asFiniteNumber(raw.lastModified) } : {}),
+  };
+}
+
+export function sanitizeMedicationChange(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const medicationId = asFiniteNumber(raw.medicationId);
+  const medicationUuid = asString(raw.medicationUuid, 100);
+  const effectiveAt = asFiniteNumber(raw.effectiveAt);
+  if ((medicationId == null && !medicationUuid) || effectiveAt == null || !MED_CHANGE_TYPES.has(raw.type)) return null;
+  return {
+    ...(asString(raw.uuid, 100) ? { uuid: asString(raw.uuid, 100) } : {}),
+    ...(medicationId != null ? { medicationId } : {}),
+    ...(medicationUuid ? { medicationUuid } : {}),
+    medicationName: asString(raw.medicationName),
+    type: raw.type,
+    effectiveAt,
+    recordedAt: asFiniteNumber(raw.recordedAt, effectiveAt),
+    from: sanitizeRegimen(raw.from),
+    to: sanitizeRegimen(raw.to),
+    changedFields: sanitizeTextArray(raw.changedFields, 20),
+    note: asString(raw.note, 500),
+    isBaseline: asBool(raw.isBaseline),
   };
 }
 
@@ -323,6 +387,9 @@ export function sanitizeImportPayload(parsed) {
   const medicationLogs = Array.isArray(data?.medicationLogs)
     ? data.medicationLogs.map(sanitizeMedicationLog).filter(Boolean).slice(0, MAX_LOGS)
     : [];
+  const medicationChanges = Array.isArray(data?.medicationChanges)
+    ? data.medicationChanges.map(sanitizeMedicationChange).filter(Boolean).slice(0, MAX_MED_CHANGES)
+    : [];
   const eegSessions = Array.isArray(data?.eegSessions)
     ? data.eegSessions.map(sanitizeEegSession).filter(Boolean).slice(0, MAX_EEG_SESSIONS)
     : [];
@@ -334,7 +401,7 @@ export function sanitizeImportPayload(parsed) {
     : [];
   const settings = sanitizeSettingsPayload(data?.settings);
 
-  return { settings, events, medications, medicationLogs, eegSessions, eegActivities, wellbeingEntries };
+  return { settings, events, medications, medicationLogs, medicationChanges, eegSessions, eegActivities, wellbeingEntries };
 }
 
 export function buildCanonicalBackupPayload(snapshot = {}) {
@@ -343,6 +410,7 @@ export function buildCanonicalBackupPayload(snapshot = {}) {
     events = [],
     medications = [],
     medicationLogs = [],
+    medicationChanges = [],
     eegSessions = [],
     eegActivities = [],
     wellbeingEntries = [],
@@ -360,6 +428,7 @@ export function buildCanonicalBackupPayload(snapshot = {}) {
       events,
       medications,
       medicationLogs,
+      medicationChanges,
       eegSessions,
       eegActivities,
       wellbeingEntries,

@@ -1,7 +1,7 @@
 /* global Cypress, cy */
 
 const DB_NAME = 'AuraTrackDB';
-const DB_VERSION = 100;
+const DB_VERSION = 110; // Dexie version 11 × 10
 
 const STORE_DEFINITIONS = {
   events: {
@@ -19,6 +19,10 @@ const STORE_DEFINITIONS = {
   medicationLogs: {
     options: { keyPath: 'id', autoIncrement: true },
     indexes: ['uuid', 'medicationId', 'medicationUuid', 'takenAt', 'scheduledTime'],
+  },
+  medicationChanges: {
+    options: { keyPath: 'id', autoIncrement: true },
+    indexes: ['uuid', 'medicationId', 'medicationUuid', 'effectiveAt', 'type'],
   },
   eegSessions: {
     options: { keyPath: 'id', autoIncrement: true },
@@ -62,6 +66,7 @@ export function clearAndSeedDatabase(win, seed) {
       settings: seed.settings ?? [],
       medications: seed.medications ?? [],
       medicationLogs: seed.medicationLogs ?? [],
+      medicationChanges: seed.medicationChanges ?? [],
       eegSessions: seed.eegSessions ?? [],
       eegActivities: seed.eegActivities ?? [],
       wellbeingEntries: seed.wellbeingEntries ?? [],

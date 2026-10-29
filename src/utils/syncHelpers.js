@@ -4,6 +4,7 @@ import {
   buildCanonicalBackupPayload,
   sanitizeImportPayload,
 } from './importSanitizer';
+import { askMedicationConflicts } from './medicationConflictPrompt';
 
 const QR_SYNC_CODEC_TIMEOUT_MS = 2500;
 const SETTINGS_SKIP_KEYS = new Set([
@@ -41,6 +42,63 @@ const medicationLogSlotKey = (log, medicationKey) => {
     log.scheduledTime,
   ].join('|');
 };
+
+const medicationChangeKey = (change, medicationUuid) => [
+  medicationUuid || '',
+  change.type || '',
+  Number(change.effectiveAt || 0),
+].join('|');
+
+// Ranks how much a dose log says: an incoming log only replaces a local placeholder it outranks
+const LOG_STATUS_RANK = { missed: 0, assumed: 1, taken: 2, late: 2 };
+
+const medicationComparable = (med) => JSON.stringify({
+  name: med.name,
+  activeIngredient: med.activeIngredient || '',
+  form: med.form || '',
+  dose: med.dose,
+  unit: med.unit,
+  slotDoses: med.slotDoses || {},
+  frequency: med.frequency,
+  scheduledTimes: med.scheduledTimes || [],
+  scheduledDays: med.scheduledDays || [],
+  reminderEnabled: med.reminderEnabled ?? false,
+  showInEmergency: med.showInEmergency ?? false,
+  active: med.active ?? true,
+});
+
+const latestChangeFor = (changes, medUuid) => changes
+  .filter(change => medUuid && change.medicationUuid === medUuid)
+  .reduce((latest, change) => (!latest || (change.recordedAt ?? 0) > (latest.recordedAt ?? 0) ? change : latest), null);
+
+// Medications both sides have but with different details. Used to warn the user before a merge;
+// `newer` says which side holds the most recently confirmed change (the default choice).
+export async function previewMedicationConflicts(parsed) {
+  const incoming = sanitizeImportPayload(parsed);
+  const [localMeds, localChanges] = await Promise.all([
+    db.medications.toArray().catch(() => []),
+    db.medicationChanges.toArray().catch(() => []),
+  ]);
+  const byUuid = new Map(localMeds.filter(m => m.uuid).map(m => [m.uuid, m]));
+  const conflicts = [];
+  for (const med of incoming.medications) {
+    const local = med.uuid ? byUuid.get(med.uuid) : null;
+    if (!local || local.deletedAt || med.deletedAt) continue;
+    if (medicationComparable(local) === medicationComparable(med)) continue;
+    const localLatest = latestChangeFor(localChanges, local.uuid);
+    const incomingLatest = latestChangeFor(incoming.medicationChanges, med.uuid);
+    conflicts.push({
+      uuid: med.uuid,
+      name: local.name,
+      local,
+      incoming: med,
+      localLatest,
+      incomingLatest,
+      newer: (incomingLatest?.recordedAt ?? 0) > (localLatest?.recordedAt ?? 0) ? 'incoming' : 'local',
+    });
+  }
+  return conflicts;
+}
 
 const eventIdentityKey = (event) => [
   Number(event.startTime || 0),
@@ -100,10 +158,11 @@ function withTimeout(promise, ms, label) {
 
 export async function exportLocalData() {
   const events = await db.events.toArray();
-  const [settingsRows, medications, medicationLogs, eegSessions, eegActivities, wellbeingEntries] = await Promise.all([
+  const [settingsRows, medications, medicationLogs, medicationChanges, eegSessions, eegActivities, wellbeingEntries] = await Promise.all([
     db.settings.toArray().catch(() => []),
     db.medications.toArray().catch(() => []),
     db.medicationLogs.toArray().catch(() => []),
+    db.medicationChanges.toArray().catch(() => []),
     db.eegSessions?.toArray?.().catch(() => []) ?? [],
     db.eegActivities?.toArray?.().catch(() => []) ?? [],
     db.wellbeingEntries?.toArray?.().catch(() => []) ?? [],
@@ -114,18 +173,30 @@ export async function exportLocalData() {
     events,
     medications,
     medicationLogs,
+    medicationChanges,
     eegSessions,
     eegActivities,
     wellbeingEntries,
   });
 }
 
-export async function mergeRemoteData(parsed) {
+// options.medicationResolutions: { [medicationUuid]: 'incoming' | 'local' }. When not given, the user
+// is asked through the conflict dialog; anything unanswered goes to the most recently confirmed change.
+export async function mergeRemoteData(parsed, options = {}) {
   const incoming = sanitizeImportPayload(parsed);
+  // Ask before overwriting any medication (must happen before the DB transaction opens)
+  let medicationResolutions = options.medicationResolutions;
+  if (!medicationResolutions) {
+    const conflicts = await previewMedicationConflicts(parsed);
+    medicationResolutions = conflicts.length ? (await askMedicationConflicts(conflicts)) ?? {} : {};
+  }
   const results = {
     settings: 0,
     events: 0,
     medications: 0,
+    medicationsUpdated: 0,
+    medicationsDeleted: 0,
+    medicationChanges: 0,
     logs: 0,
     eegSessions: 0,
     eegActivities: 0,
@@ -133,8 +204,10 @@ export async function mergeRemoteData(parsed) {
     conflicts: [],
     rules: [
       'Settings: incoming values replace local values except local backup reminder timestamps.',
-      'Medications: match by UUID first, then by name+dose+unit+schedule fingerprint; local record is preserved on field conflicts.',
-      'Dose logs: match by UUID first; otherwise scheduled doses reconcile by medication/day/time and prefer taken or late over missed placeholders.',
+      'Medications: match by UUID first, then by name+dose+unit+schedule fingerprint; on field conflicts the side with the most recently confirmed change wins unless you chose otherwise.',
+      'Medication changes: every change record from both sides is kept, so no history is lost.',
+      'Deleted medications: a deletion on either side removes the medication and its history on both.',
+      'Dose logs: match by UUID first; otherwise scheduled doses reconcile by medication/day/time and prefer taken or late over assumed, and assumed over missed.',
     ],
   };
 
@@ -144,6 +217,7 @@ export async function mergeRemoteData(parsed) {
     db.events,
     db.medications,
     db.medicationLogs,
+    db.medicationChanges,
     db.eegSessions,
     db.eegActivities,
     db.wellbeingEntries,
@@ -153,6 +227,7 @@ export async function mergeRemoteData(parsed) {
         localEvents,
         localMeds,
         localLogs,
+        localChanges,
         localSessions,
         localActivities,
         localWellbeingEntries,
@@ -161,6 +236,7 @@ export async function mergeRemoteData(parsed) {
         db.events.toArray(),
         db.medications.toArray().catch(() => []),
         db.medicationLogs.toArray().catch(() => []),
+        db.medicationChanges.toArray().catch(() => []),
         db.eegSessions?.toArray?.().catch(() => []) ?? [],
         db.eegActivities?.toArray?.().catch(() => []) ?? [],
         db.wellbeingEntries?.toArray?.().catch(() => []) ?? [],
@@ -245,35 +321,58 @@ export async function mergeRemoteData(parsed) {
           medByUuid.set(med.uuid, existing);
         }
 
-        const fieldsDiffer = JSON.stringify({
-          name: existing.name,
-          dose: existing.dose,
-          unit: existing.unit,
-          frequency: existing.frequency,
-          scheduledTimes: existing.scheduledTimes || [],
-          scheduledDays: existing.scheduledDays || [],
-          reminderEnabled: existing.reminderEnabled ?? false,
-          showInEmergency: existing.showInEmergency ?? false,
-          active: existing.active ?? true,
-        }) !== JSON.stringify({
-          name: med.name,
-          dose: med.dose,
-          unit: med.unit,
-          frequency: med.frequency,
-          scheduledTimes: med.scheduledTimes || [],
-          scheduledDays: med.scheduledDays || [],
-          reminderEnabled: med.reminderEnabled ?? false,
-          showInEmergency: med.showInEmergency ?? false,
-          active: med.active ?? true,
-        });
-
-        if (fieldsDiffer) {
-          results.conflicts.push(describeConflict(
-            'medication_conflict',
-            `Kept local medication "${existing.name}" instead of overwriting it with an incoming variant.`,
-            { uuid: med.uuid || existing.uuid || null }
-          ));
+        // A deletion on either side wins: the medication stays a tombstone and loses its history
+        if (existing.deletedAt) continue;
+        if (med.deletedAt) {
+          await db.medications.update(existing.id, { active: false, deletedAt: med.deletedAt });
+          await db.medicationLogs.where('medicationId').equals(existing.id).delete();
+          await db.medicationChanges.where('medicationId').equals(existing.id).delete();
+          if (existing.uuid) {
+            await db.medicationLogs.where('medicationUuid').equals(existing.uuid).delete();
+            await db.medicationChanges.where('medicationUuid').equals(existing.uuid).delete();
+          }
+          existing.deletedAt = med.deletedAt;
+          results.medicationsDeleted += 1;
+          continue;
         }
+
+        if (medicationComparable(existing) === medicationComparable(med)) continue;
+
+        const choice = medicationResolutions[existing.uuid]
+          ?? (((latestChangeFor(incoming.medicationChanges, med.uuid)?.recordedAt ?? 0)
+            > (latestChangeFor(localChanges, existing.uuid)?.recordedAt ?? 0)) ? 'incoming' : 'local');
+        if (choice === 'incoming') {
+          const fields = { ...med };
+          delete fields.uuid;
+          await db.medications.update(existing.id, fields);
+          Object.assign(existing, fields);
+          results.medicationsUpdated += 1;
+          continue;
+        }
+
+        results.conflicts.push(describeConflict(
+          'medication_conflict',
+          `Kept local medication "${existing.name}" instead of overwriting it with an incoming variant.`,
+          { uuid: med.uuid || existing.uuid || null }
+        ));
+      }
+
+      const changeUuids = new Set(localChanges.map(change => change.uuid).filter(Boolean));
+      const changeKeys = new Set(localChanges.map(change => medicationChangeKey(change, change.medicationUuid)));
+      const baselineMeds = new Set(localChanges.filter(change => change.isBaseline).map(change => change.medicationUuid));
+      for (const change of incoming.medicationChanges) {
+        const medication = (change.medicationUuid && (medicationUuidToLocal.get(change.medicationUuid) || medByUuid.get(change.medicationUuid)))
+          || null;
+        if (!medication || medication.deletedAt) continue;
+        if (change.uuid && changeUuids.has(change.uuid)) continue;
+        const key = medicationChangeKey(change, medication.uuid);
+        if (changeKeys.has(key)) continue;
+        // Both devices create their own baseline 'started' record when upgrading — keep one
+        if (change.isBaseline && baselineMeds.has(medication.uuid)) continue;
+        await db.medicationChanges.add({ ...change, medicationId: medication.id, medicationUuid: medication.uuid });
+        if (change.uuid) changeUuids.add(change.uuid);
+        changeKeys.add(key);
+        results.medicationChanges += 1;
       }
 
       const sessionUuidToLocal = new Map();
@@ -299,6 +398,7 @@ export async function mergeRemoteData(parsed) {
           || (log.medicationUuid && medByUuid.get(log.medicationUuid))
           || (log.medicationId != null ? localMeds.find(med => med.id === log.medicationId) : null)
           || null;
+        if (medication?.deletedAt) continue;
         if (!medication) {
           results.conflicts.push(describeConflict(
             'orphan_medication_log',
@@ -345,10 +445,12 @@ export async function mergeRemoteData(parsed) {
         });
         if (incomingComparable === existingComparable) continue;
 
-        if (existing.status === 'missed' && log.status !== 'missed') {
+        if ((LOG_STATUS_RANK[log.status] ?? 2) > (LOG_STATUS_RANK[existing.status] ?? 2)) {
           await db.medicationLogs.update(existing.id, {
             takenAt: log.takenAt,
             status: log.status,
+            doseSnapshot: log.doseSnapshot ?? existing.doseSnapshot ?? null,
+            unitSnapshot: log.unitSnapshot || existing.unitSnapshot || '',
             note: log.note || existing.note || '',
             scheduledTime: log.scheduledTime ?? existing.scheduledTime ?? null,
             medicationUuid: medication.uuid ?? existing.medicationUuid ?? null,

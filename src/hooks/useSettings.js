@@ -46,6 +46,8 @@ const DEFAULTS = {
 
   // Medication tracking
   medicationStartDate: '',      // ISO date string — first day to show in medication history
+  assumeDosesTaken: false,      // unlogged scheduled doses become 'assumed' 90 min after their time
+  assumeDosesTakenSince: '',    // ISO timestamp the setting was turned on — limits back-filling
 
   // Localisation
   language: 'en',               // ISO 639-1 language code

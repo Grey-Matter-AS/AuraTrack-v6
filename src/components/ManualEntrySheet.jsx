@@ -4,47 +4,52 @@ import { ScrollFade } from './ScrollFade';
 import { CloseIcon } from './AppIcons';
 
 // ─── Min/sec duration input pair ─────────────────────────────
-function DurField({ label, value, onChange }) {
+// ─── Single number box ────────────────────────────────────────
+// Focusing starts a fresh entry (old value shown as placeholder), so the first digit typed
+// always lands in the ones place regardless of where the mobile caret ends up.
+// Leaving the box without typing keeps the old value.
+function NumInput({ value, max, maxLength, onChange, readOnly }) {
+  const [draft, setDraft] = useState(null);
+
+  const handleChange = (raw) => {
+    const d = raw.replace(/\D/g, '').slice(0, maxLength);
+    const n = d === '' ? 0 : Math.min(max, parseInt(d, 10));
+    setDraft(d === '' ? '' : String(n));
+    onChange(n);
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      maxLength={maxLength}
+      readOnly={readOnly}
+      placeholder={value ? String(value) : '0'}
+      value={draft ?? (value ? String(value) : '')}
+      onFocus={() => { if (!readOnly) setDraft(''); }}
+      onBlur={() => setDraft(null)}
+      onChange={e => handleChange(e.target.value)}
+      className="w-16 text-center rounded-xl px-2 py-2 font-mono font-black text-lg outline-none"
+      style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+    />
+  );
+}
+
+function DurField({ label, value, onChange, readOnly = false }) {
   const { t } = useTranslation();
   const minutes = Math.floor(value / 60);
   const seconds = value % 60;
 
-  const setMin = (raw) => {
-    const m = Math.max(0, parseInt(raw, 10) || 0);
-    onChange(m * 60 + seconds);
-  };
-  const setSec = (raw) => {
-    const s = Math.max(0, Math.min(59, parseInt(raw, 10) || 0));
-    onChange(minutes * 60 + s);
-  };
-
   return (
-    <div>
+    <div style={readOnly ? { opacity: 0.6 } : undefined}>
       <p className="text-[9px] font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-dim)' }}>
         {label}
       </p>
       <div className="flex items-center gap-2">
-        <input
-          type="number"
-          inputMode="numeric"
-          min="0"
-          max="999"
-          value={minutes}
-          onChange={e => setMin(e.target.value)}
-          className="w-16 text-center rounded-xl px-2 py-2 font-mono font-black text-lg outline-none"
-          style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        />
+        <NumInput value={minutes} max={999} maxLength={3} readOnly={readOnly} onChange={m => onChange(m * 60 + seconds)} />
         <span className="font-black text-xs" style={{ color: 'var(--text-dim)' }}>{t('manual_entry.min')}</span>
-        <input
-          type="number"
-          inputMode="numeric"
-          min="0"
-          max="59"
-          value={seconds}
-          onChange={e => setSec(e.target.value)}
-          className="w-16 text-center rounded-xl px-2 py-2 font-mono font-black text-lg outline-none"
-          style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        />
+        <NumInput value={seconds} max={59} maxLength={2} readOnly={readOnly} onChange={s => onChange(minutes * 60 + s)} />
         <span className="font-black text-xs" style={{ color: 'var(--text-dim)' }}>{t('manual_entry.sec')}</span>
       </div>
     </div>
@@ -72,21 +77,25 @@ export function ManualEntrySheet({ onConfirm, onClose }) {
     color: 'var(--text-primary)',
   };
 
+  // When any phase is filled in, the total is the sum of the phases; otherwise the manual total stands
+  const phaseSum = showPhases ? auraSec + seizureSec + recoverySec : 0;
+  const effectiveTotal = phaseSum > 0 ? phaseSum : totalSec;
+
   const handleContinue = () => {
-    if (totalSec <= 0) {
+    if (effectiveTotal <= 0) {
       setError(t('manual_entry.error_duration'));
       return;
     }
     setError('');
 
-    const manualDurations = { total: totalSec };
+    const manualDurations = { total: effectiveTotal };
     if (showPhases) {
       if (auraSec     > 0) manualDurations.aura     = auraSec;
       if (seizureSec  > 0) manualDurations.seizure  = seizureSec;
       if (recoverySec > 0) manualDurations.recovery = recoverySec;
     }
 
-    onConfirm({ date, time, durationSec: totalSec, manualDurations });
+    onConfirm({ date, time, durationSec: effectiveTotal, manualDurations });
   };
 
   return (
@@ -112,7 +121,7 @@ export function ManualEntrySheet({ onConfirm, onClose }) {
           </button>
         </div>
 
-        <ScrollFade className="px-6 pt-4 pb-2 space-y-5" bgVar="--bg-card">
+        <ScrollFade className="flex-1 min-h-0 px-6 pt-4 pb-2 space-y-5" wrapperClassName="flex-1 flex flex-col" bgVar="--bg-card">
 
           <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
             {t('manual_entry.intro')}
@@ -148,7 +157,7 @@ export function ManualEntrySheet({ onConfirm, onClose }) {
           </div>
 
           {/* Total duration */}
-          <DurField label={t('manual_entry.total_duration')} value={totalSec} onChange={setTotalSec} />
+          <DurField label={t('manual_entry.total_duration')} value={effectiveTotal} onChange={setTotalSec} readOnly={phaseSum > 0} />
 
           {/* Phase breakdown toggle */}
           <button

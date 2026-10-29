@@ -88,6 +88,22 @@ export function richCaretakerScenario() {
         note: 'Rescue dose after cluster.',
       },
     ],
+    medicationChanges: [
+      {
+        id: 1,
+        uuid: 'change-1',
+        medicationId: lamotrigineId,
+        medicationUuid: 'med-lamotrigine',
+        medicationName: 'Lamotrigine',
+        type: 'changed',
+        effectiveAt: at(20, 0, -3),
+        recordedAt: at(12, 0, -3),
+        from: { name: 'Lamotrigine', activeIngredient: 'lamotrigine', form: 'tablet', dose: 100, unit: 'mg', slotDoses: {}, frequency: 'BD', scheduledTimes: ['08:00', '20:00'], scheduledDays: [0, 1, 2, 3, 4, 5, 6] },
+        to: { name: 'Lamotrigine', activeIngredient: 'lamotrigine', form: 'tablet', dose: 150, unit: 'mg', slotDoses: {}, frequency: 'BD', scheduledTimes: ['08:00', '20:00'], scheduledDays: [0, 1, 2, 3, 4, 5, 6] },
+        changedFields: ['slotDose:08:00', 'slotDose:20:00'],
+        note: 'Increased by neurologist.',
+      },
+    ],
     events: [
       {
         id: 1,

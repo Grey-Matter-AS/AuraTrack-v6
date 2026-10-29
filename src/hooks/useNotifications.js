@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import i18n from '../i18n';
-import { defaultScheduledTimes, scheduledTimestampForToday } from '../utils/medicationSchedule';
+import { defaultScheduledTimes, scheduledTimestampForToday, slotDose } from '../utils/medicationSchedule';
 import { localDayKey } from './useWellbeing';
 
 // Module-level timer store so timers survive component re-renders
@@ -14,7 +14,7 @@ function clearAllTimers() {
 async function fireNotification(med, hhMM) {
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
   const title = `Time to take ${med.name}`;
-  const body = `${med.dose}${med.unit} — tap to confirm in AuraTrack`;
+  const body = `${slotDose(med, hhMM)}${med.unit} — tap to confirm in AuraTrack`;
   const tag = `med-${med.id}-${hhMM}`;
   try {
     const sw = await navigator.serviceWorker?.ready;

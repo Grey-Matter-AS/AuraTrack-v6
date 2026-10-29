@@ -28,6 +28,7 @@ import EventDetailView from './pages/EventDetailView';
 import AboutView from './pages/AboutView';
 import HelpView from './pages/HelpView';
 import SyncModal from './components/SyncModal';
+import { MedicationConflictDialog } from './components/MedicationConflictDialog';
 import { HelpIcon, HistoryIcon, SettingsIcon } from './components/AppIcons';
 
 function Header({ onSettings, onHistory, onHelp }) {
@@ -159,9 +160,13 @@ function App() {
       loadHistory().catch((err) => console.error('Failed to refresh history:', err));
       loadAll().then(setFullHistory).catch((err) => console.error('Failed to refresh full history:', err));
       meds.load().catch(() => showToast(t('toast.load_medications_failed')));
-      meds.markMissedDoses().catch(() => showToast(t('toast.record_missed_doses_failed')));
-      meds.getLogsForDay(Date.now()).then(setTodayLogs).catch(() => showToast(t('toast.load_today_doses_failed')));
-      db.medicationLogs.toArray().then(setAllMedLogs).catch(() => showToast(t('toast.load_medication_history_failed')));
+      // Fill in missed/assumed doses first so today's list and history include them
+      meds.markMissedDoses()
+        .catch(() => showToast(t('toast.record_missed_doses_failed')))
+        .then(() => {
+          meds.getLogsForDay(Date.now()).then(setTodayLogs).catch(() => showToast(t('toast.load_today_doses_failed')));
+          db.medicationLogs.toArray().then(setAllMedLogs).catch(() => showToast(t('toast.load_medication_history_failed')));
+        });
       wellbeing.load().catch(() => showToast(t('toast.load_wellbeing_failed')));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -511,6 +516,7 @@ function App() {
         onBackupSuccess={handleBackupSuccess}
       />
 
+      <MedicationConflictDialog />
       <PWAInstallBanner isVisible={pwa.isVisible} isIOS={pwa.isIOS} install={pwa.install} dismiss={pwa.dismiss} showManualInstructions={pwa.showManualInstructions} dismissManual={pwa.dismissManual} />
       {toastMsg && (
         <div

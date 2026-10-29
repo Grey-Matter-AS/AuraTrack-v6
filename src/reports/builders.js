@@ -1,6 +1,8 @@
 import i18n from '../i18n';
 import { phaseDurs } from '../utils/phaseCalculations';
 import { esc } from '../utils/htmlEscape';
+import { getScheduledDosesForDay, regimenAt, regimenSnapshot } from '../utils/medicationSchedule';
+import { changeTypeLabel, describeChange, formLabel, regimenDoseSummary } from '../utils/medicationChanges';
 
 const DAY_MS = 86400000;
 
@@ -29,6 +31,34 @@ const FREQ_SHORT = {
   QDS: 'Four times daily',
   PRN: 'As needed (rescue)',
 };
+
+// Change rows for reports. Baseline 'started' records (created when upgrading) are left out:
+// their date is when tracking began, not a real clinical start.
+export function buildMedicationChangeRows(changes = [], { fromMs = -Infinity, toMs = Infinity } = {}) {
+  const locale = getCurrentLocale();
+  const t = getTranslator();
+  return changes
+    .filter(change => !change.isBaseline && change.effectiveAt >= fromMs && change.effectiveAt <= toMs)
+    .sort((a, b) => a.effectiveAt - b.effectiveAt)
+    .map(change => {
+      const regimen = change.to ?? change.from ?? {};
+      const detail = [regimen.activeIngredient, formLabel(regimen.form, t)].filter(Boolean).join(', ');
+      const at = new Date(change.effectiveAt);
+      return {
+        dateLabel: at.toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' }),
+        timeLabel: at.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }),
+        medication: change.medicationName || regimen.name || '',
+        medicationDetail: detail,
+        type: change.type,
+        typeLabel: changeTypeLabel(change.type, t),
+        lines: describeChange(change, t),
+        note: change.note || '',
+      };
+    });
+}
+
+const changeRowText = (row) =>
+  `${row.dateLabel} ${row.timeLabel} · ${row.medication}: ${row.typeLabel}${row.lines.length ? ` — ${row.lines.join('; ')}` : ''}`;
 
 export function getCurrentLocale() {
   return i18n.resolvedLanguage || i18n.language || 'en';
@@ -109,7 +139,7 @@ function factorHasSignal(factor) {
   return value !== undefined && value !== null && value !== '' && value !== false;
 }
 
-export function buildEventLogData(events) {
+export function buildEventLogData(events, medicationChanges = []) {
   const locale = getCurrentLocale();
   const t = getTranslator();
   const generatedDate = new Date().toLocaleDateString(locale);
@@ -117,6 +147,7 @@ export function buildEventLogData(events) {
   return {
     locale,
     generatedDate,
+    medicationChanges: buildMedicationChangeRows(medicationChanges),
     events: events.map(event => ({
       postIctal: describePostIctal(event.postIctal, t),
       id: event.id,
@@ -138,7 +169,7 @@ export function buildEventLogData(events) {
   };
 }
 
-export function buildNeurologistReportData(events, settings = {}, medications = [], medicationLogs = [], reportRange = {}, wellbeingEntries = []) {
+export function buildNeurologistReportData(events, settings = {}, medications = [], medicationLogs = [], reportRange = {}, wellbeingEntries = [], medicationChanges = []) {
   const locale = getCurrentLocale();
   const t = getTranslator();
   const now = Date.now();
@@ -311,8 +342,26 @@ export function buildNeurologistReportData(events, settings = {}, medications = 
       ? { label: 'MEDIUM', color: '#d97706', bg: '#fef3c7' }
       : { label: 'LOW', color: '#dc2626', bg: '#fee2e2' };
 
-  const freqPerDay = { OD: 1, BD: 2, TDS: 3, QDS: 4, PRN: 0 };
-  const expectedDoses = medications.reduce((sum, medication) => sum + (freqPerDay[medication.frequency] || 0) * periodDays, 0);
+  // Expected doses follow the regimen in force on each day (start/stop/schedule changes included)
+  const liveMedications = medications.filter(medication => !medication.deletedAt);
+  let expectedDoses = 0;
+  const expectedEnd = Math.min(selectedToMs, now);
+  for (let day = new Date(selectedFromMs).setHours(0, 0, 0, 0); day <= expectedEnd; day = new Date(day).setDate(new Date(day).getDate() + 1)) {
+    expectedDoses += getScheduledDosesForDay(liveMedications, day, medicationChanges)
+      .filter(dose => dose.scheduledTs >= selectedFromMs && dose.scheduledTs <= expectedEnd).length;
+  }
+  const scheduledLogs = medicationLogs.filter(log => log.scheduledTime);
+  const adherence = { taken: 0, late: 0, assumed: 0, missed: 0 };
+  scheduledLogs.forEach(log => {
+    const status = log.status || 'taken';
+    if (status in adherence) adherence[status] += 1;
+  });
+  // Medications taken at any point in the period, with their dose at the start and end of it
+  const periodMedications = liveMedications.filter(medication => {
+    if (medication.startedAt != null && medication.startedAt > selectedToMs) return false;
+    if (medication.stoppedAt != null) return medication.stoppedAt >= selectedFromMs;
+    return medication.active !== false;
+  });
   const wellbeingMoodCounts = {};
   const wellbeingFactorCounts = {};
   periodWellbeingEntries.forEach(entry => {
@@ -366,14 +415,26 @@ export function buildNeurologistReportData(events, settings = {}, medications = 
       confidence,
       medicationLogsCount: medicationLogs.length,
       expectedDoses,
+      adherence,
     },
-    medications: medications.map(medication => ({
-      id: medication.id,
-      name: medication.name,
-      doseLabel: `${medication.dose}${medication.unit}`,
-      frequency: medication.frequency,
-      frequencyLabel: FREQ_SHORT[medication.frequency] || medication.frequency,
-    })),
+    medications: periodMedications.map(medication => {
+      const startRegimen = regimenAt(medication, medicationChanges, selectedFromMs);
+      const endRegimen = regimenAt(medication, medicationChanges, Math.min(selectedToMs, now)) ?? regimenSnapshot(medication);
+      const startDose = startRegimen ? regimenDoseSummary(startRegimen) : null;
+      const endDose = regimenDoseSummary(endRegimen);
+      return {
+        id: medication.id,
+        name: medication.name,
+        detail: [medication.activeIngredient, formLabel(medication.form, t)].filter(Boolean).join(', '),
+        doseLabel: startDose && startDose !== endDose ? `${startDose} → ${endDose}` : endDose,
+        frequency: medication.frequency,
+        frequencyLabel: FREQ_SHORT[medication.frequency] || medication.frequency,
+        stoppedLabel: medication.stoppedAt != null && medication.stoppedAt <= selectedToMs
+          ? t('export.docs.stopped_on', { date: new Date(medication.stoppedAt).toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' }) })
+          : '',
+      };
+    }),
+    medicationChanges: buildMedicationChangeRows(medicationChanges, { fromMs: selectedFromMs, toMs: selectedToMs }),
     flags,
     wellbeing: {
       entriesCount: periodWellbeingEntries.length,
@@ -474,7 +535,7 @@ export function buildNeurologistReportData(events, settings = {}, medications = 
   };
 }
 
-export function buildSeizureDiaryData(allEvents, settings = {}, medications = [], month, year) {
+export function buildSeizureDiaryData(allEvents, settings = {}, medications = [], month, year, medicationChanges = []) {
   const locale = getCurrentLocale();
   const patientName = settings.personName || settings.caretakerName || '';
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -542,9 +603,15 @@ export function buildSeizureDiaryData(allEvents, settings = {}, medications = []
       abbrev: DIARY_TYPE_ABBREV[type] || type.slice(0, 2),
       color: DIARY_TYPE_COLORS[type] || DIARY_TYPE_COLORS.Uncategorized,
     })),
-    medicationsLine: medications.length > 0
-      ? medications.map(medication => `${medication.name} ${medication.dose}${medication.unit} ${medication.frequency}`).join(' | ')
+    medicationsLine: medications.filter(medication => medication.active !== false && !medication.deletedAt).length > 0
+      ? medications
+        .filter(medication => medication.active !== false && !medication.deletedAt)
+        .map(medication => `${medication.name} ${regimenDoseSummary(regimenSnapshot(medication))} ${medication.frequency}`).join(' | ')
       : '',
+    medicationChangesLines: buildMedicationChangeRows(medicationChanges, {
+      fromMs: new Date(year, month - 1, 1).getTime(),
+      toMs: new Date(year, month, 0, 23, 59, 59, 999).getTime(),
+    }).map(changeRowText),
     generatedDate: new Date().toLocaleDateString(locale),
   };
 }

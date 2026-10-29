@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMedications } from '../hooks/useMedications';
 import { getScheduledDosesForDay, getDoseStatus } from '../utils/medicationSchedule';
+import { changeTypeLabel, describeChange } from '../utils/medicationChanges';
 import { EditIcon } from './AppIcons';
 
 function parseHHMM(hhMM) {
@@ -30,13 +32,19 @@ function fmtTime(ms) {
 const STATUS = {
   taken:    { label: 'TAKEN',    bg: '#16a34a', text: '#fff' },
   late:     { label: 'LATE',     bg: '#d97706', text: '#fff' },
+  assumed:  { label: 'ASSUMED',  bg: 'transparent', text: '#16a34a', border: '1px dashed #16a34a' },
   missed:   { label: 'MISSED',   bg: '#dc2626', text: '#fff' },
   upcoming: { label: 'UPCOMING', bg: '#334155', text: '#facc15', border: '1px solid #f59e0b' },
   nodata:   { label: 'NO DATA',  bg: '#334155', text: '#fff', border: '1px solid #64748b' },
 };
 
+// When a slot has several logs, show the most informative one
+const STATUS_RANK = { missed: 0, assumed: 1, taken: 2, late: 2 };
+
 export function MedicationHistoryTab({ settings = {} }) {
-  const { medications, getLogsForPeriod, updateLog, logDoseWithStatus } = useMedications();
+  const { t } = useTranslation();
+  const { medications, changes, getLogsForPeriod, updateLog, logDoseWithStatus } = useMedications();
+  const statusLabel = (key) => (key === 'assumed' ? t('medication_history.assumed') : STATUS[key]?.label);
   const [allLogs, setAllLogs] = useState([]);
   const [editCell, setEditCell] = useState(null);
   const [editTime, setEditTime] = useState('');
@@ -59,7 +67,8 @@ export function MedicationHistoryTab({ settings = {} }) {
     return () => clearTimeout(id);
   }, [medications]);
 
-  const activeMeds = medications.filter(m => m.active && !m.isRescue);
+  // Stopped medications stay so their past days still show; each day uses the regimen in force then
+  const scheduledMeds = medications.filter(m => !m.isRescue);
 
   // Determine start date: earliest of (setting, earliest log, 30 days ago as fallback)
   const startDateMs = useMemo(() => {
@@ -74,11 +83,15 @@ export function MedicationHistoryTab({ settings = {} }) {
     if (allLogs.length > 0) {
       candidates.push(startOfDay(Math.min(...allLogs.map(l => l.takenAt))));
     }
+    // A medication started (or backdated) before its first log still shows from its start date
+    if (changes.length > 0) {
+      candidates.push(startOfDay(Math.min(...changes.map(c => c.effectiveAt))));
+    }
 
     return candidates.length > 0
-      ? Math.max(Math.min(...candidates), maxBack)
+      ? Math.min(today, Math.max(Math.min(...candidates), maxBack))
       : today; // no history at all — just show today
-  }, [allLogs, nowMs, settings.medicationStartDate]);
+  }, [allLogs, changes, nowMs, settings.medicationStartDate]);
 
   // Build list of days from start to today, newest first
   const days = useMemo(() => {
@@ -93,8 +106,8 @@ export function MedicationHistoryTab({ settings = {} }) {
     const idx = {};
     for (const log of allLogs) {
       const key = `${startOfDay(log.takenAt)}|${log.medicationId}|${log.scheduledTime ?? ''}`;
-      // Keep only one record per slot (prefer non-missed if duplicates exist)
-      if (!idx[key] || idx[key].status === 'missed') idx[key] = log;
+      // Keep only one record per slot (prefer taken/late over assumed over missed)
+      if (!idx[key] || (STATUS_RANK[log.status] ?? 2) > (STATUS_RANK[idx[key].status] ?? 2)) idx[key] = log;
     }
     // Also index ad-hoc logs (scheduledTime = null) by takenAt day
     return idx;
@@ -148,7 +161,14 @@ export function MedicationHistoryTab({ settings = {} }) {
     await loadLogs();
   };
 
-  if (activeMeds.length === 0) {
+  const handleConfirmAssumed = async () => {
+    if (!editCell?.log) return;
+    await updateLog(editCell.log.id, { status: 'taken' });
+    setEditCell(null);
+    await loadLogs();
+  };
+
+  if (scheduledMeds.length === 0) {
     return (
       <div className="py-12 text-center">
         <p className="italic text-sm" style={{ color: 'var(--text-faint)' }}>
@@ -172,8 +192,8 @@ export function MedicationHistoryTab({ settings = {} }) {
       <div className="flex gap-3 flex-wrap px-1 pt-1">
         {Object.entries(STATUS).map(([key, s]) => (
           <div key={key} className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s.bg === 'transparent' ? 'var(--bg-raised)' : s.bg, border: '1px solid var(--border)' }} />
-            <span className="text-[9px] font-bold" style={{ color: 'var(--text-dim)' }}>{s.label}</span>
+            <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: s.bg === 'transparent' ? 'var(--bg-raised)' : s.bg, border: s.border ?? '1px solid var(--border)' }} />
+            <span className="text-[9px] font-bold" style={{ color: 'var(--text-dim)' }}>{statusLabel(key)}</span>
           </div>
         ))}
         <span className="inline-flex items-center gap-1 text-[9px] font-bold" style={{ color: 'var(--text-dim)' }}>
@@ -184,7 +204,8 @@ export function MedicationHistoryTab({ settings = {} }) {
       {/* Day sections */}
       {days.map(dayMs => {
         // Build sorted dose rows for this day: sorted by scheduled time, then med name
-        const doses = getScheduledDosesForDay(activeMeds, dayMs);
+        const doses = getScheduledDosesForDay(scheduledMeds, dayMs, changes);
+        const dayChanges = changes.filter(c => !c.isBaseline && startOfDay(c.effectiveAt) === dayMs);
 
         // Also include ad-hoc logs for this day (scheduledTime = null)
         const adHocLogs = allLogs.filter(l =>
@@ -192,7 +213,7 @@ export function MedicationHistoryTab({ settings = {} }) {
           (l.scheduledTime === null || l.scheduledTime === undefined)
         );
 
-        if (doses.length === 0 && adHocLogs.length === 0) return null;
+        if (doses.length === 0 && adHocLogs.length === 0 && dayChanges.length === 0) return null;
 
         return (
           <div
@@ -208,16 +229,23 @@ export function MedicationHistoryTab({ settings = {} }) {
               <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: dayMs === startOfDay(nowMs) ? 'var(--accent)' : 'var(--text-dim)' }}>
                 {fmtDay(dayMs, nowMs)}
               </p>
+              {dayChanges.map(change => (
+                <p key={change.uuid ?? change.id} className="text-[10px] font-bold mt-1.5" style={{ color: 'var(--status-late-text)' }}>
+                  {fmtTime(change.effectiveAt)} · {change.medicationName}: {changeTypeLabel(change.type, t)}
+                  {describeChange(change, t).length > 0 && ` — ${describeChange(change, t).join('; ')}`}
+                </p>
+              ))}
             </div>
 
             {/* Dose rows — sorted by scheduled time */}
             <div className="divide-y" style={{ '--tw-divide-opacity': 1 }}>
               {doses.map(({ medicationId, medicationName, dose, unit, scheduledHHMM }) => {
-                const med = activeMeds.find(m => m.id === medicationId);
+                const med = scheduledMeds.find(m => m.id === medicationId);
                 if (!med) return null;
                 const cellStatus = getCellStatus(dayMs, medicationId, scheduledHHMM);
                 const s = STATUS[cellStatus] ?? STATUS.nodata;
                 const log = getLog(dayMs, medicationId, scheduledHHMM);
+                const doseLabel = log?.doseSnapshot != null ? `${log.doseSnapshot}${log.unitSnapshot || unit}` : `${dose}${unit}`;
                 return (
                   <button
                     key={`${medicationId}-${scheduledHHMM}`}
@@ -231,8 +259,8 @@ export function MedicationHistoryTab({ settings = {} }) {
                         {log?.isEdited && <EditIcon className="inline-block ml-1.5 w-3 h-3 text-amber-400 align-[-2px]" />}
                       </p>
                       <p className="text-[10px]" style={{ color: 'var(--text-faint)' }}>
-                        {dose}{unit} · Due {scheduledHHMM}
-                        {log && cellStatus !== 'missed' && log.status !== 'missed' && (
+                        {doseLabel} · Due {scheduledHHMM}
+                        {log && cellStatus !== 'missed' && log.status !== 'missed' && log.status !== 'assumed' && (
                           <span className="ml-1">· Taken {fmtTime(log.takenAt)}</span>
                         )}
                       </p>
@@ -241,7 +269,7 @@ export function MedicationHistoryTab({ settings = {} }) {
                       className="ml-3 px-3 py-1 rounded-full font-black text-[9px] uppercase tracking-widest shrink-0"
                       style={{ backgroundColor: s.bg, color: s.text, border: s.border }}
                     >
-                      {s.label}
+                      {statusLabel(cellStatus) ?? s.label}
                     </span>
                   </button>
                 );
@@ -322,6 +350,16 @@ export function MedicationHistoryTab({ settings = {} }) {
                 style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               />
             </div>
+
+            {editCell.log?.status === 'assumed' && (
+              <button
+                onClick={handleConfirmAssumed}
+                className="w-full py-3 rounded-2xl font-black text-xs uppercase tracking-widest"
+                style={{ backgroundColor: 'transparent', color: '#16a34a', border: '1px dashed #16a34a' }}
+              >
+                {t('medication_history.confirm_taken')}
+              </button>
+            )}
 
             <div className="flex gap-2">
               <button

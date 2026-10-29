@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { slotLabel, scheduledTimestampForDay } from '../utils/medicationSchedule';
+import { slotDose, slotLabel, scheduledTimestampForDay } from '../utils/medicationSchedule';
 import { CheckIcon, PillIcon } from './AppIcons';
 
 export function MedicationDosePanel({ medicationGroups, allActiveMedications, onSaveDoses }) {
@@ -123,7 +123,7 @@ export function MedicationDosePanel({ medicationGroups, allActiveMedications, on
                         className="px-4 py-2 rounded-full font-medium text-xs transition-all active:scale-95"
                         style={btnStyle}
                       >
-                        {med.name} {med.dose}{med.unit}
+                        {med.name} {slotDose(med, hhMM)}{med.unit}
                       </button>
                     );
                   })}

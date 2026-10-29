@@ -60,6 +60,10 @@ export function renderEventLogHtml(data) {
           }).join('')}
         </tbody>
       </table>
+      ${data.medicationChanges?.length ? `
+        <h2 style="margin-top:24px">${esc(t('export.docs.medication_changes'))}</h2>
+        ${renderMedicationChangesTable(data.medicationChanges)}
+      ` : ''}
     </div>
   `;
 
@@ -179,6 +183,7 @@ export function renderNeurologistReportHtml(data) {
       </div>
 
       ${renderMedicationSection(data)}
+      ${renderMedicationChangesSection(data)}
       ${renderWellbeingSection(data)}
 
       <div class="section">
@@ -397,6 +402,12 @@ export function renderSeizureDiaryHtml(data) {
         </div>
         ${data.medicationsLine ? `<div style="font-size:9px;color:#374151;max-width:400px">${esc(t('export.docs.medications_label'))}: ${esc(data.medicationsLine)}</div>` : ''}
       </div>
+      ${data.medicationChangesLines?.length ? `
+        <div style="margin-top:6px;font-size:9px;color:#374151">
+          <strong>${esc(t('export.docs.medication_changes'))}:</strong>
+          ${data.medicationChangesLines.map(line => `<div>${esc(line)}</div>`).join('')}
+        </div>
+      ` : ''}
 
       <div style="margin-top:6px;font-size:8px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:6px">
         ${esc(t('export.docs.diary_footer', { date: data.generatedDate }))}
@@ -560,11 +571,39 @@ function renderMedicationSection(data) {
       <h2>${esc(t('export.docs.current_medications'))}</h2>
       <table>
         <thead><tr><th>${esc(t('export.docs.drug'))}</th><th>${esc(t('export.docs.dose'))}</th><th>${esc(t('export.docs.frequency'))}</th></tr></thead>
-        <tbody>${data.medications.map(med => `<tr><td style="font-weight:700">${esc(med.name)}</td><td>${esc(med.doseLabel)}</td><td>${esc(med.frequency)} - ${esc(med.frequencyLabel)}</td></tr>`).join('')}</tbody>
+        <tbody>${data.medications.map(med => `<tr><td><span style="font-weight:700">${esc(med.name)}</span>${med.detail ? `<br><span style="font-size:10px;color:#6b7280">${esc(med.detail)}</span>` : ''}${med.stoppedLabel ? `<br><span style="font-size:10px;color:#b91c1c;font-weight:700">${esc(med.stoppedLabel)}</span>` : ''}</td><td>${esc(med.doseLabel)}</td><td>${esc(med.frequency)} - ${esc(med.frequencyLabel)}</td></tr>`).join('')}</tbody>
       </table>
       ${data.stats.medicationLogsCount > 0
-        ? `<p style="font-size:10px;color:#374151;margin-top:8px"><strong>${esc(t('export.docs.doses_logged', { count: data.stats.medicationLogsCount }))}</strong>${data.stats.expectedDoses > 0 ? ` ${esc(t('export.docs.expected_doses', { count: data.stats.expectedDoses }))}` : ''}.</p>`
+        ? `<p style="font-size:10px;color:#374151;margin-top:8px"><strong>${esc(t('export.docs.doses_logged', { count: data.stats.medicationLogsCount }))}</strong>${data.stats.expectedDoses > 0 ? ` ${esc(t('export.docs.expected_doses', { count: data.stats.expectedDoses }))}` : ''}.</p>
+           <p style="font-size:10px;color:#374151;margin-top:4px">${esc(t('export.docs.adherence_line', data.stats.adherence))}</p>
+           ${data.stats.adherence.assumed > 0 ? `<p style="font-size:9px;color:#6b7280;margin-top:2px">${esc(t('export.docs.assumed_note'))}</p>` : ''}`
         : `<p style="font-size:10px;color:#9ca3af;margin-top:8px">${esc(t('export.docs.no_dose_logs'))}</p>`}
+    </div>
+  `;
+}
+
+function renderMedicationChangesTable(rows) {
+  const t = translator();
+  return `
+    <table>
+      <thead><tr><th>${esc(t('export.docs.change_when'))}</th><th>${esc(t('export.docs.drug'))}</th><th>${esc(t('export.docs.change_what'))}</th><th>${esc(t('export.docs.notes'))}</th></tr></thead>
+      <tbody>${rows.map(row => `<tr>
+        <td>${esc(row.dateLabel)}<br><span style="font-size:10px;color:#6b7280">${esc(row.timeLabel)}</span></td>
+        <td><span style="font-weight:700">${esc(row.medication)}</span>${row.medicationDetail ? `<br><span style="font-size:10px;color:#6b7280">${esc(row.medicationDetail)}</span>` : ''}</td>
+        <td><span style="font-weight:700">${esc(row.typeLabel)}</span>${row.lines.map(line => `<br>${esc(line)}`).join('')}</td>
+        <td>${esc(row.note)}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  `;
+}
+
+function renderMedicationChangesSection(data) {
+  const t = translator();
+  if (!data.medicationChanges?.length) return '';
+  return `
+    <div class="section">
+      <h2>${esc(t('export.docs.medication_changes'))}</h2>
+      ${renderMedicationChangesTable(data.medicationChanges)}
     </div>
   `;
 }

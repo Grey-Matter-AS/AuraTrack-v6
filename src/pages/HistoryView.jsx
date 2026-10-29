@@ -10,9 +10,11 @@ import { EEGDiaryTab } from '../components/EEGDiaryTab';
 import { WellbeingTab } from '../components/WellbeingTab';
 import ExportView from './ExportView';
 import { ScrollFade } from '../components/ScrollFade';
+import { useMedications } from '../hooks/useMedications';
 
 export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, historyPageSize = 10, settings = {}, initialTab = 'seizures', eeg = null, wellbeing = null, events = [], onBackupSuccess = null }) {
   const { t } = useTranslation();
+  const { changes: medicationChanges } = useMedications();
   const { durationFormat = 'seconds', dateFormat = 'locale', timeFormat = '12h' } = settings;
   const [activeTab, setActiveTab] = useState(initialTab);
   const [page, setPage] = useState(0);
@@ -77,7 +79,7 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
       {/* ── SEIZURES TAB ── */}
       {activeTab === 'seizures' && (
         <ScrollFade wrapperClassName="flex-1">
-          <SeizureTrendChart allEvents={allEvents} />
+          <SeizureTrendChart allEvents={allEvents} medicationChanges={medicationChanges} />
 
           <div className="mb-4 flex flex-col gap-2">
             <div className="flex gap-2 items-center">

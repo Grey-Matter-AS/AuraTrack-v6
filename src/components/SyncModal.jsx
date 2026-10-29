@@ -37,8 +37,17 @@ function syncImportSummary(r) {
     wellbeingEntries: r.wellbeingEntries || 0,
     conflicts: r.conflicts?.length || 0,
     defaultValue: 'Added {{events}} event(s), {{medications}} medication(s), {{logs}} dose log(s), {{eegSessions}} EEG session(s), {{eegActivities}} EEG activity record(s), and {{wellbeingEntries}} wellbeing entries.',
-  });
+  }) + (r.medicationChanges || r.medicationsUpdated || r.medicationsDeleted
+    ? ` ${i18n.t('sync.medication_history_summary', {
+      changes: r.medicationChanges || 0,
+      updated: r.medicationsUpdated || 0,
+      deleted: r.medicationsDeleted || 0,
+    })}`
+    : '');
 }
+
+const mergeTotal = (r) => r.settings + r.events + r.medications + r.logs + r.eegSessions + r.eegActivities
+  + (r.wellbeingEntries || 0) + (r.medicationChanges || 0) + (r.medicationsUpdated || 0) + (r.medicationsDeleted || 0);
 
 // ─── Shared sub-components ───────────────────────────────────
 
@@ -137,7 +146,8 @@ function RoleSelector({ role, onChange, locked = false }) {
 }
 
 function DonePanel({ result, onClose }) {
-  const total = (result?.events || 0) + (result?.medications || 0) + (result?.logs || 0) + (result?.eegSessions || 0) + (result?.eegActivities || 0) + (result?.wellbeingEntries || 0);
+  const medicationHistoryCount = (result?.medicationChanges || 0) + (result?.medicationsUpdated || 0) + (result?.medicationsDeleted || 0);
+  const total = (result?.events || 0) + (result?.medications || 0) + (result?.logs || 0) + (result?.eegSessions || 0) + (result?.eegActivities || 0) + (result?.wellbeingEntries || 0) + medicationHistoryCount;
   return (
     <div className="space-y-4 text-center">
       <span className="app-status-badge app-status-badge--success mx-auto mb-2 !h-12 !w-12 !rounded-full !p-0"><CheckIcon className="w-6 h-6" /></span>
@@ -148,6 +158,7 @@ function DonePanel({ result, onClose }) {
             {result.events > 0 && <StatusRow icon={<ClipboardListIcon className="w-5 h-5" />} text={i18n.t('sync.events_added', { count: result.events })} />}
             {result.medications > 0 && <StatusRow icon={<PillIcon className="w-5 h-5" />} text={i18n.t('sync.medications_added', { count: result.medications })} />}
             {result.logs > 0 && <StatusRow icon={<CalendarIcon className="w-5 h-5" />} text={i18n.t('sync.logs_added', { count: result.logs })} />}
+            {medicationHistoryCount > 0 && <StatusRow icon={<PillIcon className="w-5 h-5" />} text={i18n.t('sync.medication_history_summary', { changes: result.medicationChanges || 0, updated: result.medicationsUpdated || 0, deleted: result.medicationsDeleted || 0 })} />}
             {result.eegSessions > 0 && <StatusRow icon={<ActivityIcon className="w-5 h-5" />} text={i18n.t('sync.eeg_sessions_added', { count: result.eegSessions })} />}
             {result.eegActivities > 0 && <StatusRow icon={<ActivityIcon className="w-5 h-5" />} text={i18n.t('sync.eeg_activities_added', { count: result.eegActivities })} />}
             {result.wellbeingEntries > 0 && <StatusRow icon={<ActivityIcon className="w-5 h-5" />} text={wellbeingEntriesAdded(result.wellbeingEntries)} />}
@@ -569,7 +580,7 @@ function ManualFilePanel({ role, onDone, onBackupSuccess }) {
         return;
       }
       const r = await mergeRemoteData(parsed.parsed);
-      const total = r.settings + r.events + r.medications + r.logs + r.eegSessions + r.eegActivities + (r.wellbeingEntries || 0);
+      const total = mergeTotal(r);
       setStatus(total
         ? `${syncImportSummary(r)}${r.conflicts?.length ? ` ${i18n.t('sync.conflicts_kept_local', { count: r.conflicts.length, defaultValue: '{{count}} conflict(s) kept local records.' })}` : ''}`
         : i18n.t('sync.already_up_to_date_short'));
@@ -616,7 +627,7 @@ function ManualFilePanel({ role, onDone, onBackupSuccess }) {
           fileText={backupModal.fileText}
           onClose={() => setBackupModal({ mode: null, fileName: '', fileText: '' })}
           onImportSuccess={(r) => {
-            const total = r.settings + r.events + r.medications + r.logs + r.eegSessions + r.eegActivities + (r.wellbeingEntries || 0);
+            const total = mergeTotal(r);
             setStatus(total
               ? `${syncImportSummary(r)}${r.conflicts?.length ? ` ${i18n.t('sync.conflicts_kept_local', { count: r.conflicts.length, defaultValue: '{{count}} conflict(s) kept local records.' })}` : ''}`
               : i18n.t('sync.already_up_to_date_short'));
