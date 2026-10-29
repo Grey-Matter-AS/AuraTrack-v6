@@ -170,7 +170,7 @@ export default function IdleView({
         <div className="w-full flex justify-center items-center gap-4">
           <button
             onClick={onStart}
-            className="bg-red-600 active:scale-95 active:bg-red-500 transition-all rounded-full shadow-[0_0_60px_rgba(225,29,72,0.4)] flex items-center justify-center text-white font-black ring-4 ring-red-900/20 text-center px-2"
+            className="bg-red-600 active:scale-95 active:bg-red-500 transition-all rounded-full flex items-center justify-center text-white font-black text-center px-2"
             style={{ ...circleButtonStyle, color: '#fff' }}
           >
             {t('idle.start')}
@@ -178,7 +178,7 @@ export default function IdleView({
           {onManualEntry && (
             <button
               onClick={onManualEntry}
-              className="bg-amber-500 active:scale-95 active:bg-amber-400 transition-all rounded-full shadow-[0_0_60px_rgba(245,158,11,0.4)] flex items-center justify-center text-black font-black ring-4 ring-amber-900/20 text-center px-2"
+              className="bg-amber-500 active:scale-95 active:bg-amber-400 transition-all rounded-full flex items-center justify-center text-black font-black text-center px-2"
               style={circleButtonStyle}
             >
               {t('idle.log_past')}
