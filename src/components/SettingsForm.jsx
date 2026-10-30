@@ -18,6 +18,10 @@ import { FieldLabel, Row, Section, Segments, TextField } from './settings/atoms'
 import { MedicationSection } from './settings/MedicationsTab';
 import { RecordingTab } from './settings/RecordingTab';
 import { DataTab } from './settings/DataTab';
+import { PatientsSection } from './settings/PatientsSection';
+import { getActiveProfileId, updateProfile } from '../data/profiles';
+
+let renameTimer = null;
 
 // ─── Main component ───────────────────────────────────────────
 export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, notificationPermission, onRequestNotificationPermission, onSync, storagePersistence, onBackupSuccess }) {
@@ -25,6 +29,14 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
   // Settings messages use the app-wide toasts so they show on every settings tab
   const showToast = useToast();
   const flash = (msg, tone = 'success') => showToast(msg, tone);
+  // The patient's name is also their name in the patient switcher (saved once typing pauses)
+  const renameActivePatient = (name) => {
+    clearTimeout(renameTimer);
+    renameTimer = setTimeout(async () => {
+      const id = await getActiveProfileId();
+      if (id) await updateProfile(id, { name: name.trim() });
+    }, 700);
+  };
   const noteLabel = settings.userMode === 'CARETAKER' ? t('settings.identity.patient_name') : t('settings.identity.your_name');
   const tab = activeTab || 'identity';
   const show = (id) => !activeTab || tab === id;
@@ -33,6 +45,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
     <div className="space-y-4 w-full pb-10">
 
       {/* ── IDENTITY / PROFILE ── */}
+      {show('identity') && <PatientsSection />}
       {show('identity') && <Section title={t('settings.identity.section')}>
         <div>
           <FieldLabel>{t('settings.identity.mode')}</FieldLabel>
@@ -50,7 +63,7 @@ export function SettingsForm({ settings, onUpdate, onReset, pwa, activeTab, noti
               : t('settings.identity.mode_desc_self')}
           </p>
         </div>
-        <TextField label={noteLabel} value={settings.personName} onChange={v => onUpdate('personName', v)} placeholder={t('settings.identity.name_placeholder')} />
+        <TextField label={noteLabel} value={settings.personName} onChange={v => { onUpdate('personName', v); renameActivePatient(v); }} placeholder={t('settings.identity.name_placeholder')} />
         {settings.userMode === 'CARETAKER' && (
           <TextField label={t('settings.identity.caretaker_name')} value={settings.caretakerName} onChange={v => onUpdate('caretakerName', v)} placeholder={t('settings.identity.caretaker_placeholder')} />
         )}

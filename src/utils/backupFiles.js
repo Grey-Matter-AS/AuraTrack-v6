@@ -1,4 +1,5 @@
 import { db } from '../data/db';
+import { readDeviceSettings } from '../data/profiles';
 import {
   BACKUP_TABLES,
   CANONICAL_BACKUP_SCHEMA,
@@ -56,16 +57,20 @@ async function deriveEncryptionKey(passphrase, salt, iterations) {
 
 // Every table of the database, read in one transaction so the copy is consistent. A table that
 // can't be read fails the whole backup: a backup that silently misses data is worse than none.
-export async function collectCanonicalBackupPayload(settingsSource = null) {
-  const snapshot = await db.transaction('r', db.tables, async () => {
+// database: another patient's database (all-patients backup); default the active one
+export async function collectCanonicalBackupPayload(settingsSource = null, database = db) {
+  const snapshot = await database.transaction('r', database.tables, async () => {
     const out = {};
-    for (const table of db.tables) out[table.name] = await table.toArray();
+    for (const table of database.tables) out[table.name] = await table.toArray();
     return out;
   });
+  // This device's own settings (mode, language, look) live in the device database: include them
+  const deviceRows = await readDeviceSettings().catch(() => []);
+  snapshot.settings = [...snapshot.settings.filter(row => !deviceRows.some(d => d.key === row.key)), ...deviceRows];
   const missing = BACKUP_TABLES.filter(table => !(table in snapshot));
   if (missing.length) throw new Error(`Backup could not read: ${missing.join(', ')}`);
   if (settingsSource) snapshot.settings = settingsSource;
-  return buildCanonicalBackupPayload(snapshot, { schemaVersion: db.verno });
+  return buildCanonicalBackupPayload(snapshot, { schemaVersion: database.verno });
 }
 
 export function summarizeBackupPayload(payload) {
@@ -90,6 +95,7 @@ export function parseBackupFileText(text) {
   // An AuraTrack backup, an old plain list of seizures, or an object holding at least one known table
   if (
     parsed?.schema === CANONICAL_BACKUP_SCHEMA ||
+    parsed?.schema === 'auratrack.household-backup' ||
     Array.isArray(parsed) ||
     (parsed && typeof parsed === 'object' && BACKUP_TABLES.some(table => Array.isArray(parsed[table])))
   ) {

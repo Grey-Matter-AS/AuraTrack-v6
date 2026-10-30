@@ -322,6 +322,18 @@
     "title": "Ohje",
     "about_btn": "Tietoja AuraTrackistä",
     "sections": {
+      "whats_new": {
+        "title": "Uutta versiossa 6.0",
+        "steps": [
+          "Varmuuskopiot sisältävät nyt kaiken: jokaisen merkinnän ja jokaisen yksityiskohdan. Jos osaa tiedoista ei voi lukea, varmuuskopiointi pysähtyy virheeseen eikä tallenna puutteellista kopiota.",
+          "Laitteiden välinen synkronointi siirtää nyt muutokset ja poistot: yhdellä puhelimella tehty korjaus päätyy muihin, ja poistetut merkinnät pysyvät poistettuina.",
+          "Hätäsuunnitelma kohdassa Asetukset → Tallennus: aseta hälytysaika ja ryppään määritelmä hoitosuunnitelmasi mukaan. Hälytys laskee kohtauksen keston, ei auraa eikä palautumista.",
+          "Jos auraa ei ollut, napauta suoraan Lopeta kohtaus. Kohtaustyypin voi vaihtaa yhteenvedossa.",
+          "Kohtauksen jälkeiset oireet on ryhmitelty, niihin kirjataan kehon alue (puutuminen, heikkous, halvaus …) ja aika, jonka palautuminen kesti.",
+          "Tallennetut oireryhmät kuuluvat kohtaustyyppiin, ja niitä tarjotaan tyypin valinnan jälkeen yhdessä eniten käyttämiesi oireiden kanssa. Itse kirjoittamasi oireet muistetaan.",
+          "Takaisin vie aina sinne, missä olit, ja Historian suodattimet säilyvät. Uudelle puhelimelle palautettaessa voi kopioida myös kaikki asetukset."
+        ]
+      },
       "recording": {
         "title": "Kohtauksen kirjaaminen",
         "steps": [
@@ -1340,7 +1352,8 @@
   },
   "notifications": {
     "dose_title": "Aika ottaa {{name}}",
-    "dose_body": "{{dose}} — kirjaa se AuraTrackissa"
+    "dose_body": "{{dose}} — kirjaa se AuraTrackissa",
+    "dose_title_for": "{{patient}}: aika ottaa {{name}}"
   },
   "seizure_types": {
     "tonic_clonic": "Toonis-klooninen",
@@ -1349,5 +1362,34 @@
     "absence": "Poissaolokohtaus",
     "aura_only": "Pelkkä aura",
     "uncategorized": "Tyyppiä ei asetettu"
+  },
+  "patients": {
+    "unnamed": "Potilas {{number}}",
+    "recording_for": "Tallennetaan: {{name}}",
+    "home_for": "Potilas: {{name}}",
+    "switch_label": "Vaihda potilasta",
+    "switch_title": "Kenen tiedot?",
+    "manage": "Hallinnoi potilaita",
+    "switch_failed": "Potilaan tietoja ei voitu avata.",
+    "section": "Potilaat tällä laitteella",
+    "section_help": "Jokaisen potilaan kohtaukset, lääkkeet ja raportit pidetään erillään. Vaihda potilasta näytön yläreunasta.",
+    "active": "Näytetään nyt",
+    "remove": "Poista potilas",
+    "name": "Potilaan nimi",
+    "color": "Väri",
+    "color_blue": "Sininen",
+    "color_green": "Vihreä",
+    "color_purple": "Violetti",
+    "color_amber": "Meripihka",
+    "color_pink": "Pinkki",
+    "color_teal": "Sinivihreä",
+    "new_name": "Uuden potilaan nimi",
+    "add": "Lisää potilas",
+    "remove_title": "Poistetaanko {{name}} tältä laitteelta?",
+    "remove_body": "Kaikki potilaan tiedot poistetaan tältä laitteelta. Muut laitteet ja varmuuskopiot säilyttävät omansa. Tee ensin varmuuskopio, jos tämä on ainoa kopio.",
+    "remove_confirm": "Poista",
+    "backup_all_one": "Sisällytä kaikki potilaat ({{count}})",
+    "backup_all_other": "Sisällytä kaikki potilaat ({{count}})",
+    "backup_all_help": "Poista valinta varmuuskopioidaksesi vain näytettävän potilaan."
   }
 }

@@ -1,4 +1,6 @@
 import { db } from '../data/db';
+import { DEVICE_SETTING_KEYS, DEVICE_STORED_KEYS } from '../data/settingKeys';
+import { writeDeviceSetting } from '../data/profiles';
 import {
   MAX_SYNC_PAYLOAD_CHARS,
   sanitizeImportPayload,
@@ -15,26 +17,7 @@ const SETTINGS_SKIP_KEYS = new Set([
   'lastSuccessfulBackupAt',
   'lastBackupReminderDismissedAt',
 ]);
-// Belong to one device (who uses it, how it looks, its reminders). Ongoing sync between two phones
-// in use leaves them alone; restoring or setting up a new phone copies them too (scope 'all').
-export const DEVICE_SETTING_KEYS = new Set([
-  'userMode',
-  'language',
-  'theme',
-  'accentColor',
-  'fontSize',
-  'historyPageSize',
-  'dateFormat',
-  'durationFormat',
-  'timeFormat',
-  'hapticFeedback',
-  'wellbeingDailyReminderEnabled',
-  'wellbeingReminderTime',
-  'backupReminderEnabled',
-  'backupReminderIntervalDays',
-  'assumeDosesTaken',
-  'assumeDosesTakenSince',
-]);
+export { DEVICE_SETTING_KEYS } from '../data/settingKeys';
 
 const medicationIdentityKey = (med) => [
   (med.name || '').trim().toLowerCase(),
@@ -91,11 +74,11 @@ const latestChangeFor = (changes, medUuid) => changes
 
 // Medications both sides have but with different details. Used to warn the user before a merge;
 // `newer` says which side holds the most recently confirmed change (the default choice).
-export async function previewMedicationConflicts(parsed) {
+export async function previewMedicationConflicts(parsed, database = db) {
   const incoming = sanitizeImportPayload(parsed);
   const [localMeds, localChanges] = await Promise.all([
-    db.medications.toArray().catch(() => []),
-    db.medicationChanges.toArray().catch(() => []),
+    database.medications.toArray().catch(() => []),
+    database.medicationChanges.toArray().catch(() => []),
   ]);
   const byUuid = new Map(localMeds.filter(m => m.uuid).map(m => [m.uuid, m]));
   const conflicts = [];
@@ -181,14 +164,17 @@ const withoutUuid = ({ uuid: _uuid, ...fields }) => fields;
 // options.settingsScope: 'shared' (only settings both phones share) | 'all' (an exact copy, for a new
 // phone). Default: 'all' when this device has no seizures recorded yet, otherwise 'shared'.
 export async function mergeRemoteData(parsed, options = {}) {
+  // options.database: merge into another patient's database (all-patients restore); default the active one
+  const d = options.database ?? db;
+  const deviceSettingWrites = [];
   const incoming = sanitizeImportPayload(parsed);
   // Ask before overwriting any medication (must happen before the DB transaction opens)
   let medicationResolutions = options.medicationResolutions;
   if (!medicationResolutions) {
-    const conflicts = await previewMedicationConflicts(parsed);
+    const conflicts = await previewMedicationConflicts(parsed, d);
     medicationResolutions = conflicts.length ? (await askMedicationConflicts(conflicts)) ?? {} : {};
   }
-  const settingsScope = options.settingsScope ?? ((await db.events.count()) === 0 ? 'all' : 'shared');
+  const settingsScope = options.settingsScope ?? ((await d.events.count()) === 0 ? 'all' : 'shared');
   const rejected = Object.values(incoming.report?.rejected || {}).reduce((sum, n) => sum + n, 0);
   const results = {
     settings: 0,
@@ -220,7 +206,7 @@ export async function mergeRemoteData(parsed, options = {}) {
     ],
   };
 
-  await db.transaction('rw', db.tables, async () => {
+  await d.transaction('rw', d.tables, async () => {
       const [
         localSettingsRows,
         localEvents,
@@ -232,27 +218,27 @@ export async function mergeRemoteData(parsed, options = {}) {
         localWellbeingEntries,
         localTombstones,
       ] = await Promise.all([
-        db.settings.toArray(),
-        db.events.toArray(),
-        db.medications.toArray(),
-        db.medicationLogs.toArray(),
-        db.medicationChanges.toArray(),
-        db.eegSessions.toArray(),
-        db.eegActivities.toArray(),
-        db.wellbeingEntries.toArray(),
-        db.tombstones.toArray(),
+        d.settings.toArray(),
+        d.events.toArray(),
+        d.medications.toArray(),
+        d.medicationLogs.toArray(),
+        d.medicationChanges.toArray(),
+        d.eegSessions.toArray(),
+        d.eegActivities.toArray(),
+        d.wellbeingEntries.toArray(),
+        d.tombstones.toArray(),
       ]);
 
       // ── Deletions first: a deleted record is removed here and never re-added ──
       const deadUuids = new Set(localTombstones.map(row => row.uuid));
       const tables = { events: localEvents, medicationLogs: localLogs, eegSessions: localSessions, eegActivities: localActivities, wellbeingEntries: localWellbeingEntries };
       for (const tomb of incoming.tombstones) {
-        if (!deadUuids.has(tomb.uuid)) await db.tombstones.put(tomb);
+        if (!deadUuids.has(tomb.uuid)) await d.tombstones.put(tomb);
         deadUuids.add(tomb.uuid);
         const rows = tables[tomb.table];
         const index = rows.findIndex(row => row.uuid === tomb.uuid);
         if (index === -1) continue;
-        await db.table(tomb.table).delete(rows[index].id);
+        await d.table(tomb.table).delete(rows[index].id);
         rows.splice(index, 1);
         results.deleted += 1;
       }
@@ -292,7 +278,9 @@ export async function mergeRemoteData(parsed, options = {}) {
         if (SETTINGS_SKIP_KEYS.has(key)) continue;
         if (settingsScope !== 'all' && DEVICE_SETTING_KEYS.has(key)) continue;
         if (JSON.stringify(localSettings.get(key)) === JSON.stringify(value)) continue;
-        await db.settings.put({ key, value });
+        // Mode, language and look belong to the device database, written after this transaction
+        if (DEVICE_STORED_KEYS.has(key)) { deviceSettingWrites.push([key, value]); results.settings += 1; continue; }
+        await d.settings.put({ key, value });
         results.settings += 1;
       }
 
@@ -306,13 +294,13 @@ export async function mergeRemoteData(parsed, options = {}) {
           if (session.uuid) sessionUuidToLocal.set(session.uuid, existing);
           if (session.uuid && newer(session, existing)) {
             const fields = withoutUuid(session);
-            await db.eegSessions.update(existing.id, fields);
+            await d.eegSessions.update(existing.id, fields);
             Object.assign(existing, fields);
             results.eegUpdated += 1;
           }
           continue;
         }
-        const id = await db.eegSessions.add(session);
+        const id = await d.eegSessions.add(session);
         const inserted = { ...session, id };
         sessionByKey.set(key, inserted);
         if (session.uuid) {
@@ -332,7 +320,7 @@ export async function mergeRemoteData(parsed, options = {}) {
         if (existing) {
           if (newer(event, existing)) {
             const fields = { ...withoutUuid(linked), editLog: mergeEditLogs(existing.editLog, event.editLog) };
-            await db.events.update(existing.id, fields);
+            await d.events.update(existing.id, fields);
             Object.assign(existing, fields);
             results.eventsUpdated += 1;
           }
@@ -341,7 +329,7 @@ export async function mergeRemoteData(parsed, options = {}) {
         const key = eventIdentityKey(event);
         if (eventKeys.has(key)) continue;
         eventKeys.add(key);
-        const id = await db.events.add(linked);
+        const id = await d.events.add(linked);
         const inserted = { ...linked, id };
         if (event.uuid) {
           eventByUuid.set(event.uuid, inserted);
@@ -356,7 +344,7 @@ export async function mergeRemoteData(parsed, options = {}) {
         const key = medicationIdentityKey(med);
         const existing = (med.uuid && medByUuid.get(med.uuid)) || medicationKeyToLocal.get(key) || null;
         if (!existing) {
-          const id = await db.medications.add(med);
+          const id = await d.medications.add(med);
           const inserted = { ...med, id };
           medicationKeyToLocal.set(key, inserted);
           if (med.uuid) {
@@ -370,7 +358,7 @@ export async function mergeRemoteData(parsed, options = {}) {
         medicationKeyToLocal.set(key, existing);
         if (med.uuid) medicationUuidToLocal.set(med.uuid, existing);
         if (med.uuid && !existing.uuid) {
-          await db.medications.update(existing.id, { uuid: med.uuid });
+          await d.medications.update(existing.id, { uuid: med.uuid });
           existing.uuid = med.uuid;
           medByUuid.set(med.uuid, existing);
         }
@@ -378,12 +366,12 @@ export async function mergeRemoteData(parsed, options = {}) {
         // A deletion on either side wins: the medication stays a tombstone and loses its history
         if (existing.deletedAt) continue;
         if (med.deletedAt) {
-          await db.medications.update(existing.id, { active: false, deletedAt: med.deletedAt });
-          await db.medicationLogs.where('medicationId').equals(existing.id).delete();
-          await db.medicationChanges.where('medicationId').equals(existing.id).delete();
+          await d.medications.update(existing.id, { active: false, deletedAt: med.deletedAt });
+          await d.medicationLogs.where('medicationId').equals(existing.id).delete();
+          await d.medicationChanges.where('medicationId').equals(existing.id).delete();
           if (existing.uuid) {
-            await db.medicationLogs.where('medicationUuid').equals(existing.uuid).delete();
-            await db.medicationChanges.where('medicationUuid').equals(existing.uuid).delete();
+            await d.medicationLogs.where('medicationUuid').equals(existing.uuid).delete();
+            await d.medicationChanges.where('medicationUuid').equals(existing.uuid).delete();
           }
           existing.deletedAt = med.deletedAt;
           results.medicationsDeleted += 1;
@@ -397,7 +385,7 @@ export async function mergeRemoteData(parsed, options = {}) {
             > (latestChangeFor(localChanges, existing.uuid)?.recordedAt ?? 0)) ? 'incoming' : 'local');
         if (choice === 'incoming') {
           const fields = withoutUuid(med);
-          await db.medications.update(existing.id, fields);
+          await d.medications.update(existing.id, fields);
           Object.assign(existing, fields);
           results.medicationsUpdated += 1;
           continue;
@@ -422,7 +410,7 @@ export async function mergeRemoteData(parsed, options = {}) {
         if (changeKeys.has(key)) continue;
         // Both devices create their own baseline 'started' record when upgrading — keep one
         if (change.isBaseline && baselineMeds.has(medication.uuid)) continue;
-        await db.medicationChanges.add({ ...change, medicationId: medication.id, medicationUuid: medication.uuid });
+        await d.medicationChanges.add({ ...change, medicationId: medication.id, medicationUuid: medication.uuid });
         if (change.uuid) changeUuids.add(change.uuid);
         changeKeys.add(key);
         results.medicationChanges += 1;
@@ -456,7 +444,7 @@ export async function mergeRemoteData(parsed, options = {}) {
             medicationId: medication.id,
             medicationUuid: medication.uuid ?? log.medicationUuid ?? null,
           };
-          const id = await db.medicationLogs.add(inserted);
+          const id = await d.medicationLogs.add(inserted);
           const fullRow = { ...inserted, id };
           if (fullRow.uuid) logByUuid.set(fullRow.uuid, fullRow);
           logByExactKey.set(exactKey, fullRow);
@@ -487,7 +475,7 @@ export async function mergeRemoteData(parsed, options = {}) {
             isEdited: Boolean(log.isEdited || existing.isEdited),
             updatedAt: Math.max(log.updatedAt ?? 0, Date.now()),
           };
-          await db.medicationLogs.update(existing.id, fields);
+          await d.medicationLogs.update(existing.id, fields);
           Object.assign(existing, fields);
           results.logsUpdated += 1;
           continue;
@@ -523,13 +511,13 @@ export async function mergeRemoteData(parsed, options = {}) {
         if (existing) {
           if (activity.uuid && newer(activity, existing)) {
             const fields = { ...withoutUuid(linked), editLog: mergeEditLogs(existing.editLog, activity.editLog) };
-            await db.eegActivities.update(existing.id, fields);
+            await d.eegActivities.update(existing.id, fields);
             Object.assign(existing, fields);
             results.eegUpdated += 1;
           }
           continue;
         }
-        const id = await db.eegActivities.add(linked);
+        const id = await d.eegActivities.add(linked);
         if (activity.uuid) activityByUuid.set(activity.uuid, { ...linked, id });
         results.eegActivities += 1;
       }
@@ -540,7 +528,7 @@ export async function mergeRemoteData(parsed, options = {}) {
         if (existing) {
           if (newer(entry, existing)) {
             const fields = { ...withoutUuid(entry), editLog: mergeEditLogs(existing.editLog, entry.editLog) };
-            await db.wellbeingEntries.update(existing.id, fields);
+            await d.wellbeingEntries.update(existing.id, fields);
             Object.assign(existing, fields);
             results.wellbeingUpdated += 1;
           }
@@ -548,12 +536,14 @@ export async function mergeRemoteData(parsed, options = {}) {
         }
         const key = wellbeingIdentityKey(entry);
         if (wellbeingByKey.has(key)) continue;
-        const id = await db.wellbeingEntries.add(entry);
+        const id = await d.wellbeingEntries.add(entry);
         if (entry.uuid) wellbeingByUuid.set(entry.uuid, { ...entry, id });
         wellbeingByKey.add(key);
         results.wellbeingEntries += 1;
       }
   });
+
+  for (const [key, value] of deviceSettingWrites) await writeDeviceSetting(key, value);
 
   // Open screens (settings, lists) reload what changed
   announceDataChanged();

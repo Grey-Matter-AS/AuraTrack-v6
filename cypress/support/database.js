@@ -63,8 +63,22 @@ function ensureDatabase(indexedDB) {
   });
 }
 
+// The device database (patient list, mode, language) and any other patients' databases are removed,
+// so each test starts as a fresh single-patient install
+function deleteDeviceAndOtherPatients(indexedDB) {
+  const remove = (name) => new Cypress.Promise((resolve) => {
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = request.onerror = () => resolve();
+  });
+  const list = indexedDB.databases ? indexedDB.databases() : Promise.resolve([]);
+  return Cypress.Promise.resolve(list).then((dbs) => Cypress.Promise.all([
+    remove('AuraTrackDevice'),
+    ...dbs.map(d => d.name).filter(name => name && name.startsWith(`${DB_NAME}-`)).map(remove),
+  ]));
+}
+
 export function clearAndSeedDatabase(win, seed) {
-  return ensureDatabase(win.indexedDB).then((db) => {
+  return deleteDeviceAndOtherPatients(win.indexedDB).then(() => ensureDatabase(win.indexedDB)).then((db) => {
     const payload = {
       events: seed.events ?? [],
       settings: seed.settings ?? [],

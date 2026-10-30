@@ -32,9 +32,13 @@ async function show(title, { body, tag, target }) {
 }
 
 function fireNotification(med, hhMM) {
-  return show(i18n.t('notifications.dose_title', { name: med.name }), {
+  // With several patients the reminder says whose medicine it is
+  const title = med.patientLabel
+    ? i18n.t('notifications.dose_title_for', { name: med.name, patient: med.patientLabel })
+    : i18n.t('notifications.dose_title', { name: med.name });
+  return show(title, {
     body: i18n.t('notifications.dose_body', { dose: `${slotDose(med, hhMM)}${med.unit}` }),
-    tag: `med-${med.id}-${hhMM}`,
+    tag: `med-${med.uuid || med.id}-${hhMM}`,
     target: 'doses',
   });
 }
@@ -71,7 +75,7 @@ export function useNotifications() {
         const targetMs = scheduledTimestampForToday(hhMM);
         const delay = targetMs - now;
         if (delay < 60_000) continue; // already past or less than 1 min away
-        const key = `${med.id}-${hhMM}`;
+        const key = `${med.uuid || med.id}-${hhMM}`;
         const timerId = setTimeout(() => fireNotification(med, hhMM), delay);
         pendingTimers.set(key, timerId);
       }

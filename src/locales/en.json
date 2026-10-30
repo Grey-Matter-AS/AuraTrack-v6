@@ -322,6 +322,18 @@
     "title": "Help",
     "about_btn": "About AuraTrack",
     "sections": {
+      "whats_new": {
+        "title": "What's new in 6.0",
+        "steps": [
+          "Backups now contain everything: every record and every detail. A backup that can't read part of the data stops with an error instead of saving an incomplete copy.",
+          "Sync between devices now carries edits and deletions, so a correction made on one phone reaches the others and deleted entries stay deleted.",
+          "Emergency plan in Settings → Recording: set the alert time and what counts as a cluster to match your care plan. The alert counts seizure time, not the aura or recovery.",
+          "If there was no aura, just tap End seizure. The seizure type can be changed from the summary.",
+          "After-seizure symptoms are grouped, record where they were felt (numbness, weakness, paralysis…), and how long it took to get back to normal.",
+          "Saved symptom sets belong to a seizure type and are offered after you choose it, with your most-used symptoms. Symptoms you type yourself are remembered.",
+          "Back always returns to where you were, with History's filters kept. Restoring onto a new phone can copy all its settings too."
+        ]
+      },
       "recording": {
         "title": "Recording a Seizure",
         "steps": [
@@ -1344,7 +1356,8 @@
   },
   "notifications": {
     "dose_title": "Time to take {{name}}",
-    "dose_body": "{{dose}} — open AuraTrack to log it"
+    "dose_body": "{{dose}} — open AuraTrack to log it",
+    "dose_title_for": "{{patient}}: time to take {{name}}"
   },
   "seizure_types": {
     "tonic_clonic": "Tonic-Clonic",
@@ -1353,5 +1366,34 @@
     "absence": "Absence",
     "aura_only": "Aura Only",
     "uncategorized": "Type not set"
+  },
+  "patients": {
+    "unnamed": "Patient {{number}}",
+    "recording_for": "Recording for: {{name}}",
+    "home_for": "Patient: {{name}}",
+    "switch_label": "Switch patient",
+    "switch_title": "Whose records?",
+    "manage": "Manage patients",
+    "switch_failed": "Couldn't open that patient's records.",
+    "section": "Patients on this device",
+    "section_help": "Each patient's seizures, medications and reports are kept separate. Switch patient from the top of the screen.",
+    "active": "Shown now",
+    "remove": "Remove patient",
+    "name": "Patient name",
+    "color": "Colour",
+    "color_blue": "Blue",
+    "color_green": "Green",
+    "color_purple": "Purple",
+    "color_amber": "Amber",
+    "color_pink": "Pink",
+    "color_teal": "Teal",
+    "new_name": "New patient's name",
+    "add": "Add patient",
+    "remove_title": "Remove {{name}} from this device?",
+    "remove_body": "All of this patient's records on this device are deleted. Other devices and backups keep theirs. Make a backup first if this is the only copy.",
+    "remove_confirm": "Remove and delete",
+    "backup_all_one": "Include every patient ({{count}})",
+    "backup_all_other": "Include every patient ({{count}})",
+    "backup_all_help": "Untick to back up only the patient shown now."
   }
 }

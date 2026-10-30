@@ -11,6 +11,7 @@ import { DownloadIcon, InstallIcon, ResetIcon, SyncIcon, TrashIcon, UploadIcon }
 import pkg from '../../../package.json';
 import { clearAllData } from '../../data/records';
 import { describeMergeResult } from '../../utils/mergeSummary';
+import { isHouseholdBackup, restoreHouseholdBackup } from '../../utils/householdBackup';
 
 // ─── Data & Backup tab: the one home for backup and restore, sync, storage, reset ──
 export function DataTab({ settings, onUpdate, onReset, pwa, onSync, storagePersistence, onBackupSuccess }) {
@@ -59,7 +60,9 @@ export function DataTab({ settings, onUpdate, onReset, pwa, onSync, storagePersi
         setBackupModal({ mode: 'import', fileName: file.name, fileText: text });
         return;
       }
-      const result = await mergeRemoteData(parsed.parsed, { settingsScope: restoreScope });
+      const result = isHouseholdBackup(parsed.parsed)
+        ? await restoreHouseholdBackup(parsed.parsed, { settingsScope: restoreScope })
+        : await mergeRemoteData(parsed.parsed, { settingsScope: restoreScope });
       flash(t('settings.data.imported', { summary: summarizeImportResult(result) }));
     } catch (err) {
       console.error('Import failed:', err);

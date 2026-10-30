@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from './db';
 import { clearAllData, deleteEvent, deleteRecord } from './records';
+import { deviceDb, writeDeviceSetting } from './profiles';
 import { collectCanonicalBackupPayload, parseBackupFileText } from '../utils/backupFiles';
 import { mergeRemoteData } from '../utils/syncHelpers';
 import { recordMissedDoses } from '../hooks/useMedications';
@@ -13,7 +14,11 @@ const HOUR = 3600 * 1000;
 async function wipe() {
   await clearAllData();
   await db.settings.clear();
+  await deviceDb.settings.clear();
 }
+
+// Mode, language and look are kept per device (src/data/profiles.js), the rest per patient
+const deviceSetting = async (key) => (await deviceDb.settings.get(key))?.value;
 
 // One row in every table, with every field the app writes plus one field this version doesn't know
 async function seedFullDatabase() {
@@ -58,9 +63,9 @@ async function seedFullDatabase() {
     notes: '', isEdited: false, editLog: [], createdAt: 1_700_000_400_000, updatedAt: 1_700_000_400_000,
   });
   await db.tombstones.put({ uuid: 'gone-1', table: 'events', deletedAt: 1_700_000_500_000 });
+  await writeDeviceSetting('userMode', 'CARETAKER');
   await db.settings.bulkPut([
     { key: 'personName', value: 'Alex' },
-    { key: 'userMode', value: 'CARETAKER' },
     { key: 'favoriteSymptomSets', value: [{ id: 's1', name: 'Usual', symptoms: [{ symptom: 'Tingling' }] }] },
   ]);
 }
@@ -85,6 +90,7 @@ describe('backup contains everything (1.1)', () => {
     const result = await merge(JSON.parse(JSON.stringify(payload)));
     expect(result.rejected).toBe(0);
     const after = await snapshotTables();
+    expect(await deviceSetting('userMode'), 'device settings restored').toBe('CARETAKER');
 
     for (const table of Object.keys(before)) {
       // Local id links are rebuilt on restore, so compare them through the uuids they point at
@@ -198,24 +204,25 @@ describe('settings scope (1.4)', () => {
 
   it('a phone in use keeps its own device settings', async () => {
     await db.events.add({ startTime: 1, duration: 1 });
-    await db.settings.bulkPut([{ key: 'userMode', value: 'CARETAKER' }, { key: 'language', value: 'en' }]);
+    await writeDeviceSetting('userMode', 'CARETAKER');
+    await writeDeviceSetting('language', 'en');
     const result = await merge(incoming);
     expect(result.settingsScope).toBe('shared');
-    expect((await db.settings.get('userMode')).value).toBe('CARETAKER');
-    expect((await db.settings.get('language')).value).toBe('en');
+    expect(await deviceSetting('userMode')).toBe('CARETAKER');
+    expect(await deviceSetting('language')).toBe('en');
     expect((await db.settings.get('personName')).value).toBe('Alex');
   });
 
   it('a new phone copies everything', async () => {
     const result = await merge(incoming);
     expect(result.settingsScope).toBe('all');
-    expect((await db.settings.get('userMode')).value).toBe('PATIENT');
+    expect(await deviceSetting('userMode')).toBe('PATIENT');
   });
 
   it('the scope can be chosen explicitly', async () => {
     await db.events.add({ startTime: 1, duration: 1 });
     await merge(incoming, { settingsScope: 'all' });
-    expect((await db.settings.get('language')).value).toBe('nb');
+    expect(await deviceSetting('language')).toBe('nb');
   });
 });
 

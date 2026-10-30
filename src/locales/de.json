@@ -322,6 +322,18 @@
     "title": "Hilfe",
     "about_btn": "Über AuraTrack",
     "sections": {
+      "whats_new": {
+        "title": "Neu in 6.0",
+        "steps": [
+          "Sicherungen enthalten jetzt alles: jeden Eintrag und jedes Detail. Kann ein Teil der Daten nicht gelesen werden, bricht die Sicherung mit einem Fehler ab, statt eine unvollständige Kopie zu speichern.",
+          "Die Synchronisierung zwischen Geräten überträgt jetzt Änderungen und Löschungen: Eine Korrektur auf einem Telefon erreicht die anderen, gelöschte Einträge bleiben gelöscht.",
+          "Notfallplan unter Einstellungen → Aufzeichnung: Alarmzeit und Cluster-Regel passend zu Ihrem Plan einstellen. Der Alarm zählt die Anfallszeit, nicht Aura oder Erholung.",
+          "Gab es keine Aura, einfach Anfall beenden tippen. Die Anfallsart lässt sich in der Übersicht ändern.",
+          "Symptome nach dem Anfall sind gruppiert, mit Körperbereich (Taubheit, Schwäche, Lähmung …) und der Zeit, bis alles wieder normal war.",
+          "Gespeicherte Symptomgruppen gehören zu einer Anfallsart und werden nach deren Auswahl angeboten, zusammen mit den häufigsten Symptomen. Selbst eingegebene Symptome werden gemerkt.",
+          "Zurück führt immer dorthin, wo Sie waren, und die Filter im Verlauf bleiben erhalten. Beim Wiederherstellen auf einem neuen Telefon können auch alle Einstellungen übernommen werden."
+        ]
+      },
       "recording": {
         "title": "Einen Anfall aufzeichnen",
         "steps": [
@@ -1340,7 +1352,8 @@
   },
   "notifications": {
     "dose_title": "Zeit für {{name}}",
-    "dose_body": "{{dose}} — AuraTrack öffnen zum Erfassen"
+    "dose_body": "{{dose}} — AuraTrack öffnen zum Erfassen",
+    "dose_title_for": "{{patient}}: Zeit für {{name}}"
   },
   "seizure_types": {
     "tonic_clonic": "Tonisch-klonisch",
@@ -1349,5 +1362,34 @@
     "absence": "Absence",
     "aura_only": "Nur Aura",
     "uncategorized": "Art nicht festgelegt"
+  },
+  "patients": {
+    "unnamed": "Patient {{number}}",
+    "recording_for": "Aufzeichnung für: {{name}}",
+    "home_for": "Patient: {{name}}",
+    "switch_label": "Patient wechseln",
+    "switch_title": "Wessen Einträge?",
+    "manage": "Patienten verwalten",
+    "switch_failed": "Die Einträge dieses Patienten konnten nicht geöffnet werden.",
+    "section": "Patienten auf diesem Gerät",
+    "section_help": "Anfälle, Medikamente und Berichte jedes Patienten bleiben getrennt. Patient oben auf dem Bildschirm wechseln.",
+    "active": "Wird angezeigt",
+    "remove": "Patient entfernen",
+    "name": "Name des Patienten",
+    "color": "Farbe",
+    "color_blue": "Blau",
+    "color_green": "Grün",
+    "color_purple": "Lila",
+    "color_amber": "Bernstein",
+    "color_pink": "Rosa",
+    "color_teal": "Petrol",
+    "new_name": "Name des neuen Patienten",
+    "add": "Patient hinzufügen",
+    "remove_title": "{{name}} von diesem Gerät entfernen?",
+    "remove_body": "Alle Einträge dieses Patienten auf diesem Gerät werden gelöscht. Andere Geräte und Sicherungen behalten ihre. Erst sichern, wenn dies die einzige Kopie ist.",
+    "remove_confirm": "Entfernen und löschen",
+    "backup_all_one": "Alle Patienten einschließen ({{count}})",
+    "backup_all_other": "Alle Patienten einschließen ({{count}})",
+    "backup_all_help": "Abwählen, um nur den angezeigten Patienten zu sichern."
   }
 }

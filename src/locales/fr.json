@@ -322,6 +322,18 @@
     "title": "Aide",
     "about_btn": "À propos d'AuraTrack",
     "sections": {
+      "whats_new": {
+        "title": "Nouveautés de la 6.0",
+        "steps": [
+          "Les sauvegardes contiennent désormais tout : chaque enregistrement et chaque détail. Si une partie des données est illisible, la sauvegarde s’arrête avec une erreur au lieu d’enregistrer une copie incomplète.",
+          "La synchronisation entre appareils transmet maintenant les modifications et suppressions : une correction sur un téléphone atteint les autres et les éléments supprimés le restent.",
+          "Plan d’urgence dans Réglages → Enregistrement : réglez le délai d’alerte et ce qui constitue une série selon votre plan. L’alerte compte la durée de la crise, pas l’aura ni la récupération.",
+          "S’il n’y a pas eu d’aura, touchez simplement Fin de crise. Le type de crise peut être modifié depuis le résumé.",
+          "Les symptômes après la crise sont regroupés, indiquent où ils ont été ressentis (engourdissement, faiblesse, paralysie…) et le temps de retour à la normale.",
+          "Les ensembles de symptômes enregistrés appartiennent à un type de crise et sont proposés une fois celui-ci choisi, avec vos symptômes les plus utilisés. Les symptômes saisis par vous sont mémorisés.",
+          "Retour ramène toujours là où vous étiez, avec les filtres de l’historique conservés. La restauration sur un nouveau téléphone peut aussi copier tous ses réglages."
+        ]
+      },
       "recording": {
         "title": "Enregistrer une crise",
         "steps": [
@@ -1340,7 +1352,8 @@
   },
   "notifications": {
     "dose_title": "C’est l’heure de prendre {{name}}",
-    "dose_body": "{{dose}} — ouvrez AuraTrack pour l’enregistrer"
+    "dose_body": "{{dose}} — ouvrez AuraTrack pour l’enregistrer",
+    "dose_title_for": "{{patient}} : c’est l’heure de prendre {{name}}"
   },
   "seizure_types": {
     "tonic_clonic": "Tonico-clonique",
@@ -1349,5 +1362,34 @@
     "absence": "Absence",
     "aura_only": "Aura seule",
     "uncategorized": "Type non indiqué"
+  },
+  "patients": {
+    "unnamed": "Patient {{number}}",
+    "recording_for": "Enregistrement pour : {{name}}",
+    "home_for": "Patient : {{name}}",
+    "switch_label": "Changer de patient",
+    "switch_title": "Les dossiers de qui ?",
+    "manage": "Gérer les patients",
+    "switch_failed": "Impossible d’ouvrir les dossiers de ce patient.",
+    "section": "Patients sur cet appareil",
+    "section_help": "Les crises, médicaments et rapports de chaque patient restent séparés. Changez de patient en haut de l’écran.",
+    "active": "Affiché",
+    "remove": "Retirer le patient",
+    "name": "Nom du patient",
+    "color": "Couleur",
+    "color_blue": "Bleu",
+    "color_green": "Vert",
+    "color_purple": "Violet",
+    "color_amber": "Ambre",
+    "color_pink": "Rose",
+    "color_teal": "Bleu canard",
+    "new_name": "Nom du nouveau patient",
+    "add": "Ajouter un patient",
+    "remove_title": "Retirer {{name}} de cet appareil ?",
+    "remove_body": "Tous les dossiers de ce patient sur cet appareil sont supprimés. Les autres appareils et sauvegardes gardent les leurs. Faites d’abord une sauvegarde si c’est la seule copie.",
+    "remove_confirm": "Retirer et supprimer",
+    "backup_all_one": "Inclure tous les patients ({{count}})",
+    "backup_all_other": "Inclure tous les patients ({{count}})",
+    "backup_all_help": "Décochez pour ne sauvegarder que le patient affiché."
   }
 }

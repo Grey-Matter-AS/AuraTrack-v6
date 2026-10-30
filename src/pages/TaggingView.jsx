@@ -96,6 +96,7 @@ export default function TaggingView({
   customSymptoms = [],
   history = [],
   onUpdateSetting,
+  patientBanner = null,
 }) {
   const { t } = useTranslation();
   const skipLabel = t('tagging.skip_for_now');
@@ -241,6 +242,7 @@ export default function TaggingView({
 
   return (
     <div className="app-page-shell flex-1 min-h-full flex flex-col items-center overflow-y-auto py-4 custom-scrollbar animate-in fade-in slide-in-from-bottom-6">
+      {patientBanner && <div className="w-full mb-3 shrink-0">{patientBanner}</div>}
       <div className="w-full p-6 rounded-[2rem] shadow-2xl flex flex-col" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
 
         {taggingStep === 'SUMMARY' ? (

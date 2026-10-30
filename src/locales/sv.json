@@ -322,6 +322,18 @@
     "title": "Hjälp",
     "about_btn": "Om AuraTrack",
     "sections": {
+      "whats_new": {
+        "title": "Nytt i 6.0",
+        "steps": [
+          "Säkerhetskopior innehåller nu allt: varje post och varje detalj. Om en del av datan inte kan läsas avbryts säkerhetskopieringen med ett fel i stället för att spara en ofullständig kopia.",
+          "Synkronisering mellan enheter för nu över ändringar och raderingar, så en rättelse på en telefon når de andra och raderade poster förblir raderade.",
+          "Nödplan under Inställningar → Inspelning: ställ in larmtid och vad som räknas som ett kluster efter din plan. Larmet räknar anfallstiden, inte aura eller återhämtning.",
+          "Om det inte fanns någon aura, tryck bara Avsluta anfall. Anfallstypen kan ändras från sammanfattningen.",
+          "Symtom efter anfall är grupperade, registrerar var de kändes (domningar, svaghet, förlamning …) och hur lång tid det tog att bli normal igen.",
+          "Sparade symtomgrupper hör till en anfallstyp och erbjuds när du valt den, tillsammans med dina mest använda symtom. Symtom du skriver själv kommer ihåg.",
+          "Tillbaka leder alltid dit du var, och filtren i Historik behålls. Vid återställning på en ny telefon kan även alla inställningar kopieras."
+        ]
+      },
       "recording": {
         "title": "Registrera ett anfall",
         "steps": [
@@ -1340,7 +1352,8 @@
   },
   "notifications": {
     "dose_title": "Dags att ta {{name}}",
-    "dose_body": "{{dose}} — öppna AuraTrack för att registrera"
+    "dose_body": "{{dose}} — öppna AuraTrack för att registrera",
+    "dose_title_for": "{{patient}}: dags att ta {{name}}"
   },
   "seizure_types": {
     "tonic_clonic": "Tonisk-klonisk",
@@ -1349,5 +1362,34 @@
     "absence": "Absens",
     "aura_only": "Endast aura",
     "uncategorized": "Typ inte angiven"
+  },
+  "patients": {
+    "unnamed": "Patient {{number}}",
+    "recording_for": "Spelar in för: {{name}}",
+    "home_for": "Patient: {{name}}",
+    "switch_label": "Byt patient",
+    "switch_title": "Vems registreringar?",
+    "manage": "Hantera patienter",
+    "switch_failed": "Kunde inte öppna patientens registreringar.",
+    "section": "Patienter på den här enheten",
+    "section_help": "Varje patients anfall, läkemedel och rapporter hålls åtskilda. Byt patient högst upp på skärmen.",
+    "active": "Visas nu",
+    "remove": "Ta bort patient",
+    "name": "Patientens namn",
+    "color": "Färg",
+    "color_blue": "Blå",
+    "color_green": "Grön",
+    "color_purple": "Lila",
+    "color_amber": "Bärnsten",
+    "color_pink": "Rosa",
+    "color_teal": "Blågrön",
+    "new_name": "Ny patients namn",
+    "add": "Lägg till patient",
+    "remove_title": "Ta bort {{name}} från den här enheten?",
+    "remove_body": "Alla patientens registreringar på den här enheten raderas. Andra enheter och säkerhetskopior behåller sina. Gör en säkerhetskopia först om detta är den enda kopian.",
+    "remove_confirm": "Ta bort och radera",
+    "backup_all_one": "Ta med alla patienter ({{count}})",
+    "backup_all_other": "Ta med alla patienter ({{count}})",
+    "backup_all_help": "Avmarkera för att bara säkerhetskopiera patienten som visas."
   }
 }

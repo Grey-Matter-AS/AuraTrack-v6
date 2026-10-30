@@ -4,6 +4,19 @@ AuraTrack is a privacy-first seizure tracking PWA for people with epilepsy and t
 
 > **Not a medical device.** AuraTrack is a personal logging tool and report assistant. It does not diagnose, treat, or replace professional medical advice.
 
+## What's new in 6.0
+
+- **Backups contain everything:** every table and every field. A backup that can't read part of the data fails with an error instead of saving an incomplete copy. Restores report what was skipped and why.
+- **Sync carries edits and deletions:** the newest version of a record wins, edit histories are joined, and deletions reach every device (tombstones).
+- **Emergency plan settings** (Settings → Recording): the alert time (default 5 minutes) and the cluster rule (default 3 seizures within 8 minutes). The alert measures seizure time, not the aura or the recovery, and reports state the rule used.
+- **No-aura seizures:** End seizure can be tapped without ending an aura first. The seizure type can be changed from the summary.
+- **After-seizure findings:** grouped, with body areas for numbness, weakness, heaviness, paralysis and similar, plus the time until back to normal.
+- **Saved symptom sets** per seizure type with suggested names, most-used symptoms, and remembered custom symptoms.
+- **Navigation remembers where you were:** History keeps its filters, and editing returns to the seizure you came from.
+- **Faster start-up:** charts, PDF reports, sync and non-English languages load when first used.
+
+Upgrading from 5.x upgrades the on-device database (schema v13); the app can't go back to 5.x on that device afterwards. Make a backup before updating, and update every device you sync with.
+
 ## What AuraTrack Does
 
 ### Seizure recording

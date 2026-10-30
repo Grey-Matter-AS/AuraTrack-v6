@@ -9,6 +9,9 @@ import { usePersistentStorage } from './hooks/usePersistentStorage';
 import { setHapticEnabled } from './utils/hapticFeedback';
 import { db } from './data/db';
 import { deleteEvent as deleteEventRecord } from './data/records';
+import { getActiveProfileId, listProfiles, readOtherPatientsMedications, switchProfile } from './data/profiles';
+import { PatientBanner, PatientSwitcher } from './components/PatientSwitcher';
+import { patientName } from './utils/patients';
 import { DeleteModal } from './components/DeleteModal';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -34,13 +37,14 @@ import { MedicationConflictDialog } from './components/MedicationConflictDialog'
 import { Button, ToastProvider } from './components/ui';
 import { HelpIcon, HistoryIcon, SettingsIcon } from './components/AppIcons';
 
-function Header({ onSettings, onHistory, onHelp }) {
+function Header({ onSettings, onHistory, onHelp, patientSwitcher = null }) {
   const { t } = useTranslation();
   return (
     <div className="app-header app-width-shell pt-4 pb-3 shrink-0">
       <div className="app-header__brand text-center">
         <h1 className="app-header__brand-title text-[10px] font-black tracking-[0.4em] uppercase">AURATRACK</h1>
         <div className="h-1 w-4 bg-[var(--accent)] mx-auto mt-1 rounded-full opacity-60" />
+        {patientSwitcher}
       </div>
       <div className="app-header__nav">
         <button
@@ -83,6 +87,17 @@ function ScreenLoading() {
 function App() {
   const { t } = useTranslation();
   const nav = useNavigation();
+
+  // Patients on this device (one database each, see src/data/profiles.js)
+  const [profiles, setProfiles] = useState([]);
+  const [activeProfileId, setActiveProfileId] = useState(null);
+  const reloadProfiles = useCallback(async () => {
+    const [list, active] = await Promise.all([listProfiles(), getActiveProfileId()]);
+    setProfiles(list);
+    setActiveProfileId(active);
+  }, []);
+  useEffect(() => { const id = setTimeout(() => { reloadProfiles().catch(() => {}); }, 0); return () => clearTimeout(id); }, [reloadProfiles]);
+  const activeProfile = profiles.find(p => p.id === activeProfileId) || null;
   const status = nav.status;
   // Recording and tagging a new seizure replace the screen stack (nothing to go back to)
   const setStatus = nav.reset;
@@ -147,15 +162,20 @@ function App() {
 
   // A sync or restore changed stored data: reload what the home screen and History show
   const { load: loadWellbeing } = wellbeing;
+  const { load: refreshEeg } = eeg;
+  const { getLogsForDay } = meds;
   useEffect(() => {
     const reload = () => {
       refreshEvents().catch(() => {});
       loadWellbeing().catch(() => {});
+      refreshEeg().catch(() => {});
+      reloadProfiles().catch(() => {});
       db.medicationLogs.count().then(setMedLogCount).catch(() => {});
+      getLogsForDay(Date.now()).then(setTodayLogs).catch(() => {});
     };
     window.addEventListener(DATA_CHANGED_EVENT, reload);
     return () => window.removeEventListener(DATA_CHANGED_EVENT, reload);
-  }, [refreshEvents, loadWellbeing]);
+  }, [refreshEvents, loadWellbeing, refreshEeg, reloadProfiles, getLogsForDay]);
 
   // Sync haptic preference to the module singleton
   useEffect(() => { setHapticEnabled(settings.hapticFeedback); }, [settings.hapticFeedback]);
@@ -291,13 +311,30 @@ function App() {
     return () => clearTimeout(resetTimer);
   }, [status, acquireWakeLock, releaseWakeLock, wakeLockSupported]);
 
+  // Dose reminders for every patient on this device, not only the one shown
+  const [otherPatientMeds, setOtherPatientMeds] = useState([]);
+  useEffect(() => {
+    if (profiles.length < 2) { const id = setTimeout(() => setOtherPatientMeds([]), 0); return () => clearTimeout(id); }
+    let alive = true;
+    readOtherPatientsMedications(activeProfileId).then(list => { if (alive) setOtherPatientMeds(list); }).catch(() => {});
+    return () => { alive = false; };
+  }, [profiles, activeProfileId]);
+  const reminderMedications = useMemo(() => {
+    if (profiles.length < 2) return meds.medications;
+    const label = (profile) => patientName(profile, profiles, t);
+    return [
+      ...meds.medications.map(med => ({ ...med, patientLabel: label(activeProfile) })),
+      ...otherPatientMeds.flatMap(({ profile, medications }) => medications.map(med => ({ ...med, patientLabel: label(profile) }))),
+    ];
+  }, [meds.medications, otherPatientMeds, profiles, activeProfile, t]);
+
   // Re-acquire wake lock when tab regains focus (OS releases it on tab switch)
   // Also re-schedule notifications on visibility change
   useEffect(() => {
     const handler = () => {
       if (document.visibilityState === 'visible') {
         if (status === 'RECORDING') acquireWakeLock().catch(() => {});
-        scheduleForToday(meds.medications, {
+        scheduleForToday(reminderMedications, {
           enabled: settings.wellbeingDailyReminderEnabled,
           time: settings.wellbeingReminderTime,
           hasTodayEntry: wellbeing.todayEntries.length > 0,
@@ -306,18 +343,33 @@ function App() {
     };
     document.addEventListener('visibilitychange', handler);
     return () => document.removeEventListener('visibilitychange', handler);
-  }, [status, meds.medications, settings.wellbeingDailyReminderEnabled, settings.wellbeingReminderTime, wellbeing.todayEntries.length, acquireWakeLock, scheduleForToday]);
+  }, [status, reminderMedications, settings.wellbeingDailyReminderEnabled, settings.wellbeingReminderTime, wellbeing.todayEntries.length, acquireWakeLock, scheduleForToday]);
 
   // Schedule notifications whenever medication list changes
   useEffect(() => {
-    scheduleForToday(meds.medications, {
+    scheduleForToday(reminderMedications, {
       enabled: settings.wellbeingDailyReminderEnabled,
       time: settings.wellbeingReminderTime,
       hasTodayEntry: wellbeing.todayEntries.length > 0,
     });
-  }, [meds.medications, settings.wellbeingDailyReminderEnabled, settings.wellbeingReminderTime, wellbeing.todayEntries.length, scheduleForToday]);
+  }, [reminderMedications, settings.wellbeingDailyReminderEnabled, settings.wellbeingReminderTime, wellbeing.todayEntries.length, scheduleForToday]);
+
+  // Switching shows the other patient's home screen; never during a recording or tagging
+  const handleSwitchPatient = async (id) => {
+    if (['RECORDING', 'TAGGING'].includes(status)) return;
+    try {
+      await switchProfile(id);
+      setActiveProfileId(id);
+      nav.reset('IDLE');
+    } catch (err) {
+      console.error('Switching patient failed:', err);
+      showToast(t('patients.switch_failed'));
+    }
+  };
 
   const handleStart = async () => {
+    // Crash recovery reopens the recording for this patient
+    try { if (activeProfileId) localStorage.setItem('aura_patient', activeProfileId); } catch { /* private browsing */ }
     wizard.reset();
     video.reset();
     const seizureStartTime = timer.startTimer();
@@ -516,7 +568,8 @@ function App() {
           <Button variant="secondary" size="sm" onClick={() => pwa.updateServiceWorker()}>{t('app.update_reload')}</Button>
         </div>
       )}
-      {showHeader && <Header onHistory={() => nav.openFromHome('HISTORY')} onSettings={() => nav.openFromHome('SETTINGS')} onHelp={() => nav.openFromHome('HELP')} />}
+      {showHeader && <Header onHistory={() => nav.openFromHome('HISTORY')} onSettings={() => nav.openFromHome('SETTINGS')} onHelp={() => nav.openFromHome('HELP')}
+        patientSwitcher={<PatientSwitcher profiles={profiles} activeId={activeProfileId} onSwitch={handleSwitchPatient} onManage={() => nav.openFromHome('SETTINGS', { tab: 'identity' })} />} />}
 
       {status === 'RECORDING' && wakeLockUnsupported && (
         <div className="shrink-0 text-xs text-center px-4 py-2"
@@ -529,9 +582,15 @@ function App() {
         data-scroll-region={status === 'RECORDING' ? 'recording' : 'app'}
         className={`flex-1 min-h-0 flex flex-col items-center px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] ${status === 'RECORDING' ? 'overflow-y-auto' : 'overflow-hidden'}`}
       >
+        {/* With more than one patient, always clear whose seizure is being recorded (home has the header chip) */}
+        {status === 'RECORDING' && profiles.length > 1 && (
+          <div className="app-page-shell w-full shrink-0 pt-2">
+            <PatientBanner profile={activeProfile} profiles={profiles} />
+          </div>
+        )}
         {status === 'IDLE'         && <IdleView plan={plan} history={recentHistory} fullHistory={fullHistory} onStart={handleStart} onManualEntry={() => setShowManualEntry(true)} onEdit={handleEdit} onDelete={setItemToDelete} onViewDetail={goToDetail} medicationGroups={medicationGroups} allActiveMedications={allActiveMedications} onSaveDoses={handleSaveDoses} durationFormat={settings.durationFormat} dateFormat={settings.dateFormat} timeFormat={settings.timeFormat} eegSession={eeg.activeSession} eegCurrentActivity={eeg.currentActivity} onStartEegSession={eeg.startSession} onEndEegSession={eeg.endSession} onStartEegActivity={eeg.startActivity} onStopEegActivity={eeg.stopActivity} onOpenEegDiary={() => nav.navigate('HISTORY', { tab: 'eeg' })} eegDiaryEnabled={settings.eegDiaryEnabled} wellbeing={wellbeing} wellbeingEnabled={settings.wellbeingEnabled} />}
         {status === 'RECORDING'    && <RecordingView elapsed={timer.elapsed} startTime={timer.startTime} laps={timer.laps} onLap={timer.recordLap} onStop={handleStop} onEmergencyStop={handleEmergencyStop} onQuickNote={l => wizard.addQuickNote(l, timer.elapsed)} userMode={settings.userMode} quickNoteLabels={activeQuickNoteLabels} emergencyMedications={emergencyMedications} neurologistName={settings.neurologistName} neurologistContact={settings.neurologistContact} emergencyContact={settings.emergencyContact} durationFormat={settings.durationFormat} plan={plan} onStartVideo={async () => { const result = await video.start({ seizureStartTime: timer.startTime, seizureStartLabel: timer.startTime ? new Date(timer.startTime).toLocaleString() : new Date().toLocaleString(), preferredFacingMode: settings.userMode === 'CARETAKER' ? 'environment' : 'user' }); if (!result?.ok) showToast(video.error || t('toast.video_start_failed')); }} onStopVideo={async () => { await video.stop(); }} onSwitchCamera={async () => { const result = await video.switchCamera(); if (!result?.ok && result?.reason !== 'single_camera') showToast(video.error || t('toast.video_switch_failed')); }} videoRecording={video.isRecording} videoSupported={video.isSupported} videoError={video.error} previewStream={video.previewStream} canSwitchCamera={video.canSwitchCamera} />}
-        {status === 'TAGGING'      && <TaggingView {...wizard} savedSets={settings.favoriteSymptomSets} customSymptoms={settings.customSymptoms} history={fullHistory} onUpdateSetting={updateSettings} elapsed={timer.elapsed} laps={timer.laps} startTime={timer.startTime} onSave={handleSave} onSkip={handleSkipTagging} onCancel={handleCancel} durationFormat={settings.durationFormat} />}
+        {status === 'TAGGING'      && <TaggingView {...wizard} patientBanner={<PatientBanner profile={activeProfile} profiles={profiles} />} savedSets={settings.favoriteSymptomSets} customSymptoms={settings.customSymptoms} history={fullHistory} onUpdateSetting={updateSettings} elapsed={timer.elapsed} laps={timer.laps} startTime={timer.startTime} onSave={handleSave} onSkip={handleSkipTagging} onCancel={handleCancel} durationFormat={settings.durationFormat} />}
         {status === 'HISTORY'      && <Suspense fallback={<ScreenLoading />}><HistoryView onBack={nav.goBack} onEdit={handleEdit} onDelete={setItemToDelete} onViewDetail={goToDetail} historyPageSize={settings.historyPageSize} settings={settings} viewState={nav.current} onViewStateChange={nav.updateCurrent} eeg={eeg} wellbeing={wellbeing} events={fullHistory} onOpenBackup={() => nav.navigate('SETTINGS', { tab: 'data' })} /></Suspense>}
         {status === 'SETTINGS'     && <SettingsView settings={settings} onUpdate={updateSettings} onReset={resetSettings} onBack={nav.goBack} tab={nav.current.tab || 'identity'} onTabChange={tab => nav.updateCurrent({ tab })} pwa={pwa} notificationPermission={notifications.permission} onRequestNotificationPermission={async () => { const p = await notifications.requestPermission(); if (p === 'granted') notifications.scheduleForToday(meds.medications, { enabled: settings.wellbeingDailyReminderEnabled, time: settings.wellbeingReminderTime, hasTodayEntry: wellbeing.todayEntries.length > 0 }); return p; }} onSync={() => setSyncModal({ open: true, connectToken: null, offerSDP: null })} storagePersistence={storagePersistence} onBackupSuccess={handleBackupSuccess} />}
         {status === 'EVENT_DETAIL' && <EventDetailView eventId={nav.current.eventId} plan={plan} onEdit={handleEdit} onClose={nav.goBack} durationFormat={settings.durationFormat} dateFormat={settings.dateFormat} timeFormat={settings.timeFormat} />}

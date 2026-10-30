@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { db } from '../data/db';
 import { DATA_CHANGED_EVENT } from '../utils/dataEvents';
+import { DEVICE_STORED_KEYS } from '../data/settingKeys';
+import { clearDeviceSettings, readDeviceSettings, writeDeviceSetting } from '../data/profiles';
 import i18n, { setLanguage } from '../i18n';
 import { DEFAULT_WELLBEING_FACTORS } from '../data/constants';
 
@@ -70,9 +72,11 @@ export function useSettings() {
 
   const loadSettings = useCallback(async () => {
     try {
-      const rows = await db.settings.toArray();
+      // The active patient's settings, then this device's own (mode, language, look)
+      const [rows, deviceRows] = await Promise.all([db.settings.toArray(), readDeviceSettings()]);
       const merged = { ...DEFAULTS };
-      rows.forEach(row => { merged[row.key] = row.value; });
+      rows.forEach(row => { if (!DEVICE_STORED_KEYS.has(row.key)) merged[row.key] = row.value; });
+      deviceRows.forEach(row => { merged[row.key] = row.value; });
       if (merged.language && merged.language !== i18n.language) {
         await setLanguage(merged.language);
       }
@@ -95,7 +99,8 @@ export function useSettings() {
 
   const updateSettings = async (key, value) => {
     try {
-      await db.settings.put({ key, value });
+      if (DEVICE_STORED_KEYS.has(key)) await writeDeviceSetting(key, value);
+      else await db.settings.put({ key, value });
       setSettings(prev => ({ ...prev, [key]: value }));
       setLastError(null);
       return true;
@@ -113,6 +118,8 @@ export function useSettings() {
         await db.settings.clear();
         await db.settings.bulkPut(kept.filter(Boolean));
       });
+      await clearDeviceSettings();
+      await setLanguage(DEFAULTS.language);
       const next = { ...DEFAULTS };
       kept.filter(Boolean).forEach(row => { next[row.key] = row.value; });
       setSettings(next);

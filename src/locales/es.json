@@ -322,6 +322,18 @@
     "title": "Ayuda",
     "about_btn": "Acerca de AuraTrack",
     "sections": {
+      "whats_new": {
+        "title": "Novedades de la 6.0",
+        "steps": [
+          "Las copias de seguridad contienen ahora todo: cada registro y cada detalle. Si no se puede leer parte de los datos, la copia se detiene con un error en lugar de guardar una copia incompleta.",
+          "La sincronización entre dispositivos transmite ahora cambios y eliminaciones: una corrección en un teléfono llega a los demás y lo eliminado sigue eliminado.",
+          "Plan de emergencia en Ajustes → Grabación: fije el tiempo de alerta y qué cuenta como racimo según su plan. La alerta cuenta el tiempo de crisis, no el aura ni la recuperación.",
+          "Si no hubo aura, toque directamente Terminar crisis. El tipo de crisis se puede cambiar desde el resumen.",
+          "Los síntomas tras la crisis están agrupados, registran dónde se notaron (entumecimiento, debilidad, parálisis…) y cuánto tardó en volver a la normalidad.",
+          "Los conjuntos de síntomas guardados pertenecen a un tipo de crisis y se ofrecen al elegirlo, con sus síntomas más usados. Se recuerdan los síntomas que escribe usted.",
+          "Atrás vuelve siempre a donde estaba, conservando los filtros del Historial. Al restaurar en un teléfono nuevo también se pueden copiar todos sus ajustes."
+        ]
+      },
       "recording": {
         "title": "Registrar una crisis",
         "steps": [
@@ -1340,7 +1352,8 @@
   },
   "notifications": {
     "dose_title": "Hora de tomar {{name}}",
-    "dose_body": "{{dose}} — abra AuraTrack para registrarla"
+    "dose_body": "{{dose}} — abra AuraTrack para registrarla",
+    "dose_title_for": "{{patient}}: hora de tomar {{name}}"
   },
   "seizure_types": {
     "tonic_clonic": "Tónico-clónica",
@@ -1349,5 +1362,34 @@
     "absence": "Ausencia",
     "aura_only": "Solo aura",
     "uncategorized": "Tipo sin indicar"
+  },
+  "patients": {
+    "unnamed": "Paciente {{number}}",
+    "recording_for": "Grabando para: {{name}}",
+    "home_for": "Paciente: {{name}}",
+    "switch_label": "Cambiar de paciente",
+    "switch_title": "¿De quién son los registros?",
+    "manage": "Gestionar pacientes",
+    "switch_failed": "No se pudieron abrir los registros de ese paciente.",
+    "section": "Pacientes en este dispositivo",
+    "section_help": "Las crisis, medicaciones e informes de cada paciente se guardan por separado. Cambie de paciente en la parte superior.",
+    "active": "Mostrado ahora",
+    "remove": "Quitar paciente",
+    "name": "Nombre del paciente",
+    "color": "Color",
+    "color_blue": "Azul",
+    "color_green": "Verde",
+    "color_purple": "Morado",
+    "color_amber": "Ámbar",
+    "color_pink": "Rosa",
+    "color_teal": "Verde azulado",
+    "new_name": "Nombre del nuevo paciente",
+    "add": "Añadir paciente",
+    "remove_title": "¿Quitar a {{name}} de este dispositivo?",
+    "remove_body": "Se eliminan todos los registros de este paciente en este dispositivo. Otros dispositivos y copias conservan los suyos. Haga antes una copia si esta es la única.",
+    "remove_confirm": "Quitar y eliminar",
+    "backup_all_one": "Incluir a todos los pacientes ({{count}})",
+    "backup_all_other": "Incluir a todos los pacientes ({{count}})",
+    "backup_all_help": "Desmarque para copiar solo el paciente mostrado."
   }
 }

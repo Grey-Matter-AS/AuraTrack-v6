@@ -322,6 +322,18 @@
     "title": "Hjælp",
     "about_btn": "Om AuraTrack",
     "sections": {
+      "whats_new": {
+        "title": "Nyt i 6.0",
+        "steps": [
+          "Sikkerhedskopier indeholder nu alt: hver post og hver detalje. Kan en del af dataene ikke læses, stopper sikkerhedskopien med en fejl i stedet for at gemme en ufuldstændig kopi.",
+          "Synkronisering mellem enheder overfører nu rettelser og sletninger, så en rettelse på én telefon når de andre, og slettede poster forbliver slettet.",
+          "Nødplan under Indstillinger → Optagelse: angiv alarmtiden og hvad der tæller som en klynge, så det passer til din plan. Alarmen tæller anfaldstiden, ikke aura eller restitution.",
+          "Var der ingen aura, så tryk blot Afslut anfald. Anfaldstypen kan ændres fra oversigten.",
+          "Symptomer efter anfald er grupperet, registrerer hvor de mærkedes (følelsesløshed, svaghed, lammelse …) og hvor længe det tog at blive normal igen.",
+          "Gemte symptomsæt hører til en anfaldstype og tilbydes, når du har valgt den, sammen med dine mest brugte symptomer. Symptomer, du selv skriver, huskes.",
+          "Tilbage fører altid tilbage til, hvor du var, med Historikkens filtre bevaret. Gendannelse på en ny telefon kan også kopiere alle dens indstillinger."
+        ]
+      },
       "recording": {
         "title": "Optagelse af et anfald",
         "steps": [
@@ -1340,7 +1352,8 @@
   },
   "notifications": {
     "dose_title": "Tid til at tage {{name}}",
-    "dose_body": "{{dose}} — åbn AuraTrack for at registrere"
+    "dose_body": "{{dose}} — åbn AuraTrack for at registrere",
+    "dose_title_for": "{{patient}}: tid til at tage {{name}}"
   },
   "seizure_types": {
     "tonic_clonic": "Tonisk-klonisk",
@@ -1349,5 +1362,34 @@
     "absence": "Absence",
     "aura_only": "Kun aura",
     "uncategorized": "Type ikke angivet"
+  },
+  "patients": {
+    "unnamed": "Patient {{number}}",
+    "recording_for": "Optager for: {{name}}",
+    "home_for": "Patient: {{name}}",
+    "switch_label": "Skift patient",
+    "switch_title": "Hvis registreringer?",
+    "manage": "Administrér patienter",
+    "switch_failed": "Kunne ikke åbne patientens registreringer.",
+    "section": "Patienter på denne enhed",
+    "section_help": "Hver patients anfald, medicin og rapporter holdes adskilt. Skift patient øverst på skærmen.",
+    "active": "Vises nu",
+    "remove": "Fjern patient",
+    "name": "Patientens navn",
+    "color": "Farve",
+    "color_blue": "Blå",
+    "color_green": "Grøn",
+    "color_purple": "Lilla",
+    "color_amber": "Rav",
+    "color_pink": "Lyserød",
+    "color_teal": "Petrol",
+    "new_name": "Ny patients navn",
+    "add": "Tilføj patient",
+    "remove_title": "Fjern {{name}} fra denne enhed?",
+    "remove_body": "Alle patientens registreringer på denne enhed slettes. Andre enheder og sikkerhedskopier beholder deres. Lav en sikkerhedskopi først, hvis dette er den eneste kopi.",
+    "remove_confirm": "Fjern og slet",
+    "backup_all_one": "Medtag alle patienter ({{count}})",
+    "backup_all_other": "Medtag alle patienter ({{count}})",
+    "backup_all_help": "Fjern fluebenet for kun at tage sikkerhedskopi af den viste patient."
   }
 }

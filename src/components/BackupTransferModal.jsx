@@ -1,19 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DownloadIcon, EyeIcon, UploadIcon } from './AppIcons';
-import { BottomSheet, Button, Inset, TextInput } from './ui';
+import { BottomSheet, Button, Checkbox, Inset, TextInput } from './ui';
 import {
   MIN_BACKUP_PASSPHRASE_LENGTH,
   collectCanonicalBackupPayload,
   decryptEncryptedBackup,
   encryptBackupPayload,
-  hasBackupContent,
   parseBackupFileText,
   suggestedEncryptedBackupName,
   summarizeBackupPayload,
 } from '../utils/backupFiles';
 import { saveTextFile } from '../utils/fileSave';
 import { mergeRemoteData } from '../utils/syncHelpers';
+import { collectHouseholdBackup, isHouseholdBackup, restoreHouseholdBackup, summarizeHouseholdBackup } from '../utils/householdBackup';
+import { listProfiles } from '../data/profiles';
 
 function StepText({ children }) {
   return <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{children}</p>;
@@ -39,6 +40,15 @@ export function BackupTransferModal({
   const [busy, setBusy] = useState(false);
 
   const isExport = mode === 'export';
+  // With more than one patient on this device, the backup can include all of them (the default)
+  const [patientCount, setPatientCount] = useState(1);
+  const [allPatientsChoice, setAllPatientsChoice] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    listProfiles().then(list => { if (alive) setPatientCount(list.length); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const allPatients = patientCount > 1 && allPatientsChoice;
   const title = isExport
     ? t('backup.modal.export_title', 'Create Encrypted Backup')
     : t('backup.modal.import_title', 'Import Encrypted Backup');
@@ -81,8 +91,9 @@ export function BackupTransferModal({
     setBusy(true);
     setError('');
     try {
-      const payload = await collectCanonicalBackupPayload(settings);
-      if (!hasBackupContent(payload)) {
+      const payload = allPatients ? await collectHouseholdBackup() : await collectCanonicalBackupPayload(settings);
+      const summary = allPatients ? summarizeHouseholdBackup(payload) : summarizeBackupPayload(payload);
+      if (!Object.entries(summary).some(([key, count]) => key !== 'patients' && count > 0)) {
         setError(t('backup.modal.no_data', 'No health data available to back up.'));
         setBusy(false);
         return;
@@ -102,7 +113,7 @@ export function BackupTransferModal({
         setBusy(false);
         return;
       }
-      await onExportSuccess?.(summarizeBackupPayload(payload));
+      await onExportSuccess?.(summary);
       onClose?.();
     } catch (exportError) {
       console.error('Encrypted backup export failed:', exportError);
@@ -130,7 +141,10 @@ export function BackupTransferModal({
         throw new Error(t('backup.modal.not_encrypted', 'Selected file is not an encrypted backup.'));
       }
       const decrypted = await decryptEncryptedBackup(parsed.parsed, passphrase);
-      const result = await mergeRemoteData(decrypted, { settingsScope });
+      // A file with every patient restores each into the matching patient on this device
+      const result = isHouseholdBackup(decrypted)
+        ? await restoreHouseholdBackup(decrypted, { settingsScope })
+        : await mergeRemoteData(decrypted, { settingsScope });
       await onImportSuccess?.(result);
       onClose?.();
     } catch (importError) {
@@ -190,6 +204,15 @@ export function BackupTransferModal({
         autoComplete={isExport ? 'new-password' : 'current-password'}
         placeholder={t('backup.modal.passphrase_placeholder', 'Enter backup passphrase')}
       />
+
+      {isExport && patientCount > 1 && (
+        <Checkbox
+          checked={allPatientsChoice}
+          onChange={setAllPatientsChoice}
+          label={t('patients.backup_all', { count: patientCount })}
+          help={t('patients.backup_all_help')}
+        />
+      )}
 
       {isExport && (
         <TextInput

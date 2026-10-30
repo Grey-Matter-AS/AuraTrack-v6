@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ScrollFade } from '../components/ScrollFade';
 
 const SECTION_IDS = [
+  'whats_new',
   'recording',
   'tagging',
   'manual',
