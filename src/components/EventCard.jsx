@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { formatDuration, formatEventDate, formatEventTime } from '../utils/formatters';
+import { formatDurationSetting, formatEventDate, formatEventTime } from '../utils/formatters';
 import { EyeIcon, TrashIcon, WarningIcon } from './AppIcons';
+import { seizureTypeLabel } from '../data/constants';
 
 function DangerBadge({ dangerFlags }) {
   const { t } = useTranslation();
@@ -14,7 +15,7 @@ function DangerBadge({ dangerFlags }) {
       {isLong && (
         <span
           className="app-status-badge app-status-badge--warning"
-          title={t('event_card.long_duration_title')}
+          title={t('event_card.long_duration_title', { minutes: dangerFlags.alertMinutes })}
         >
           <WarningIcon className="w-3 h-3" /> {t('event_card.long_duration_badge')}
         </span>
@@ -22,7 +23,7 @@ function DangerBadge({ dangerFlags }) {
       {isCluster && (
         <span
           className="app-status-badge app-status-badge--danger"
-          title={t('event_card.cluster_title', { count: dangerFlags.clusterCount })}
+          title={t('event_card.cluster_title', { count: dangerFlags.clusterCount, window: dangerFlags.clusterWindow })}
         >
           <WarningIcon className="w-3 h-3" /> {t('event_card.cluster_badge', { count: dangerFlags.clusterCount })}
         </span>
@@ -33,7 +34,7 @@ function DangerBadge({ dangerFlags }) {
 
 export function EventCard({ event, onEdit, onDelete, onViewDetail, dangerFlags, durationFormat = 'seconds', dateFormat = 'locale', timeFormat = '12h' }) {
   const { t } = useTranslation();
-  const fmtDur = (s) => durationFormat === 'human' ? formatDuration(s) : `${s}s`;
+  const fmtDur = (s) => formatDurationSetting(s, durationFormat);
   const handleView = () => onViewDetail ? onViewDetail(event.id) : onEdit(event);
   const flags = dangerFlags?.flags;
 
@@ -51,7 +52,7 @@ export function EventCard({ event, onEdit, onDelete, onViewDetail, dangerFlags, 
       <div className="flex justify-between items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-            <p className="font-bold" style={{ color: 'var(--text-primary)' }}>{event.type || t('event_card.unknown')}</p>
+            <p className="font-bold" style={{ color: 'var(--text-primary)' }}>{seizureTypeLabel(event.type, t) || t('event_card.unknown')}</p>
             {event.isEdited && (
               <span
                 className="app-status-badge app-status-badge--info"

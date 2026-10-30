@@ -12,6 +12,8 @@ Cypress.Commands.add('countStoreRows', (storeName) => {
 
 // Tabs render as chips on wide screens and as a dropdown below 480px wide
 Cypress.Commands.add('openTab', (label) => {
+  // Wait for the tab control: History loads on first use, so it can arrive a moment after the click
+  cy.get('select.ui-tabs-select').should('exist');
   cy.get('body').then(($body) => {
     const select = [...$body.find('select.ui-tabs-select')].find(el => el.offsetParent !== null);
     if (select) {

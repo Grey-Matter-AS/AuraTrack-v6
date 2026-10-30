@@ -1,16 +1,20 @@
 import { db } from '../data/db';
 import {
+  BACKUP_TABLES,
   CANONICAL_BACKUP_SCHEMA,
-  CANONICAL_BACKUP_VERSION,
   buildCanonicalBackupPayload,
   sanitizeImportPayload,
 } from './importSanitizer';
+import { dateStamp } from './dates';
+import { fromBase64Url, toBase64Url } from './base64url';
 
 export const ENCRYPTED_BACKUP_SCHEMA = 'auratrack.encrypted-backup';
 export const ENCRYPTED_BACKUP_VERSION = 1;
 export const MIN_BACKUP_PASSPHRASE_LENGTH = 8;
 
 const PBKDF2_ITERATIONS = 310000;
+// A file asking for more would freeze the app while deriving the key
+const MAX_PBKDF2_ITERATIONS = 2_000_000;
 const SALT_BYTES = 16;
 const IV_BYTES = 12;
 
@@ -23,10 +27,6 @@ function requireCrypto() {
   }
 }
 
-function dateStamp() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function normalizePassphrase(passphrase) {
   return String(passphrase ?? '').normalize('NFKC');
 }
@@ -35,22 +35,6 @@ function randomBytes(length) {
   const bytes = new Uint8Array(length);
   globalThis.crypto.getRandomValues(bytes);
   return bytes;
-}
-
-function toBase64Url(bytes) {
-  let binary = '';
-  const chunkSize = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function fromBase64Url(value) {
-  const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64.length % 4 ? base64 + '='.repeat(4 - (base64.length % 4)) : base64;
-  const binary = atob(padded);
-  return Uint8Array.from(binary, char => char.charCodeAt(0));
 }
 
 async function deriveEncryptionKey(passphrase, salt, iterations) {
@@ -70,41 +54,23 @@ async function deriveEncryptionKey(passphrase, salt, iterations) {
   );
 }
 
+// Every table of the database, read in one transaction so the copy is consistent. A table that
+// can't be read fails the whole backup: a backup that silently misses data is worse than none.
 export async function collectCanonicalBackupPayload(settingsSource = null) {
-  const events = await db.events.toArray();
-  const [settingsRows, medications, medicationLogs, medicationChanges, eegSessions, eegActivities, wellbeingEntries] = await Promise.all([
-    db.settings.toArray().catch(() => []),
-    db.medications.toArray().catch(() => []),
-    db.medicationLogs.toArray().catch(() => []),
-    db.medicationChanges.toArray().catch(() => []),
-    db.eegSessions?.toArray?.().catch(() => []) ?? [],
-    db.eegActivities?.toArray?.().catch(() => []) ?? [],
-    db.wellbeingEntries?.toArray?.().catch(() => []) ?? [],
-  ]);
-
-  return buildCanonicalBackupPayload({
-    settings: settingsSource ?? settingsRows,
-    events,
-    medications,
-    medicationLogs,
-    medicationChanges,
-    eegSessions,
-    eegActivities,
-    wellbeingEntries,
+  const snapshot = await db.transaction('r', db.tables, async () => {
+    const out = {};
+    for (const table of db.tables) out[table.name] = await table.toArray();
+    return out;
   });
+  const missing = BACKUP_TABLES.filter(table => !(table in snapshot));
+  if (missing.length) throw new Error(`Backup could not read: ${missing.join(', ')}`);
+  if (settingsSource) snapshot.settings = settingsSource;
+  return buildCanonicalBackupPayload(snapshot, { schemaVersion: db.verno });
 }
 
 export function summarizeBackupPayload(payload) {
   const data = sanitizeImportPayload(payload);
-  return {
-    events: data.events.length,
-    medications: data.medications.length,
-    medicationLogs: data.medicationLogs.length,
-    medicationChanges: data.medicationChanges.length,
-    eegSessions: data.eegSessions.length,
-    eegActivities: data.eegActivities.length,
-    wellbeingEntries: data.wellbeingEntries.length,
-  };
+  return Object.fromEntries(BACKUP_TABLES.filter(table => table !== 'tombstones').map(table => [table, data[table].length]));
 }
 
 export function hasBackupContent(payload) {
@@ -121,11 +87,11 @@ export function parseBackupFileText(text) {
   if (parsed?.schema === ENCRYPTED_BACKUP_SCHEMA) {
     return { kind: 'encrypted', parsed };
   }
+  // An AuraTrack backup, an old plain list of seizures, or an object holding at least one known table
   if (
     parsed?.schema === CANONICAL_BACKUP_SCHEMA ||
-    parsed?.version === CANONICAL_BACKUP_VERSION ||
     Array.isArray(parsed) ||
-    (parsed && typeof parsed === 'object')
+    (parsed && typeof parsed === 'object' && BACKUP_TABLES.some(table => Array.isArray(parsed[table])))
   ) {
     return { kind: 'plain', parsed };
   }
@@ -178,7 +144,9 @@ export async function decryptEncryptedBackup(parsed, passphrase) {
     const salt = fromBase64Url(parsed.kdf?.salt || '');
     const iv = fromBase64Url(parsed.cipher?.iv || '');
     const ciphertext = fromBase64Url(parsed.ciphertext || '');
-    const key = await deriveEncryptionKey(passphrase, salt, parsed.kdf?.iterations || PBKDF2_ITERATIONS);
+    const iterations = Number(parsed.kdf?.iterations) || PBKDF2_ITERATIONS;
+    if (!Number.isInteger(iterations) || iterations < 1 || iterations > MAX_PBKDF2_ITERATIONS) throw new Error('Unsupported key strength');
+    const key = await deriveEncryptionKey(passphrase, salt, iterations);
     const plaintextBuffer = await globalThis.crypto.subtle.decrypt(
       { name: 'AES-GCM', iv },
       key,

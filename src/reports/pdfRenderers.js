@@ -2,6 +2,8 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import i18n from '../i18n';
 import { durationLineSVG, freqBarChartSVG, phaseStackSVG, typeBarSVG, wellbeingCorrelationSVG } from '../utils/pdfCharts';
+import { dateStamp } from '../utils/dates';
+import { saveFileBlob } from '../utils/fileSave';
 
 const COLORS = {
   ink: [17, 24, 39],
@@ -75,8 +77,8 @@ export async function downloadNeurologistReportPdf(data) {
   const margin = 40;
   let cursorY = 42;
   const [freqChart, durationChart, typeChart, phaseChart, wellbeingChart] = await Promise.all([
-    renderSvgChart(freqBarChartSVG(data.charts.periodEvents, data.periodDays, data.charts.periodEndMs)),
-    renderSvgChart(durationLineSVG(data.charts.periodEvents, data.periodDays)),
+    renderSvgChart(freqBarChartSVG(data.charts.periodEvents, data.periodDays, data.charts.periodEndMs, data.plan)),
+    renderSvgChart(durationLineSVG(data.charts.periodEvents, data.periodDays, data.plan)),
     renderSvgChart(typeBarSVG(data.charts.byType, data.charts.totalEvents)),
     renderSvgChart(phaseStackSVG(data.charts.periodEvents, 10)),
     renderSvgChart(wellbeingCorrelationSVG(data.charts.periodEvents, data.charts.wellbeingEntries, data.periodDays, data.charts.periodEndMs)),
@@ -265,6 +267,15 @@ export async function downloadNeurologistReportPdf(data) {
       cursorY += 8;
     });
   }
+
+  // The thresholds behind the flags (the user's emergency plan)
+  cursorY = ensurePageRoom(doc, cursorY, 30);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(107, 114, 128);
+  const ruleLines = doc.splitTextToSize(data.planRule, pageWidth - margin * 2);
+  doc.text(ruleLines, margin, cursorY + 8);
+  cursorY += 8 + ruleLines.length * 10 + 6;
 
   cursorY = ensurePageRoom(doc, cursorY, 360);
   drawSectionTitle(doc, t('export.docs.trend_analysis'), margin, cursorY, pageWidth - margin);
@@ -974,9 +985,6 @@ function hexToRgb(hex) {
   ];
 }
 
-function dateStamp() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function translator() {
   return (key, options) => i18n.t(key, options);
@@ -986,32 +994,4 @@ function stripHtml(value) {
   return value.replace(/<br\s*\/?>/gi, '\n');
 }
 
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 100);
-}
-
-async function saveFileNative(blob, suggestedName, description, extensions) {
-  if ('showSaveFilePicker' in window) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName,
-        types: [{ description, accept: { [blob.type]: extensions } }],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return { ok: true, cancelled: false };
-    } catch (error) {
-      if (error.name === 'AbortError') return { ok: false, cancelled: true };
-    }
-  }
-  triggerDownload(blob, suggestedName);
-  return { ok: true, cancelled: false };
-}
+const saveFileNative = saveFileBlob;

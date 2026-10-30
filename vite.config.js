@@ -8,10 +8,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': a new version waits for the user's tap, so it can never reload the page mid-recording
+      registerType: 'prompt',
       manifest: false,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        // Tapping a reminder opens the app (public/notification-click.js)
+        importScripts: ['notification-click.js'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024
       }
     })

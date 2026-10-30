@@ -1,12 +1,8 @@
 import Dexie from 'dexie';
 import { regimenSnapshot } from '../utils/medicationSchedule';
+import { makeUUID } from '../utils/ids';
 
 export const db = new Dexie('AuraTrackDB');
-
-function makeUUID() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-  return `uuid-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-}
 
 db.version(3).stores({
   events: '++id, startTime, date, type, isComplete, isEdited, notes'
@@ -137,3 +133,74 @@ db.version(11).stores({
     });
   }
 });
+
+// Tables whose rows sync record by record: each row has a uuid and an updatedAt, and a deletion
+// leaves a tombstone (uuid + table) so it reaches other devices instead of being sent back.
+export const SYNCED_TABLES = ['events', 'medicationLogs', 'eegSessions', 'eegActivities', 'wellbeingEntries'];
+
+// v12: tombstones, updatedAt on every synced row, uuids on rows that never got one, and removal of
+// duplicate auto-generated missed/assumed dose logs (two runs of the missed-dose check at once).
+db.version(12).stores({
+  events: '++id, uuid, startTime, date, type, isComplete, isEdited, notes, eegSessionId, videoAttached',
+  settings: 'key',
+  medications: '++id, uuid',
+  medicationLogs: '++id, uuid, medicationId, medicationUuid, takenAt, scheduledTime',
+  medicationChanges: '++id, uuid, medicationId, medicationUuid, effectiveAt, type',
+  eegSessions: '++id, uuid, startTime, status, actualEndTime',
+  eegActivities: '++id, uuid, sessionId, kind, startTime, endTime, linkedEventId, isEdited',
+  wellbeingEntries: '++id, uuid, recordedAt, dayKey, primaryMood, intensity, isEdited',
+  tombstones: '&uuid, table, deletedAt',
+}).upgrade(async tx => {
+  const now = Date.now();
+  for (const name of SYNCED_TABLES) {
+    const table = tx.table(name);
+    await table.toCollection().modify(row => {
+      if (!row.uuid) row.uuid = makeUUID();
+      if (row.updatedAt == null) {
+        row.updatedAt = row.lastModified ?? row.createdAt ?? row.recordedAt ?? row.takenAt ?? row.startTime ?? now;
+      }
+    });
+  }
+
+  const rank = { missed: 0, assumed: 1, taken: 2, late: 2 };
+  const logs = await tx.table('medicationLogs').toArray();
+  const slots = new Map();
+  for (const log of logs) {
+    if (!log.scheduledTime) continue;
+    const day = new Date(log.takenAt || 0).toDateString();
+    const key = `${log.medicationUuid || `id:${log.medicationId}`}|${day}|${log.scheduledTime}`;
+    slots.set(key, [...(slots.get(key) || []), log]);
+  }
+  const redundant = [];
+  for (const group of slots.values()) {
+    if (group.length < 2) continue;
+    const best = group.reduce((a, b) => ((rank[b.status] ?? 2) > (rank[a.status] ?? 2) ? b : a));
+    // Only auto-generated placeholders are removed; a logged dose (taken/late) is never deleted
+    group.filter(log => log !== best && (log.status === 'missed' || log.status === 'assumed') && !log.isEdited)
+      .forEach(log => redundant.push(log.id));
+  }
+  if (redundant.length) await tx.table('medicationLogs').bulkDelete(redundant);
+});
+
+// v13: only the indexes queries use. Dropped indexes (free-text notes, type, flags…) cost space and
+// slowed every save; Dexie removes them without touching the stored data.
+db.version(13).stores({
+  events: '++id, uuid, startTime',
+  settings: 'key',
+  medications: '++id, uuid',
+  medicationLogs: '++id, uuid, medicationId, medicationUuid, takenAt',
+  medicationChanges: '++id, uuid, medicationId, medicationUuid, effectiveAt',
+  eegSessions: '++id, uuid, startTime, status',
+  eegActivities: '++id, uuid, sessionId, startTime, linkedEventId',
+  wellbeingEntries: '++id, uuid, recordedAt',
+  tombstones: '&uuid, table, deletedAt',
+});
+
+// Every write stamps updatedAt, unless the caller sets it (sync keeps the other device's time)
+for (const name of SYNCED_TABLES) {
+  db.table(name).hook('creating', (_key, obj) => {
+    if (obj.updatedAt == null) obj.updatedAt = Date.now();
+    if (!obj.uuid) obj.uuid = makeUUID();
+  });
+  db.table(name).hook('updating', (mods) => ('updatedAt' in mods ? undefined : { updatedAt: Date.now() }));
+}

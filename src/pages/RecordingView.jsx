@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDuration } from '../utils/formatters';
+import { formatDurationSetting } from '../utils/formatters';
 import { CheckIcon, CloseIcon, WarningIcon } from '../components/AppIcons';
 import { Button } from '../components/ui';
-
-const ALERT_THRESHOLD = 300;  // 5 minutes
-const AUTO_STOP_AT    = 720;  // 12 minutes
+import { AUTO_STOP_AT_S, emergencyPlan } from '../utils/dangerFlags';
 const stripTrailingCheck = (text) => String(text || '').replace(/\s*\u2713\s*$/u, '');
 
-function RedAlert({ elapsed, onClose, emergencyMedications = [], neurologistName, neurologistContact, emergencyContact }) {
+function RedAlert({ elapsed, alertMinutes, isCarer, onClose, emergencyMedications = [], neurologistName, neurologistContact, emergencyContact }) {
   const { t } = useTranslation();
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
@@ -45,8 +43,9 @@ function RedAlert({ elapsed, onClose, emergencyMedications = [], neurologistName
 
       <WarningIcon className="w-20 h-20 mb-3 text-[#fff]" />
 
+      {/* What is known: how long it has lasted. Awareness isn't (a focal aware seizure can last this long too). */}
       <h1 className="text-4xl font-black text-[#fff] uppercase tracking-tight text-center mb-1">
-        {t('alert.unresponsive')}
+        {t(isCarer ? 'alert.title_carer' : 'alert.title_self', { minutes: alertMinutes })}
       </h1>
       <p className="text-xl font-black text-red-200 uppercase tracking-widest text-center mb-5">
         {t('alert.medical_emergency')}
@@ -55,7 +54,7 @@ function RedAlert({ elapsed, onClose, emergencyMedications = [], neurologistName
       <div className="w-full max-w-xs rounded-3xl p-4 mb-4 text-center space-y-1"
         style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
         <p className="text-red-100 text-sm font-bold">{t('alert.call_services')}</p>
-        <p className="text-red-300 text-xs">{t('alert.dont_leave')}</p>
+        <p className="text-red-300 text-xs">{t(isCarer ? 'alert.dont_leave' : 'alert.self_instruction')}</p>
       </div>
 
       {/* Emergency medications */}
@@ -95,7 +94,7 @@ function RedAlert({ elapsed, onClose, emergencyMedications = [], neurologistName
       )}
 
       {/* Live elapsed */}
-      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-300 mb-1">{t('alert.elapsed')}</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-300 mb-1">{t(isCarer ? 'alert.seizure_time' : 'alert.elapsed')}</p>
       <p className="text-6xl font-mono font-black text-[#fff] tabular-nums">
         {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
       </p>
@@ -121,6 +120,7 @@ function RecordingView({
   neurologistContact,
   emergencyContact,
   durationFormat = 'seconds',
+  plan = emergencyPlan(),
   onStartVideo,
   onStopVideo,
   onSwitchCamera,
@@ -131,16 +131,18 @@ function RecordingView({
   canSwitchCamera = false,
 }) {
   const { t } = useTranslation();
-  const fmtDur = (s) => durationFormat === 'human' ? formatDuration(s) : `${s}s`;
+  const fmtDur = (s) => formatDurationSetting(s, durationFormat);
   const seizureStartLabel = startTime ? new Date(startTime).toLocaleString() : '';
   const [showMarkers, setShowMarkers] = useState(false);
   const [alertDismissed, setAlertDismissed] = useState(false);
   const emergencyFiredRef = useRef(false);
   const previewRef = useRef(null);
 
+  // Seconds from start to end; a phase still running counts to now (elapsed is measured from the
+  // recording start, so a later phase subtracts the time before it began)
   const getDiff = (start, end) => {
     if (!start) return 0;
-    if (!end) return elapsed;
+    if (!end) return Math.max(0, elapsed - Math.floor((start - (startTime || start)) / 1000));
     return Math.floor((end - start) / 1000);
   };
 
@@ -148,11 +150,24 @@ function RecordingView({
   const seizureDuration  = laps.aura ? getDiff(laps.aura, laps.seizure) : 0;
   const recoveryDuration = laps.seizure ? getDiff(laps.seizure, null) : 0;
 
-  const showAlert = !alertDismissed && elapsed >= ALERT_THRESHOLD;
+  // The emergency clock is seizure activity: in carer mode from the end of the aura (or the start,
+  // when there was none) until the seizure ends; a long recovery afterwards doesn't count.
+  // Until the aura is marked over, the phase isn't known, so the whole time counts (never alert late).
+  const isCarer = userMode === 'CARETAKER';
+  const seizureClock = isCarer && laps.aura ? seizureDuration : elapsed;
+  const noAura = Boolean(laps.aura && startTime && laps.aura === startTime);
+  const showAlert = !alertDismissed && seizureClock >= plan.alertSec;
+  const showWarning = seizureClock >= plan.warnSec && seizureClock < plan.alertSec;
+
+  // A seizure with no aura: End seizure is tapped first, so the aura is recorded as zero length
+  const endSeizure = () => {
+    if (!laps.aura) onLap('aura', startTime);
+    onLap('seizure');
+  };
 
   // Auto-stop at 12 minutes — ref guard ensures it fires exactly once
   useEffect(() => {
-    if (elapsed >= AUTO_STOP_AT && !emergencyFiredRef.current) {
+    if (elapsed >= AUTO_STOP_AT_S && !emergencyFiredRef.current) {
       emergencyFiredRef.current = true;
       onEmergencyStop?.();
     }
@@ -171,7 +186,7 @@ function RecordingView({
   return (
     <>
       {/* RED ALERT — fullscreen overlay, stays on top of everything */}
-      {showAlert && <RedAlert elapsed={elapsed} onClose={dismissAlert} emergencyMedications={emergencyMedications} neurologistName={neurologistName} neurologistContact={neurologistContact} emergencyContact={emergencyContact} />}
+      {showAlert && <RedAlert elapsed={seizureClock} alertMinutes={plan.alertMinutes} isCarer={isCarer} onClose={dismissAlert} emergencyMedications={emergencyMedications} neurologistName={neurologistName} neurologistContact={neurologistContact} emergencyContact={emergencyContact} />}
 
       <div data-recording-screen className="app-page-shell flex-1 min-h-full flex flex-col items-center mx-auto py-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] animate-in fade-in gap-4">
 
@@ -185,7 +200,7 @@ function RecordingView({
             <div className="py-3 rounded-2xl text-center" style={{ backgroundColor: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
               <p className="app-status-badge app-status-badge--danger !text-[9px] !px-2 !py-0.5 !mb-1 mx-auto">{t('recording.seizure')}</p>
               <p className="text-2xl font-mono font-bold leading-none"
-                style={{ color: laps.aura && !laps.seizure && seizureDuration >= 240 ? 'var(--text-danger)' : 'var(--text-primary)' }}>
+                style={{ color: laps.aura && !laps.seizure && seizureDuration >= plan.warnSec ? 'var(--text-danger)' : 'var(--text-primary)' }}>
                 {fmtDur(seizureDuration)}
               </p>
             </div>
@@ -228,14 +243,14 @@ function RecordingView({
           <p className="text-xs font-black uppercase tracking-[0.4em] mb-2" style={{ color: 'var(--text-dim)' }}>{t('recording.total_elapsed')}</p>
           <div
             className="text-[11vh] font-mono font-black tracking-tighter tabular-nums leading-none"
-            style={{ color: elapsed >= 240 && userMode !== 'CARETAKER' ? 'var(--text-danger)' : 'var(--text-primary)' }}
+            style={{ color: !isCarer && elapsed >= plan.warnSec ? 'var(--text-danger)' : 'var(--text-primary)' }}
           >
             {fmtDur(elapsed)}
           </div>
           {/* Warning ring at 4 min (1 min before alert) */}
-          {elapsed >= 240 && elapsed < ALERT_THRESHOLD && (
+          {showWarning && (
             <p className="app-status-badge app-status-badge--danger mt-2 animate-pulse">
-              {userMode === 'CARETAKER' ? t('recording.long_seizure_warning') : t('recording.approaching_threshold')}
+              {isCarer ? t('recording.long_seizure_warning') : t('recording.approaching_threshold')}
             </p>
           )}
           <div className="flex justify-center mt-4 gap-2 flex-wrap">
@@ -279,28 +294,26 @@ function RecordingView({
 	                    {laps.aura ? stripTrailingCheck(t('recording.aura_ended')) : t('recording.end_aura')}
 	                  </span>
                   <span className="app-action-tile__detail" style={{ color: laps.aura ? '#fff' : 'rgba(255,255,255,0.88)' }}>
-                    {fmtDur(auraDuration)}
+                    {noAura ? t('recording.no_aura') : fmtDur(auraDuration)}
                   </span>
                 </button>
 
                 <button
-                  disabled={!laps.aura || !!laps.seizure}
-                  onClick={() => onLap('seizure')}
+                  disabled={!!laps.seizure}
+                  onClick={endSeizure}
                   className="app-action-tile border-[2px] transition-all active:scale-95 disabled:active:scale-100"
                   style={laps.seizure
                     ? { backgroundColor: '#334155', borderColor: '#64748b', color: '#fff' }
-                    : (!laps.aura
-                        ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-faint)', opacity: 0.58 }
-                        : { backgroundColor: '#dc2626', borderColor: '#f87171', color: '#fff', boxShadow: '0 18px 34px rgba(127,29,29,0.3)' })}
+                    : { backgroundColor: '#dc2626', borderColor: '#f87171', color: '#fff', boxShadow: '0 18px 34px rgba(127,29,29,0.3)' }}
                 >
-                  <span className="app-action-tile__eyebrow" style={{ color: laps.seizure ? '#fff' : (!laps.aura ? 'var(--text-faint)' : 'rgba(255,255,255,0.82)') }}>
+                  <span className="app-action-tile__eyebrow" style={{ color: laps.seizure ? '#fff' : 'rgba(255,255,255,0.82)' }}>
                     {t('recording.seizure')}
                   </span>
 	                  <span className="app-action-tile__title inline-flex items-center justify-center gap-2">
 	                    {laps.seizure && <CheckIcon className="w-5 h-5" />}
 	                    {laps.seizure ? stripTrailingCheck(t('recording.seizure_ended')) : t('recording.end_seizure')}
 	                  </span>
-                  <span className="app-action-tile__detail" style={{ color: laps.seizure ? '#fff' : (!laps.aura ? 'var(--text-faint)' : 'rgba(255,255,255,0.88)') }}>
+                  <span className="app-action-tile__detail" style={{ color: laps.seizure ? '#fff' : 'rgba(255,255,255,0.88)' }}>
                     {fmtDur(seizureDuration)}
                   </span>
                 </button>

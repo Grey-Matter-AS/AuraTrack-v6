@@ -118,14 +118,15 @@ describe('AuraTrack core flows', () => {
     cy.contains('button', 'STOP TIMER').click();
     cy.contains('button', 'Tonic-Clonic').click();
     cy.contains('button', 'Continue to Summary').click();
-    cy.contains('button', 'Confusion').click();
-    cy.contains('button', 'Sleepiness').click();
-    cy.contains('button', '+ Add Area').click();
+    cy.contains('button', 'Confused / disoriented').scrollIntoView().click();
+    cy.contains('button', 'Drowsy / fell asleep').click();
+    // A finding that affects a body part asks where
+    cy.contains('button', 'Paralysis (Todd’s)').click();
     cy.contains('button', 'Arms').click();
     cy.contains('button', 'Left Arm').click();
     cy.contains('button', 'Hand/Fingers').click();
-    cy.contains('button', 'Add 1 paralysis area').click();
-    cy.contains('Todd\'s paralysis').should('be.visible');
-    cy.contains('Arms › Left Arm › Hand/Fingers').should('be.visible');
+    cy.contains('button', 'Add 1 area').click();
+    cy.contains('Arms › Left Arm › Hand/Fingers').scrollIntoView().should('be.visible');
+    cy.contains('button', 'Confused / disoriented').should('have.attr', 'aria-pressed', 'true');
   });
 });

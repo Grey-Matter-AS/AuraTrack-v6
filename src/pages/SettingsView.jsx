@@ -4,9 +4,13 @@ import { SettingsForm } from '../components/SettingsForm';
 import { Tabs } from '../components/ui';
 import { ScrollFade } from '../components/ScrollFade';
 
-export default function SettingsView({ settings, onUpdate, onReset, onBack, pwa, notificationPermission, onRequestNotificationPermission, onSync, initialTab = 'identity', storagePersistence = null, onBackupSuccess = null }) {
+// tab / onTabChange: the open tab is kept in the navigation entry, so Back from Help (or a sheet)
+// returns to the same tab
+export default function SettingsView({ settings, onUpdate, onReset, onBack, pwa, notificationPermission, onRequestNotificationPermission, onSync, tab, onTabChange, initialTab = 'identity', storagePersistence = null, onBackupSuccess = null }) {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [localTab, setLocalTab] = useState(initialTab);
+  const activeTab = tab ?? localTab;
+  const setActiveTab = onTabChange ?? setLocalTab;
 
   const TABS = [
     { id: 'identity',    label: t('settings.tabs.identity')    },

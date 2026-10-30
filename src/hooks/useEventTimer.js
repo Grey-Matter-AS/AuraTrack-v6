@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { haptic } from '../utils/hapticFeedback';
 
 const EMPTY_LAPS = { aura: null, seizure: null, recovery: null };
+// Crash recovery keys: everything needed to resume a recording after the app is closed
+export const RECOVERY_KEYS = ['aura_startTime', 'aura_status', 'aura_startDateReadable', 'aura_startTimeReadable', 'aura_laps', 'aura_notes'];
 
 export function useEventTimer() {
   const [isRunning, setIsRunning] = useState(false);
@@ -30,6 +32,8 @@ export function useEventTimer() {
     setLaps(EMPTY_LAPS);
     setIsRunning(true);
     try {
+      localStorage.removeItem('aura_laps');
+      localStorage.removeItem('aura_notes');
       localStorage.setItem('aura_startTime', now);
       localStorage.setItem('aura_status', 'RECORDING');
       localStorage.setItem('aura_startDateReadable', new Date(now).toLocaleDateString());
@@ -55,20 +59,25 @@ export function useEventTimer() {
     try {
       date = localStorage.getItem('aura_startDateReadable');
       time = localStorage.getItem('aura_startTimeReadable');
-      ['aura_startTime', 'aura_status', 'aura_startDateReadable', 'aura_startTimeReadable']
-        .forEach(k => localStorage.removeItem(k));
+      RECOVERY_KEYS.forEach(k => localStorage.removeItem(k));
     } catch { /* ignore — private browsing */ }
     return { startTime: startTimeRef.current, endTime, duration, laps: finalLaps, date, time };
   }, []);
 
-  const recordLap = useCallback((phase) => {
-    const nextLaps = { ...lapsRef.current, [phase]: Date.now() };
+  // at: when the phase ended (default now). A seizure without an aura records the aura as ending at the start.
+  const recordLap = useCallback((phase, at = Date.now()) => {
+    const nextLaps = { ...lapsRef.current, [phase]: at };
     lapsRef.current = nextLaps;
     setLaps(nextLaps);
+    try { localStorage.setItem('aura_laps', JSON.stringify(nextLaps)); } catch { /* private browsing */ }
     haptic(100);
   }, []);
 
   const restore = useCallback((savedStartTime) => {
+    let savedLaps = EMPTY_LAPS;
+    try { savedLaps = { ...EMPTY_LAPS, ...JSON.parse(localStorage.getItem('aura_laps') || '{}') }; } catch { /* none saved */ }
+    lapsRef.current = savedLaps;
+    setLaps(savedLaps);
     startTimeRef.current = savedStartTime;
     setStartTime(savedStartTime);
     setElapsed(Math.floor((Date.now() - savedStartTime) / 1000));

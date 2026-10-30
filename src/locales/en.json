@@ -45,7 +45,9 @@
     "stop_video": "Stop Video",
     "video_badge": "Video",
     "video_error_unavailable": "Camera permission or video recording is not available on this device.",
-    "switch_camera": "Switch Camera"
+    "switch_camera": "Switch Camera",
+    "no_aura": "No aura",
+    "auto_stop_note": "Recording stopped automatically at 12 minutes (status epilepticus)."
   },
   "alert": {
     "medical_alert": "MEDICAL ALERT",
@@ -56,7 +58,11 @@
     "administer_med": "Administer Emergency Medication",
     "neurologist": "Neurologist",
     "emergency_contact": "Emergency Contact",
-    "elapsed": "Elapsed"
+    "elapsed": "Elapsed",
+    "title_carer": "SEIZURE {{minutes}}+ MINUTES",
+    "title_self": "{{minutes}}+ MINUTES — GET HELP",
+    "self_instruction": "Tell someone nearby or call emergency services if you can.",
+    "seizure_time": "Seizure time"
   },
   "tagging": {
     "step1_title": "Step 1: Seizure Type",
@@ -75,7 +81,19 @@
     "todds_paralysis": "Todd's paralysis",
     "add_paralysis_area": "Add Paralysis Area",
     "add_paralysis_areas": "Add {{count}} paralysis area(s)",
-    "remove_area": "Remove area"
+    "remove_area": "Remove area",
+    "add_custom_symptom": "+ Add your own symptom",
+    "add_custom_detail": "+ Add your own detail",
+    "save_continue_summary": "Save and continue to summary",
+    "add_selected_zero": "Add selected",
+    "add_selected_one": "Add {{count}} selected",
+    "add_selected_other": "Add {{count}} selected",
+    "custom_symptom_title": "Your own symptom",
+    "custom_detail_title": "Your own detail",
+    "custom_symptom_placeholder": "Name the symptom to add under this menu",
+    "custom_detail_placeholder": "Describe the symptom detail or variant",
+    "custom_remembered_help": "Saved for next time. You can rename or delete it in Settings → Recording.",
+    "continue": "Continue"
   },
   "history": {
     "title": "History",
@@ -95,7 +113,8 @@
     "from_date": "From",
     "to_date": "To",
     "from_date_hint": "From date",
-    "to_date_hint": "To date"
+    "to_date_hint": "To date",
+    "uncategorized": "Type not set"
   },
   "export": {
     "title": "Export & Reports",
@@ -212,7 +231,7 @@
       "chart_phase_breakdown": "PHASE BREAKDOWN — LAST {{count}} EVENTS",
       "no_phase_data": "No phase data",
       "self_subject": "Self",
-      "flag_events_exceeding_5m": "Events exceeding 5 minutes ({{count}})",
+      "flag_events_exceeding_5m": "Seizures lasting {{minutes}} minutes or longer ({{count}})",
       "flag_increasing_frequency": "Increasing frequency",
       "flag_increasing_duration": "Increasing duration trend",
       "flag_auto_terminated": "Auto-terminated events ({{count}})",
@@ -222,7 +241,7 @@
       "flag_detail_recent_avg_vs_earlier_avg": "Recent avg {{recent}} vs earlier avg {{earlier}}.",
       "flag_detail_auto_terminated": "Timer stopped automatically at 12 minutes due to patient unresponsiveness; may indicate a prolonged recovery state.",
       "flag_detail_edited_records": "Phase durations or details were modified after initial recording and may differ from real-time capture.",
-      "detail_badge_over5": ">5 MIN",
+      "detail_badge_over5": "≥{{minutes}} MIN",
       "detail_badge_auto_stopped": "AUTO-STOPPED",
       "detail_badge_edited": "EDITED",
       "event_number": "Event #{{count}}",
@@ -252,11 +271,17 @@
       "change_what": "Change",
       "adherence_line": "Scheduled doses: {{taken}} confirmed, {{late}} late, {{assumed}} assumed, {{missed}} missed",
       "assumed_note": "Assumed doses were not confirmed by the user; they are recorded as taken by default.",
-      "stopped_on": "Stopped {{date}}"
+      "stopped_on": "Stopped {{date}}",
+      "emergency_plan_rule": "Emergency plan used for these flags: alert after {{minutes}} minutes of seizure activity; cluster = {{count}} or more seizures within {{window}}.",
+      "trigger_wellbeing_match_one": "{{count}} also logged in that day’s wellbeing",
+      "trigger_wellbeing_match_other": "{{count}} also logged in that day’s wellbeing"
     },
     "eeg_title": "EEG Diary",
     "eeg_label": "EEG Clinical Table",
-    "eeg_desc": "Export the most recent EEG session as a table-first clinical PDF."
+    "eeg_desc": "Export the most recent EEG session as a table-first clinical PDF.",
+    "go_to_backup": "Go to backup",
+    "export_button": "Export",
+    "factor": "Factor"
   },
   "event_detail": {
     "title": "Event Detail",
@@ -278,9 +303,9 @@
     "triggers": "Possible Triggers",
     "notes": "Clinical Observations",
     "danger_prolonged_title": "Prolonged Seizure",
-    "danger_prolonged_desc": "This event lasted more than 5 minutes. Seek medical review if not already done.",
+    "danger_prolonged_desc": "The seizure lasted {{minutes}} minutes or longer (the alert time in your emergency plan). Seek medical review if not already done.",
     "danger_cluster_title": "Cluster ×{{count}} / Status Epilepticus Risk",
-    "danger_cluster_desc": "{{count}} seizures occurred within 8 minutes. Consult a neurologist immediately.",
+    "danger_cluster_desc": "{{count}} seizures occurred within {{window}}. Consult a neurologist immediately.",
     "eeg_session": "EEG session",
     "linked": "Linked",
     "video_file": "Video file",
@@ -328,7 +353,7 @@
           "Use OD, BD, TDS, QDS, PRN, scheduled times, and day-of-week settings to match the prescribed plan.",
           "The home screen shows today's scheduled doses — tap each medication button to toggle it, then tap Save to log the doses.",
           "Medication History shows logged, missed, late, extra, and corrected doses. Edited entries keep an audit marker.",
-          "Enable dose reminders per medication in Settings → Medications. Rescue medicines can also be highlighted during emergency alerts."
+          "Enable dose reminders per medication in Settings → Medications. Rescue medicines can also be highlighted during emergency alerts. Reminders come while AuraTrack is open or was used recently; for a guaranteed alarm also set one in your phone’s clock."
         ]
       },
       "wellbeing": {
@@ -500,7 +525,20 @@
       "factor_type_number": "Number",
       "factor_unit_placeholder": "Unit",
       "factor_label": "Factor name",
-      "factor_type": "Factor type"
+      "factor_type": "Factor type",
+      "emergency_plan": "Emergency plan",
+      "emergency_plan_help": "Use the times in your emergency care plan. If unsure, keep the defaults and ask your neurologist. These settings are shared with your other synced devices.",
+      "alert_after": "Emergency alert after",
+      "alert_after_help": "Seizure time before the full-screen alert. A warning shows one minute earlier. Default 5 minutes.",
+      "unit_minutes": "minutes",
+      "unit_hours": "hours",
+      "cluster_rule": "Cluster warning",
+      "cluster_rule_help": "Seizures are flagged as a cluster when this many happen within this time. Default 3 within 8 minutes. Ask your neurologist what counts as a cluster for you.",
+      "cluster_count": "Number of seizures",
+      "seizures_within": "seizures within",
+      "cluster_window": "Cluster time window",
+      "cluster_window_unit": "Time unit",
+      "reset_default": "Reset to default"
     },
     "medications": {
       "section": "Medications",
@@ -515,7 +553,7 @@
       "active_days": "Active Days",
       "daily": "Daily",
       "dose_reminders": "Dose Reminders",
-      "dose_reminders_help": "Push notification at each scheduled time",
+      "dose_reminders_help": "A notification at each scheduled time while AuraTrack is open or was used recently. Not a guaranteed alarm: if the phone has closed the app, the reminder does not come.",
       "show_emergency": "Show on Emergency Screen",
       "show_emergency_help": "Display during prolonged seizure alert",
       "save": "Save",
@@ -529,7 +567,7 @@
       "reminder_granted": "🔔 Notifications enabled",
       "reminder_denied": "🔕 Notifications blocked",
       "reminder_off": "🔕 Notifications off",
-      "reminder_granted_help": "Reminders will fire while app is open or suspended.",
+      "reminder_granted_help": "Reminders come while the app is open or was used recently. Tapping one opens today's doses. For a guaranteed alarm, also set one in your phone's clock.",
       "reminder_denied_help": "Blocked in browser settings — reset site permissions to re-enable.",
       "reminder_off_help": "Enable to receive dose reminder notifications.",
       "reminder_enable": "Enable",
@@ -684,7 +722,18 @@
       "import_summary_meds_updated_one": "{{count}} medication updated",
       "import_summary_meds_updated_other": "{{count}} medications updated",
       "import_summary_meds_deleted_one": "{{count}} medication deleted",
-      "import_summary_meds_deleted_other": "{{count}} medications deleted"
+      "import_summary_meds_deleted_other": "{{count}} medications deleted",
+      "import_summary_updated_one": "{{count}} record updated",
+      "import_summary_updated_other": "{{count}} records updated",
+      "import_summary_deleted_one": "{{count}} record deleted (deleted on the other device)",
+      "import_summary_deleted_other": "{{count}} records deleted (deleted on the other device)",
+      "import_summary_unmatched_one": "{{count}} record could not be matched to a medication or EEG session on this device and was skipped.",
+      "import_summary_unmatched_other": "{{count}} records could not be matched to a medication or EEG session on this device and were skipped.",
+      "import_summary_rejected_one": "{{count}} record was skipped because its data was invalid (for example a missing date).",
+      "import_summary_rejected_other": "{{count}} records were skipped because their data was invalid (for example a missing date).",
+      "restore_copy_all": "When restoring, copy display and device settings too",
+      "restore_copy_all_help": "For setting up a new phone: an exact copy including mode, language, theme and reminders. On by default while this phone has no seizures recorded.",
+      "after_full_restore": "Next on this phone: allow notifications and install AuraTrack to the home screen (these can’t be copied)."
     },
     "about_section": {
       "section": "About",
@@ -729,7 +778,8 @@
       "hide": "Hide",
       "show": "Show",
       "working": "Working...",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "videos_not_included": "Videos are saved separately on this device and are not in the backup."
     },
     "reminder": {
       "eyebrow": "Recovery reminder",
@@ -771,9 +821,9 @@
     "delete": "Delete",
     "untagged": "Untagged",
     "notes_placeholder": "Clinical observations, after-seizure notes, medication given...",
-    "long_duration_title": "Seizure lasted more than 5 minutes",
+    "long_duration_title": "Seizure lasted {{minutes}} minutes or longer",
     "long_duration_badge": ">5 MIN",
-    "cluster_title": "Cluster seizures / Status Epilepticus risk - {{count}} events within 8 minutes",
+    "cluster_title": "Cluster: {{count}} seizures within {{window}}",
     "cluster_badge": "CLUSTER x{{count}}",
     "unknown": "Unknown"
   },
@@ -792,10 +842,29 @@
     "recovery": "Recovery",
     "total": "Total",
     "manual_durations": "Adjust durations manually",
-    "remove_symptom": "Remove",
-    "drag_to_reorder": "Drag to reorder",
+    "remove_symptom": "Remove symptom",
+    "drag_to_reorder": "Hold & drag ≡ to reorder (the first is the main symptom)",
     "event_datetime": "Event Date & Time",
-    "event_date_time": "Event date & time"
+    "event_date_time": "Event date & time",
+    "seizure_type": "Seizure type",
+    "type_not_set": "Not set",
+    "change_type": "Change",
+    "no_aura": "There was no aura",
+    "edited": "edited",
+    "edit": "EDIT",
+    "edit_phase_question": "Edit {{phase}}?",
+    "yes": "YES",
+    "no": "NO",
+    "total_duration": "Total duration",
+    "edit_total_question": "Edit total duration?",
+    "yes_edit": "YES, EDIT",
+    "logged_symptoms": "Logged symptoms",
+    "possible_triggers": "Possible triggers",
+    "optional": "optional",
+    "clinical_observations": "Clinical observations",
+    "finish_save": "FINISH & SAVE LOG",
+    "cancel_discard": "CANCEL & DISCARD",
+    "cancel_edit": "CANCEL CHANGES"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -1020,7 +1089,10 @@
     "export_import": "Export / Import",
     "invalid_qr": "That QR code is not a valid AuraTrack sync code.",
     "title": "Sync to Another Device",
-    "medication_history_summary": "Medication history: {{changes}} change record(s), {{updated}} updated, {{deleted}} deleted."
+    "medication_history_summary": "Medication history: {{changes}} change record(s), {{updated}} updated, {{deleted}} deleted.",
+    "copy_device_settings": "Also copy display and device settings",
+    "copy_device_settings_help": "Mode (self or carer), language, theme, text size and reminders. Leave off when both phones are in use, for example the patient's and the carer's.",
+    "backup_elsewhere": "To move data with a file instead, use Back up / Restore on the Data & Backup screen."
   },
   "install": {
     "add_to_home": "Add to Home Screen",
@@ -1152,7 +1224,8 @@
   },
   "common": {
     "close": "Close",
-    "section": "Section"
+    "section": "Section",
+    "back": "Back"
   },
   "ui": {
     "select_date": "Select date",
@@ -1160,5 +1233,125 @@
     "select_datetime": "Select date & time",
     "select_month": "Select month",
     "choose": "Choose…"
+  },
+  "post_ictal": {
+    "group": {
+      "responsiveness": "Responsiveness",
+      "movement": "Movement",
+      "sensation": "Sensation",
+      "speech": "Speech",
+      "head": "Head and vision",
+      "body": "Body",
+      "mood": "Mood and behaviour",
+      "other": "Other (in your own words)"
+    },
+    "finding": {
+      "not_responding": "Not responding",
+      "confused": "Confused / disoriented",
+      "drowsy": "Drowsy / fell asleep",
+      "agitated": "Agitated / restless",
+      "no_memory": "No memory of the event",
+      "paralysis": "Paralysis (Todd’s)",
+      "weakness": "Weakness",
+      "heaviness": "Heaviness",
+      "clumsiness": "Clumsiness / poor coordination",
+      "numbness": "Numbness",
+      "tingling": "Tingling / pins and needles",
+      "pain": "Pain / muscle ache",
+      "unable_to_speak": "Unable to speak",
+      "slurred_speech": "Slurred speech",
+      "word_finding": "Word-finding difficulty",
+      "headache": "Headache",
+      "vision_changes": "Vision changes",
+      "nausea": "Nausea / vomiting",
+      "incontinence": "Incontinence",
+      "tongue_bite": "Tongue bite",
+      "injury": "Injury",
+      "exhaustion": "Exhaustion",
+      "anxious": "Anxious / frightened",
+      "low_mood": "Low mood / tearful",
+      "unusual_behaviour": "Unusual behaviour"
+    },
+    "add_area": "+ Add area",
+    "no_area": "Area not recorded.",
+    "add_areas_one": "Add {{count}} area",
+    "add_areas_other": "Add {{count}} areas",
+    "other_placeholder": "Describe another after-seizure symptom",
+    "add_other": "Add",
+    "recovery_title": "Back to normal after",
+    "recovery_ongoing": "Not back to normal yet",
+    "recovery_ongoing_text": "Not back to normal when recorded",
+    "recovery_after_text": "Back to normal after {{time}}",
+    "add_areas_zero": "Add selected areas"
+  },
+  "wizard": {
+    "selected": "SELECTED",
+    "tap_to_add": "TAP TO ADD"
+  },
+  "symptom_sets": {
+    "title": "Saved symptom sets",
+    "entry": "Saved symptom sets — {{type}}",
+    "entry_no_type": "Saved symptom sets",
+    "sets_heading": "Saved sets",
+    "most_used": "Most used for {{type}}",
+    "untyped": "Not assigned to a seizure type",
+    "no_type": "No seizure type",
+    "more_one": "+ {{count}} more",
+    "more_other": "+ {{count}} more",
+    "added_by_you": "Added by you",
+    "save": "Save as symptom set",
+    "save_set": "Save set",
+    "name_title": "Set name",
+    "name_placeholder": "Name for this set",
+    "name_help": "Suggested from the seizure type and the first symptom. Change it if you like; names are unique within a seizure type.",
+    "use_suggested": "Use suggested name: {{name}}",
+    "symptoms_in_set": "Symptoms in this set ({{count}})",
+    "remove_symptom": "Remove symptom",
+    "move_up": "Move up",
+    "move_down": "Move down",
+    "delete": "Delete",
+    "delete_title": "Delete “{{name}}”?",
+    "delete_body": "Past seizures keep their symptoms. It is only removed from the list for next time.",
+    "settings_title": "Saved symptom sets & your symptoms",
+    "settings_help": "Each set belongs to a seizure type and is offered after you choose that type while tagging. Symptoms you typed in yourself are offered again next time. Renaming or deleting never changes past seizures.",
+    "none_yet": "No saved symptom sets yet. Save one from the summary after tagging a seizure.",
+    "your_symptoms": "Your own symptoms",
+    "no_custom": "Symptoms you type in yourself will appear here.",
+    "kind_post_ictal": "After-seizure symptom"
+  },
+  "triggers": {
+    "sleep_deprivation": "Sleep deprivation",
+    "missed_medication": "Missed medication",
+    "stress": "Stress",
+    "illness_fever": "Illness / fever",
+    "hormonal": "Hormonal / menstruation",
+    "alcohol": "Alcohol",
+    "flashing_lights": "Flashing lights",
+    "heat": "Heat / overheating",
+    "exercise": "Exercise",
+    "hunger": "Hunger / low blood sugar",
+    "unknown": "Unknown"
+  },
+  "med_history": {
+    "mark_taken": "Mark taken",
+    "mark_missed": "Mark missed",
+    "previously_edited": "Previously edited"
+  },
+  "error_boundary": {
+    "title": "Something went wrong",
+    "body": "Please reload the app. If a recording was in progress, it resumes from its start time when the app reopens.",
+    "reload": "RELOAD APP"
+  },
+  "notifications": {
+    "dose_title": "Time to take {{name}}",
+    "dose_body": "{{dose}} — open AuraTrack to log it"
+  },
+  "seizure_types": {
+    "tonic_clonic": "Tonic-Clonic",
+    "focal_aware": "Focal Aware",
+    "focal_impaired": "Focal Impaired",
+    "absence": "Absence",
+    "aura_only": "Aura Only",
+    "uncategorized": "Type not set"
   }
 }

@@ -3,30 +3,54 @@ import { useTranslation } from 'react-i18next';
 import { CloseButton } from './Buttons';
 import { ToastContext } from './toastContext';
 
-// Shared behaviour for every overlay: Escape closes it, the page behind can't scroll, and toasts
-// move to the top of the screen so they never sit on the overlay's buttons.
-let openOverlays = 0;
-function useOverlayBehaviour(onClose, dismissible) {
+// Shared behaviour for every overlay: Escape closes it, the page behind can't scroll, toasts move to
+// the top of the screen so they never sit on the overlay's buttons, and keyboard / screen-reader
+// focus moves into the overlay, stays inside it (Tab wraps), and returns where it was on close.
+// Only the topmost overlay reacts when several are open.
+const overlayStack = [];
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function trapTab(e, panel) {
+  const items = [...panel.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null || el === document.activeElement);
+  if (!items.length) { e.preventDefault(); panel.focus(); return; }
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
+function useOverlayBehaviour(onClose, dismissible, panelRef) {
   const closeRef = useRef(onClose);
+  const dismissibleRef = useRef(dismissible);
   useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  useEffect(() => { dismissibleRef.current = dismissible; }, [dismissible]);
 
   useEffect(() => {
-    openOverlays += 1;
+    const panel = panelRef.current;
+    const previousFocus = document.activeElement;
+    overlayStack.push(panel);
     document.body.dataset.overlayOpen = 'true';
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const onKey = (e) => { if (e.key === 'Escape' && dismissible) closeRef.current?.(); };
+    // Into the overlay, unless a field inside already took focus (autoFocus)
+    if (panel && !panel.contains(document.activeElement)) panel.focus({ preventScroll: true });
+
+    const onKey = (e) => {
+      if (overlayStack[overlayStack.length - 1] !== panel) return;
+      if (e.key === 'Escape' && dismissibleRef.current) closeRef.current?.();
+      if (e.key === 'Tab' && panel) trapTab(e, panel);
+    };
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
-      openOverlays -= 1;
-      if (openOverlays <= 0) {
-        openOverlays = 0;
+      overlayStack.splice(overlayStack.indexOf(panel), 1);
+      if (!overlayStack.length) {
         delete document.body.dataset.overlayOpen;
         document.body.style.overflow = previousOverflow;
       }
+      if (previousFocus?.isConnected) previousFocus.focus?.({ preventScroll: true });
     };
-  }, [dismissible]);
+  }, [panelRef]);
 }
 
 // ─── Bottom sheet: anything with input ────────────────────────
@@ -34,13 +58,14 @@ function useOverlayBehaviour(onClose, dismissible) {
 // The body scrolls; the footer (actions) is always visible above the home bar.
 export function BottomSheet({ title, onClose, dismissible = true, footer, children, labelledBy, testId, bodyTestId }) {
   const { t } = useTranslation();
-  useOverlayBehaviour(onClose, dismissible);
+  const panelRef = useRef(null);
+  useOverlayBehaviour(onClose, dismissible, panelRef);
   return (
     <div
       className="ui-overlay"
       onClick={e => { if (dismissible && e.target === e.currentTarget) onClose?.(); }}
     >
-      <div className="ui-sheet" role="dialog" aria-modal="true" aria-label={labelledBy ? undefined : title} aria-labelledby={labelledBy} data-testid={testId}>
+      <div ref={panelRef} tabIndex={-1} className="ui-sheet" role="dialog" aria-modal="true" aria-label={labelledBy ? undefined : title} aria-labelledby={labelledBy} data-testid={testId}>
         {(title || (dismissible && onClose)) && (
           <div className="ui-sheet__header">
             <p className="ui-sheet__title">{title}</p>
@@ -56,13 +81,14 @@ export function BottomSheet({ title, onClose, dismissible = true, footer, childr
 
 // ─── Dialog: short confirmations ──────────────────────────────
 export function Dialog({ title, message, onClose, dismissible = true, actions, children, tone }) {
-  useOverlayBehaviour(onClose, dismissible);
+  const panelRef = useRef(null);
+  useOverlayBehaviour(onClose, dismissible, panelRef);
   return (
     <div
       className="ui-overlay ui-overlay--dialog"
       onClick={e => { if (dismissible && e.target === e.currentTarget) onClose?.(); }}
     >
-      <div className="ui-dialog" role="alertdialog" aria-modal="true" aria-label={title}>
+      <div ref={panelRef} tabIndex={-1} className="ui-dialog" role="alertdialog" aria-modal="true" aria-label={title}>
         {title && <p className="ui-dialog__title" style={tone === 'danger' ? { color: 'var(--status-missed-text)' } : undefined}>{title}</p>}
         {message && <p className="ui-dialog__message">{message}</p>}
         {children}

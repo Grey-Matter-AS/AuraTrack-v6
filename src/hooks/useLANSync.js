@@ -1,42 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import QRCode from 'qrcode';
 import { exportLocalData, mergeRemoteData, compressSDP, decompressSDP } from '../utils/syncHelpers';
 import { MAX_SYNC_PAYLOAD_CHARS } from '../utils/importSanitizer';
-
-const CHUNK_SIZE = 4000;
-const MAX_CHUNKS = Math.ceil(MAX_SYNC_PAYLOAD_CHARS / CHUNK_SIZE);
-const BUFFER_HIGH_WATER = 64 * 1024;
-const BUFFER_WAIT_MS = 750;
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function waitForWritable(channel) {
-  if (!channel || typeof channel.bufferedAmount !== 'number' || channel.bufferedAmount < BUFFER_HIGH_WATER) return;
-  channel.bufferedAmountLowThreshold = Math.floor(BUFFER_HIGH_WATER / 2);
-  await Promise.race([
-    new Promise(resolve => {
-      const onLow = () => {
-        channel.removeEventListener?.('bufferedamountlow', onLow);
-        resolve();
-      };
-      channel.addEventListener?.('bufferedamountlow', onLow, { once: true });
-    }),
-    delay(BUFFER_WAIT_MS),
-  ]);
-}
-
-function generatePin() {
-  const values = new Uint32Array(1);
-  crypto.getRandomValues(values);
-  return String(100000 + (values[0] % 900000));
-}
-
-function chunkString(str) {
-  if (str.length > MAX_SYNC_PAYLOAD_CHARS) throw new Error('Sync payload is too large.');
-  const out = [];
-  for (let i = 0; i < str.length; i += CHUNK_SIZE) out.push(str.slice(i, i + CHUNK_SIZE));
-  return out.length ? out : [''];
-}
+import { CHUNK_SIZE, MAX_CHUNKS, chunkString, delay, generatePin, waitForWritable } from '../utils/syncTransport';
 
 function appURL(hash) {
   return `${window.location.origin}${window.location.pathname}${hash}`;
@@ -58,7 +24,10 @@ async function sdpToQR(sdp, hashPrefix) {
   return QRCode.toDataURL(url, { width: 420, margin: 2, errorCorrectionLevel: 'L' });
 }
 
-export function useLANSync() {
+// mergeOptions: passed to mergeRemoteData (e.g. { settingsScope: 'all' } to copy device settings too)
+export function useLANSync(mergeOptions = {}) {
+  const mergeOptionsRef = useRef(mergeOptions);
+  useEffect(() => { mergeOptionsRef.current = mergeOptions; });
   const [phase, setPhase] = useState('idle');
   const [offerQR, setOfferQR] = useState(null);
   const [answerQR, setAnswerQR] = useState(null);
@@ -177,7 +146,7 @@ export function useLANSync() {
           go('merging');
           const payload = rxRef.current.chunks.join('');
           if (payload.length > MAX_SYNC_PAYLOAD_CHARS) throw new Error('Received data is too large.');
-          const r = await mergeRemoteData(JSON.parse(payload));
+          const r = await mergeRemoteData(JSON.parse(payload), mergeOptionsRef.current);
           setResult(r);
           if (isHostRef.current) {
             chRef.current?.send(JSON.stringify({ type: 'done' }));
@@ -286,7 +255,7 @@ export function useLANSync() {
     verifiedRef.current = true;
     chRef.current.send(JSON.stringify({ type: 'pin_ok', pin: pinRef.current }));
     go('transferring');
-  }, [sendLocalData]);
+  }, []);
 
   return {
     phase, offerQR, answerQR, pin, remotePin, result, error, isHost,

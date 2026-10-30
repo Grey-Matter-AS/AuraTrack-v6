@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet, Button, DateInput, FieldRow, NumberInput } from './ui';
+import { localDateKey } from '../utils/dates';
 
-// Local calendar date (toISOString would give the UTC date — wrong around midnight)
-const localDateKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 // ─── Min/sec duration input pair ─────────────────────────────
 function DurField({ label, value, onChange, readOnly = false }) {

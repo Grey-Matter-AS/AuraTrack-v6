@@ -1,50 +1,21 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Peer from 'peerjs';
 import { exportLocalData, mergeRemoteData } from '../utils/syncHelpers';
 import { MAX_SYNC_PAYLOAD_CHARS } from '../utils/importSanitizer';
+import { CHUNK_SIZE, MAX_CHUNKS, chunkString, delay, generatePin, waitForWritable as waitForChannel } from '../utils/syncTransport';
 
-const CHUNK_SIZE = 4000;
-const MAX_CHUNKS = Math.ceil(MAX_SYNC_PAYLOAD_CHARS / CHUNK_SIZE);
-const BUFFER_HIGH_WATER = 64 * 1024;
-const BUFFER_WAIT_MS = 750;
+const waitForWritable = (conn) => waitForChannel(getDataChannel(conn));
+
 const CONNECT_TIMEOUT_MS = 30000;
-
-function generatePin() {
-  const values = new Uint32Array(1);
-  crypto.getRandomValues(values);
-  return String(100000 + (values[0] % 900000));
-}
-
-function chunkString(str) {
-  if (str.length > MAX_SYNC_PAYLOAD_CHARS) throw new Error('Sync payload is too large.');
-  const out = [];
-  for (let i = 0; i < str.length; i += CHUNK_SIZE) out.push(str.slice(i, i + CHUNK_SIZE));
-  return out.length ? out : [''];
-}
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 function getDataChannel(conn) {
   return conn?.dataChannel || conn?._dc || null;
 }
 
-async function waitForWritable(conn) {
-  const channel = getDataChannel(conn);
-  if (!channel || typeof channel.bufferedAmount !== 'number' || channel.bufferedAmount < BUFFER_HIGH_WATER) return;
-  channel.bufferedAmountLowThreshold = Math.floor(BUFFER_HIGH_WATER / 2);
-  await Promise.race([
-    new Promise(resolve => {
-      const onLow = () => {
-        channel.removeEventListener?.('bufferedamountlow', onLow);
-        resolve();
-      };
-      channel.addEventListener?.('bufferedamountlow', onLow, { once: true });
-    }),
-    delay(BUFFER_WAIT_MS),
-  ]);
-}
-
-export function useP2PSync() {
+// mergeOptions: passed to mergeRemoteData (e.g. { settingsScope: 'all' } to copy device settings too)
+export function useP2PSync(mergeOptions = {}) {
+  const mergeOptionsRef = useRef(mergeOptions);
+  useEffect(() => { mergeOptionsRef.current = mergeOptions; });
   const [phase, setPhase] = useState('idle');
   const [peerId, setPeerId] = useState(null);
   const [pin, setPin] = useState(null);
@@ -164,7 +135,7 @@ export function useP2PSync() {
           go('merging');
           const payload = rxRef.current.chunks.join('');
           if (payload.length > MAX_SYNC_PAYLOAD_CHARS) throw new Error('Received data is too large.');
-          const mergeResult = await mergeRemoteData(JSON.parse(payload));
+          const mergeResult = await mergeRemoteData(JSON.parse(payload), mergeOptionsRef.current);
           setResult(mergeResult);
           if (isHostRef.current) {
             connRef.current?.send({ type: 'done' });

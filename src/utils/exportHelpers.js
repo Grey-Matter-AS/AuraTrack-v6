@@ -1,11 +1,14 @@
+import i18n from '../i18n';
 import { formatCSVField, formatCSVRow } from './formatters';
 import { buildEventLogData, buildNeurologistReportData, buildSeizureDiaryData, buildEegDiaryReportData } from '../reports/builders';
 import { renderEventLogHtml, renderNeurologistReportHtml, renderSeizureDiaryHtml, renderEegDiaryHtml } from '../reports/htmlRenderers';
 import { downloadEventLogPdf, downloadNeurologistReportPdf, downloadSeizureDiaryPdf, downloadEegDiaryPdf } from '../reports/pdfRenderers';
+import { dateStamp, endOfLocalDay, parseLocalDate } from './dates';
+import { saveFileBlob } from './fileSave';
 
 export const filterEventsByDateRange = (events, fromDateStr, toDateStr) => {
-  const from = fromDateStr ? new Date(fromDateStr).setHours(0, 0, 0, 0) : 0;
-  const to = toDateStr ? new Date(toDateStr).setHours(23, 59, 59, 999) : Date.now();
+  const from = fromDateStr ? parseLocalDate(fromDateStr).getTime() : 0;
+  const to = toDateStr ? endOfLocalDay(parseLocalDate(toDateStr)) : Date.now();
   return events.filter(event => event.startTime >= from && event.startTime <= to);
 };
 
@@ -13,12 +16,12 @@ function formatWellbeingFactors(factors = {}) {
   return Object.values(factors).map(factor => {
     const value = factor?.value ?? '';
     const suffix = factor?.unit ? ` ${factor.unit}` : '';
-    return `${factor?.label || 'Factor'}=${value}${suffix}`;
+    return `${factor?.label || i18n.t('export.factor')}=${value}${suffix}`;
   }).join('|');
 }
 
 export const exportToCSV = async (events, medications = [], medicationLogs = [], eegSessions = [], eegActivities = [], wellbeingEntries = [], medicationChanges = []) => {
-  const header = 'id,date,time,type,duration,notes,postIctalFindings,postIctalParalysisLocations';
+  const header = 'id,date,time,type,duration,notes,postIctalFindings,postIctalParalysisLocations,postIctalRecovery';
   const rows = events.map(formatCSVRow).join('\n');
 
   let csv = `${header}\n${rows}`;
@@ -162,40 +165,5 @@ export const buildEegDiaryPreview = (session, activities = []) =>
 export const exportEegDiaryPDF = async (session, activities = []) =>
   downloadEegDiaryPdf(buildEegDiaryReportData(session, activities));
 
-function dateStamp() {
-  return new Date().toISOString().slice(0, 10);
-}
 
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 100);
-}
-
-export async function saveFileBlob(blob, suggestedName, description, extensions) {
-  if ('showSaveFilePicker' in window) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName,
-        types: [{ description, accept: { [blob.type]: extensions } }],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-      return { ok: true, cancelled: false };
-    } catch (error) {
-      if (error.name === 'AbortError') return { ok: false, cancelled: true };
-    }
-  }
-  triggerDownload(blob, suggestedName);
-  return { ok: true, cancelled: false };
-}
-
-export async function saveTextFile(text, suggestedName, description, extensions, mimeType = 'application/json') {
-  return saveFileBlob(new Blob([text], { type: mimeType }), suggestedName, description, extensions);
-}
+export { saveFileBlob, saveTextFile } from './fileSave';

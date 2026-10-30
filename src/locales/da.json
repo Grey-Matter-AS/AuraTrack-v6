@@ -45,7 +45,9 @@
     "stop_video": "Stop Video",
     "video_badge": "Video",
     "video_error_unavailable": "Camera permission or video recording is not available on this device.",
-    "switch_camera": "Switch Camera"
+    "switch_camera": "Switch Camera",
+    "no_aura": "Ingen aura",
+    "auto_stop_note": "Optagelsen stoppede automatisk efter 12 minutter (status epilepticus)."
   },
   "alert": {
     "medical_alert": "MEDICINSK ADVARSEL",
@@ -56,7 +58,11 @@
     "administer_med": "Giv nødmedicin",
     "neurologist": "Neurolog",
     "emergency_contact": "Nødkontakt",
-    "elapsed": "Tid"
+    "elapsed": "Tid",
+    "title_carer": "ANFALD {{minutes}}+ MINUTTER",
+    "title_self": "{{minutes}}+ MINUTTER — FÅ HJÆLP",
+    "self_instruction": "Sig det til en i nærheden, eller ring til alarmcentralen, hvis du kan.",
+    "seizure_time": "Anfaldstid"
   },
   "tagging": {
     "step1_title": "Trin 1: Anfaldtype",
@@ -75,7 +81,19 @@
     "todds_paralysis": "Todd's parese",
     "add_paralysis_area": "Tilføj lammelsesområde",
     "add_paralysis_areas": "Tilføj {{count}} lammelsesområde(r)",
-    "remove_area": "Fjern område"
+    "remove_area": "Fjern område",
+    "add_custom_symptom": "+ Tilføj dit eget symptom",
+    "add_custom_detail": "+ Tilføj din egen detalje",
+    "save_continue_summary": "Gem og fortsæt til oversigt",
+    "add_selected_zero": "Tilføj valgte",
+    "add_selected_one": "Tilføj {{count}} valgt",
+    "add_selected_other": "Tilføj {{count}} valgte",
+    "custom_symptom_title": "Dit eget symptom",
+    "custom_detail_title": "Din egen detalje",
+    "custom_symptom_placeholder": "Navngiv symptomet, der skal tilføjes i denne menu",
+    "custom_detail_placeholder": "Beskriv symptomets detalje eller variant",
+    "custom_remembered_help": "Gemmes til næste gang. Du kan omdøbe eller slette det under Indstillinger → Optagelse.",
+    "continue": "Fortsæt"
   },
   "history": {
     "title": "Historik",
@@ -95,7 +113,8 @@
     "from_date": "Fra",
     "to_date": "Til",
     "from_date_hint": "Fra dato",
-    "to_date_hint": "Til dato"
+    "to_date_hint": "Til dato",
+    "uncategorized": "Type ikke angivet"
   },
   "export": {
     "title": "Eksport og rapporter",
@@ -210,7 +229,7 @@
       "chart_phase_breakdown": "FASEFORDELING — SENESTE {{count}} HÆNDELSER",
       "no_phase_data": "Ingen fasedata",
       "self_subject": "Selv",
-      "flag_events_exceeding_5m": "Hændelser over 5 minutter ({{count}})",
+      "flag_events_exceeding_5m": "Anfald på {{minutes}} minutter eller længere ({{count}})",
       "flag_increasing_frequency": "Stigende frekvens",
       "flag_increasing_duration": "Stigende varighedstrend",
       "flag_auto_terminated": "Autoterminerede hændelser ({{count}})",
@@ -220,7 +239,7 @@
       "flag_detail_recent_avg_vs_earlier_avg": "Nyligt gennemsnit {{recent}} mod tidligere gennemsnit {{earlier}}.",
       "flag_detail_auto_terminated": "Timeren stoppede automatisk efter 12 minutter på grund af manglende respons fra patienten; kan tyde på en forlænget fase efter anfaldet.",
       "flag_detail_edited_records": "Fasevarigheder eller detaljer blev ændret efter første registrering og kan afvige fra realtidsregistrering.",
-      "detail_badge_over5": ">5 MIN",
+      "detail_badge_over5": "≥{{minutes}} MIN",
       "detail_badge_auto_stopped": "AUTOSTOPPET",
       "detail_badge_edited": "REDIGERET",
       "event_number": "Hændelse #{{count}}",
@@ -250,13 +269,19 @@
       "change_what": "Ændring",
       "adherence_line": "Planlagte doser: {{taken}} bekræftet, {{late}} for sent, {{assumed}} antaget, {{missed}} glemt",
       "assumed_note": "Antagne doser er ikke bekræftet af brugeren; de registreres som taget som standard.",
-      "stopped_on": "Stoppet {{date}}"
+      "stopped_on": "Stoppet {{date}}",
+      "emergency_plan_rule": "Nødplan brugt til disse markeringer: alarm efter {{minutes}} minutters anfaldsaktivitet; klynge = {{count}} eller flere anfald inden for {{window}}.",
+      "trigger_wellbeing_match_one": "{{count}} også registreret i dagens trivsel",
+      "trigger_wellbeing_match_other": "{{count}} også registreret i dagens trivsel"
     },
     "eeg_title": "EEG Diary",
     "eeg_label": "EEG Clinical Table",
     "eeg_desc": "Export the most recent EEG session as a table-first clinical PDF.",
     "privacy_notice_body": "Encrypted backups are protected with your passphrase before they are saved. CSV, PDF, and video exports are still regular files, so treat them like medical documents.",
-    "privacy_notice_title": "Privatlivsmeddelelse"
+    "privacy_notice_title": "Privatlivsmeddelelse",
+    "go_to_backup": "Gå til sikkerhedskopi",
+    "export_button": "Eksportér",
+    "factor": "Faktor"
   },
   "event_detail": {
     "title": "Hændelsesdetaljer",
@@ -278,9 +303,9 @@
     "triggers": "Mulige udløsende faktorer",
     "notes": "Kliniske observationer",
     "danger_prolonged_title": "Langvarigt anfald",
-    "danger_prolonged_desc": "Denne hændelse varede mere end 5 minutter. Søg lægehjælp, hvis det ikke allerede er gjort.",
+    "danger_prolonged_desc": "Anfaldet varede {{minutes}} minutter eller længere (alarmtiden i din nødplan). Søg lægehjælp, hvis det ikke allerede er gjort.",
     "danger_cluster_title": "Klynge ×{{count}} / Risiko for status epilepticus",
-    "danger_cluster_desc": "{{count}} anfald forekom inden for 8 minutter. Kontakt omgående en neurolog.",
+    "danger_cluster_desc": "{{count}} anfald forekom inden for {{window}}. Kontakt omgående en neurolog.",
     "eeg_session": "EEG session",
     "linked": "Linked",
     "video_file": "Video file",
@@ -326,7 +351,7 @@
         "steps": [
           "Tilføj din medicin under Indstillinger → Medicin.",
           "Startskærmen viser dagens planlagte doser — tryk på hver medicinknap for at skifte den, og tryk derefter på Gem for at logge doserne.",
-          "Aktiver påmindelser pr. medicin under Indstillinger → Medicin."
+          "Aktiver påmindelser pr. medicin under Indstillinger → Medicin. Påmindelser kommer, mens AuraTrack er åben eller for nylig brugt; vil du have en garanteret alarm, så sæt også én i telefonens ur."
         ]
       },
       "history": {
@@ -496,7 +521,20 @@
       "factor_type_number": "Tal",
       "factor_unit_placeholder": "Enhed",
       "factor_label": "Faktorens navn",
-      "factor_type": "Faktortype"
+      "factor_type": "Faktortype",
+      "emergency_plan": "Nødplan",
+      "emergency_plan_help": "Brug tiderne i din nødplan. Er du i tvivl, så behold standardværdierne og spørg din neurolog. Indstillingerne deles med dine andre synkroniserede enheder.",
+      "alert_after": "Nødalarm efter",
+      "alert_after_help": "Anfaldstid før alarmen på hele skærmen. En advarsel vises et minut før. Standard 5 minutter.",
+      "unit_minutes": "minutter",
+      "unit_hours": "timer",
+      "cluster_rule": "Klyngeadvarsel",
+      "cluster_rule_help": "Anfald markeres som en klynge, når så mange sker inden for denne tid. Standard 3 inden for 8 minutter. Spørg din neurolog, hvad der tæller som en klynge for dig.",
+      "cluster_count": "Antal anfald",
+      "seizures_within": "anfald inden for",
+      "cluster_window": "Tidsrum for klynge",
+      "cluster_window_unit": "Tidsenhed",
+      "reset_default": "Nulstil til standard"
     },
     "medications": {
       "section": "Medicin",
@@ -511,7 +549,7 @@
       "active_days": "Aktive dage",
       "daily": "Dagligt",
       "dose_reminders": "Dosispåmindelser",
-      "dose_reminders_help": "Push-besked på hvert planlagt tidspunkt",
+      "dose_reminders_help": "En notifikation ved hvert planlagt tidspunkt, mens AuraTrack er åben eller for nylig brugt. Ikke en garanteret alarm: hvis telefonen har lukket appen, kommer påmindelsen ikke.",
       "show_emergency": "Vis på nødskærmen",
       "show_emergency_help": "Vis under langvarigt anfaldsvarsling",
       "save": "Gem",
@@ -525,7 +563,7 @@
       "reminder_granted": "🔔 Notifikationer aktiveret",
       "reminder_denied": "🔕 Notifikationer blokeret",
       "reminder_off": "🔕 Notifikationer slået fra",
-      "reminder_granted_help": "Påmindelser aktiveres, mens appen er åben eller i baggrunden.",
+      "reminder_granted_help": "Påmindelser kommer, mens appen er åben eller for nylig brugt. Et tryk åbner dagens doser. Vil du have en garanteret alarm, så sæt også én i telefonens ur.",
       "reminder_denied_help": "Blokeret i browserindstillinger — nulstil webstedstilladelser for at genaktivere.",
       "reminder_off_help": "Aktivér for at modtage dosispåmindelser.",
       "reminder_enable": "Aktivér",
@@ -680,7 +718,18 @@
       "import_summary_meds_updated_one": "{{count}} medicin opdateret",
       "import_summary_meds_updated_other": "{{count}} lægemidler opdateret",
       "import_summary_meds_deleted_one": "{{count}} medicin slettet",
-      "import_summary_meds_deleted_other": "{{count}} lægemidler slettet"
+      "import_summary_meds_deleted_other": "{{count}} lægemidler slettet",
+      "import_summary_updated_one": "{{count}} post opdateret",
+      "import_summary_updated_other": "{{count}} poster opdateret",
+      "import_summary_deleted_one": "{{count}} post slettet (slettet på den anden enhed)",
+      "import_summary_deleted_other": "{{count}} poster slettet (slettet på den anden enhed)",
+      "import_summary_unmatched_one": "{{count}} post kunne ikke kobles til en medicin eller EEG-session på denne enhed og blev sprunget over.",
+      "import_summary_unmatched_other": "{{count}} poster kunne ikke kobles til en medicin eller EEG-session på denne enhed og blev sprunget over.",
+      "import_summary_rejected_one": "{{count}} post blev sprunget over, fordi dens data var ugyldige (f.eks. en manglende dato).",
+      "import_summary_rejected_other": "{{count}} poster blev sprunget over, fordi deres data var ugyldige (f.eks. en manglende dato).",
+      "restore_copy_all": "Kopiér også visnings- og enhedsindstillinger ved gendannelse",
+      "restore_copy_all_help": "Til opsætning af en ny telefon: en nøjagtig kopi inkl. tilstand, sprog, tema og påmindelser. Slået til som standard, så længe der ikke er registreret anfald på denne telefon.",
+      "after_full_restore": "Næste skridt på denne telefon: tillad notifikationer, og installér AuraTrack på hjemmeskærmen (det kan ikke kopieres)."
     },
     "about_section": {
       "section": "Om",
@@ -719,9 +768,9 @@
     "delete": "Slet",
     "untagged": "Ikke tagget",
     "notes_placeholder": "Clinical observations, after-seizure notes, medication given...",
-    "long_duration_title": "Seizure lasted more than 5 minutes",
+    "long_duration_title": "Anfaldet varede {{minutes}} minutter eller længere",
     "long_duration_badge": ">5 MIN",
-    "cluster_title": "Cluster seizures / Status Epilepticus risk - {{count}} events within 8 minutes",
+    "cluster_title": "Klynge: {{count}} anfald inden for {{window}}",
     "cluster_badge": "CLUSTER x{{count}}",
     "unknown": "Unknown"
   },
@@ -740,10 +789,29 @@
     "recovery": "Efterfase",
     "total": "Samlet",
     "manual_durations": "Justér varigheder manuelt",
-    "remove_symptom": "Fjern",
-    "drag_to_reorder": "Drag to reorder",
+    "remove_symptom": "Fjern symptom",
+    "drag_to_reorder": "Hold og træk ≡ for at ændre rækkefølgen (det første er hovedsymptomet)",
     "event_datetime": "Event Date & Time",
-    "event_date_time": "Dato og tid for hændelsen"
+    "event_date_time": "Dato og tid for hændelsen",
+    "seizure_type": "Anfaldstype",
+    "type_not_set": "Ikke angivet",
+    "change_type": "Skift",
+    "no_aura": "Der var ingen aura",
+    "edited": "redigeret",
+    "edit": "RET",
+    "edit_phase_question": "Ret {{phase}}?",
+    "yes": "JA",
+    "no": "NEJ",
+    "total_duration": "Samlet varighed",
+    "edit_total_question": "Ret samlet varighed?",
+    "yes_edit": "JA, RET",
+    "logged_symptoms": "Registrerede symptomer",
+    "possible_triggers": "Mulige udløsende faktorer",
+    "optional": "valgfrit",
+    "clinical_observations": "Kliniske observationer",
+    "finish_save": "AFSLUT OG GEM",
+    "cancel_discard": "ANNULLÉR OG KASSÉR",
+    "cancel_edit": "ANNULLÉR ÆNDRINGER"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -968,7 +1036,10 @@
     "export_import": "Export / Import",
     "invalid_qr": "That QR code is not a valid AuraTrack sync code.",
     "title": "Sync to Another Device",
-    "medication_history_summary": "Medicinhistorik: {{changes}} ændringspost(er), {{updated}} opdateret, {{deleted}} slettet."
+    "medication_history_summary": "Medicinhistorik: {{changes}} ændringspost(er), {{updated}} opdateret, {{deleted}} slettet.",
+    "copy_device_settings": "Kopiér også visnings- og enhedsindstillinger",
+    "copy_device_settings_help": "Tilstand (selv eller omsorgsperson), sprog, tema, tekststørrelse og påmindelser. Lad den være slået fra, når begge telefoner er i brug, f.eks. patientens og omsorgspersonens.",
+    "backup_elsewhere": "Vil du flytte data med en fil i stedet, så brug Sikkerhedskopi / Gendan på skærmen Data og sikkerhedskopi."
   },
   "install": {
     "add_to_home": "Føj til hjemmeskærm",
@@ -1055,7 +1126,8 @@
       "hide": "Skjul",
       "show": "Vis",
       "working": "Working...",
-      "cancel": "Annuller"
+      "cancel": "Annuller",
+      "videos_not_included": "Videoer gemmes separat på denne enhed og er ikke med i sikkerhedskopien."
     },
     "reminder": {
       "eyebrow": "Recovery reminder",
@@ -1148,7 +1220,8 @@
   },
   "common": {
     "close": "Luk",
-    "section": "Sektion"
+    "section": "Sektion",
+    "back": "Tilbage"
   },
   "ui": {
     "select_date": "Vælg dato",
@@ -1156,5 +1229,125 @@
     "select_datetime": "Vælg dato og tid",
     "select_month": "Vælg måned",
     "choose": "Vælg…"
+  },
+  "post_ictal": {
+    "group": {
+      "responsiveness": "Reaktionsevne",
+      "movement": "Bevægelse",
+      "sensation": "Følesans",
+      "speech": "Tale",
+      "head": "Hoved og syn",
+      "body": "Krop",
+      "mood": "Humør og adfærd",
+      "other": "Andet (med dine egne ord)"
+    },
+    "finding": {
+      "not_responding": "Reagerer ikke",
+      "confused": "Forvirret / desorienteret",
+      "drowsy": "Døsig / faldt i søvn",
+      "agitated": "Ophidset / urolig",
+      "no_memory": "Ingen erindring om hændelsen",
+      "paralysis": "Lammelse (Todds)",
+      "weakness": "Svaghed",
+      "heaviness": "Tyngdefornemmelse",
+      "clumsiness": "Klodsethed / dårlig koordination",
+      "numbness": "Følelsesløshed",
+      "tingling": "Prikken / myrekryb",
+      "pain": "Smerte / muskelømhed",
+      "unable_to_speak": "Kan ikke tale",
+      "slurred_speech": "Snøvlende tale",
+      "word_finding": "Svært ved at finde ord",
+      "headache": "Hovedpine",
+      "vision_changes": "Synsforstyrrelser",
+      "nausea": "Kvalme / opkast",
+      "incontinence": "Inkontinens",
+      "tongue_bite": "Tungebid",
+      "injury": "Skade",
+      "exhaustion": "Udmattelse",
+      "anxious": "Angst / bange",
+      "low_mood": "Nedtrykt / grådlabil",
+      "unusual_behaviour": "Usædvanlig adfærd"
+    },
+    "add_area": "+ Tilføj område",
+    "no_area": "Område ikke registreret.",
+    "add_areas_one": "Tilføj {{count}} område",
+    "add_areas_other": "Tilføj {{count}} områder",
+    "other_placeholder": "Beskriv et andet symptom efter anfaldet",
+    "add_other": "Tilføj",
+    "recovery_title": "Tilbage til normal efter",
+    "recovery_ongoing": "Endnu ikke tilbage til normal",
+    "recovery_ongoing_text": "Ikke tilbage til normal ved registrering",
+    "recovery_after_text": "Tilbage til normal efter {{time}}",
+    "add_areas_zero": "Tilføj valgte områder"
+  },
+  "wizard": {
+    "selected": "VALGT",
+    "tap_to_add": "TRYK FOR AT TILFØJE"
+  },
+  "symptom_sets": {
+    "title": "Gemte symptomsæt",
+    "entry": "Gemte symptomsæt — {{type}}",
+    "entry_no_type": "Gemte symptomsæt",
+    "sets_heading": "Gemte sæt",
+    "most_used": "Mest brugt ved {{type}}",
+    "untyped": "Ikke knyttet til en anfaldstype",
+    "no_type": "Ingen anfaldstype",
+    "more_one": "+ {{count}} mere",
+    "more_other": "+ {{count}} mere",
+    "added_by_you": "Tilføjet af dig",
+    "save": "Gem som symptomsæt",
+    "save_set": "Gem sæt",
+    "name_title": "Navn på sæt",
+    "name_placeholder": "Navn til dette sæt",
+    "name_help": "Foreslået ud fra anfaldstypen og det første symptom. Ret det, hvis du vil; navne er unikke inden for en anfaldstype.",
+    "use_suggested": "Brug foreslået navn: {{name}}",
+    "symptoms_in_set": "Symptomer i dette sæt ({{count}})",
+    "remove_symptom": "Fjern symptom",
+    "move_up": "Flyt op",
+    "move_down": "Flyt ned",
+    "delete": "Slet",
+    "delete_title": "Slet “{{name}}”?",
+    "delete_body": "Tidligere anfald beholder deres symptomer. Det fjernes kun fra listen til næste gang.",
+    "settings_title": "Gemte symptomsæt og dine symptomer",
+    "settings_help": "Hvert sæt hører til en anfaldstype og tilbydes, når du har valgt typen under registreringen. Symptomer, du selv har skrevet, tilbydes igen næste gang. Omdøbning eller sletning ændrer aldrig tidligere anfald.",
+    "none_yet": "Ingen gemte symptomsæt endnu. Gem et fra oversigten efter registrering af et anfald.",
+    "your_symptoms": "Dine egne symptomer",
+    "no_custom": "Symptomer, du selv skriver, vises her.",
+    "kind_post_ictal": "Symptom efter anfald"
+  },
+  "triggers": {
+    "sleep_deprivation": "Søvnmangel",
+    "missed_medication": "Glemt medicin",
+    "stress": "Stress",
+    "illness_fever": "Sygdom / feber",
+    "hormonal": "Hormonel / menstruation",
+    "alcohol": "Alkohol",
+    "flashing_lights": "Blinkende lys",
+    "heat": "Varme / overophedning",
+    "exercise": "Motion",
+    "hunger": "Sult / lavt blodsukker",
+    "unknown": "Ukendt"
+  },
+  "med_history": {
+    "mark_taken": "Markér som taget",
+    "mark_missed": "Markér som glemt",
+    "previously_edited": "Tidligere redigeret"
+  },
+  "error_boundary": {
+    "title": "Noget gik galt",
+    "body": "Genindlæs appen. Hvis en optagelse var i gang, fortsætter den fra starttidspunktet, når appen åbnes igen.",
+    "reload": "GENINDLÆS APP"
+  },
+  "notifications": {
+    "dose_title": "Tid til at tage {{name}}",
+    "dose_body": "{{dose}} — åbn AuraTrack for at registrere"
+  },
+  "seizure_types": {
+    "tonic_clonic": "Tonisk-klonisk",
+    "focal_aware": "Fokal med bevaret bevidsthed",
+    "focal_impaired": "Fokal med påvirket bevidsthed",
+    "absence": "Absence",
+    "aura_only": "Kun aura",
+    "uncategorized": "Type ikke angivet"
   }
 }

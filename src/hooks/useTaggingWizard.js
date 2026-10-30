@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { db } from '../data/db';
 import { haptic } from '../utils/hapticFeedback';
+import { CUSTOM_FINDING, EMPTY_POST_ICTAL, normalizePostIctal } from '../utils/postIctal';
 
 const EMPTY_SELECTIONS = { type: '', group: '', symptom: '', detail: '', region: '', subRegion: '', specificPart: '' };
-const EMPTY_POST_ICTAL = { findings: [], paralysisLocations: [] };
+const sameLocation = (a, b) => a.region === b.region && a.subRegion === b.subRegion && a.specificPart === b.specificPart;
 
 export function useTaggingWizard() {
   const [taggingStep, setTaggingStep] = useState('TYPE');
@@ -36,34 +37,51 @@ export function useTaggingWizard() {
     setOverrideDateTimeState({ date, time });
   };
 
-  const togglePostIctalFinding = (label) => {
+  // After-seizure findings: { key, locations } (custom ones also carry their label)
+  const togglePostIctalFinding = (key) => {
     setPostIctal(prev => ({
       ...prev,
-      findings: prev.findings.includes(label)
-        ? prev.findings.filter(item => item !== label)
-        : [...prev.findings, label],
+      findings: prev.findings.some(f => f.key === key)
+        ? prev.findings.filter(f => f.key !== key)
+        : [...prev.findings, { key, locations: [] }],
     }));
   };
 
-  const addPostIctalParalysisLocations = (locations) => {
+  const addPostIctalLocations = (key, locations) => {
+    setPostIctal(prev => {
+      const existing = prev.findings.find(f => f.key === key);
+      const merged = [...(existing?.locations || [])];
+      locations.forEach(location => { if (!merged.some(l => sameLocation(l, location))) merged.push(location); });
+      const finding = { key, locations: merged };
+      return {
+        ...prev,
+        findings: existing ? prev.findings.map(f => (f === existing ? finding : f)) : [...prev.findings, finding],
+      };
+    });
+  };
+
+  const removePostIctalLocation = (key, index) => {
     setPostIctal(prev => ({
       ...prev,
-      paralysisLocations: [
-        ...prev.paralysisLocations,
-        ...locations.filter(location => !prev.paralysisLocations.some(existing =>
-          existing.region === location.region &&
-          existing.subRegion === location.subRegion &&
-          existing.specificPart === location.specificPart
-        )),
-      ],
+      findings: prev.findings.map(f => (f.key === key ? { ...f, locations: f.locations.filter((_, i) => i !== index) } : f)),
     }));
   };
 
-  const removePostIctalParalysisLocation = (index) => {
-    setPostIctal(prev => ({
-      ...prev,
-      paralysisLocations: prev.paralysisLocations.filter((_, itemIndex) => itemIndex !== index),
-    }));
+  const addCustomPostIctal = (label) => {
+    const text = label.trim();
+    if (!text) return;
+    setPostIctal(prev => (prev.findings.some(f => f.key === CUSTOM_FINDING && f.label.toLowerCase() === text.toLowerCase())
+      ? prev
+      : { ...prev, findings: [...prev.findings, { key: CUSTOM_FINDING, label: text, locations: [] }] }));
+  };
+
+  const removeCustomPostIctal = (label) => {
+    setPostIctal(prev => ({ ...prev, findings: prev.findings.filter(f => !(f.key === CUSTOM_FINDING && f.label === label)) }));
+  };
+
+  // minutes: back to normal after this long (null = not recorded); ongoing: not back to normal yet
+  const setPostIctalRecovery = ({ minutes = null, ongoing = false }) => {
+    setPostIctal(prev => ({ ...prev, recoveryMinutes: ongoing ? null : minutes, recoveryOngoing: ongoing }));
   };
 
   const loadForEdit = (event) => {
@@ -74,7 +92,7 @@ export function useTaggingWizard() {
     setTempSymptomList(event.symptoms || []);
     setNotes(event.notes || '');
     setTriggers(event.triggers || []);
-    setPostIctal(event.postIctal || EMPTY_POST_ICTAL);
+    setPostIctal(normalizePostIctal(event.postIctal));
     setManualDurationsState(event.manualDurations || {});
     setEditedTimers(event.editedTimers || []);
     setOverrideDateTimeState(null);
@@ -92,65 +110,15 @@ export function useTaggingWizard() {
     setTaggingStep('TYPE');
   };
 
-  const handleFinalSave = async () => {
-    const targetId = editingId || activeEventId;
-    if (!targetId) throw new Error('No active event to save');
-
-    const existing = await db.events.get(targetId);
-    let type = selections.type;
-    if (!type && editingId) type = existing?.type || 'Uncategorized';
-
-    const dateTimeOverride = overrideDateTime
-      ? (() => {
-          const newStartTime = new Date(`${overrideDateTime.date}T${overrideDateTime.time}`).getTime();
-          return {
-            startTime: newStartTime,
-            date: new Date(newStartTime).toLocaleDateString(),
-            time: new Date(newStartTime).toLocaleTimeString(),
-          };
-        })()
-      : {};
-
-    const newEditLog = existing?.editLog ? [...existing.editLog] : [];
-    if (editingId && existing) {
-      const resolvedType = type || 'Uncategorized';
-      const changedFields = [];
-      if (resolvedType !== (existing.type || 'Uncategorized')) changedFields.push('type');
-      if (notes !== (existing.notes || '')) changedFields.push('notes');
-      if (JSON.stringify(triggers) !== JSON.stringify(existing.triggers || [])) changedFields.push('triggers');
-      if (JSON.stringify(tempSymptomList) !== JSON.stringify(existing.symptoms || [])) changedFields.push('symptoms');
-      if (JSON.stringify(postIctal) !== JSON.stringify(existing.postIctal || EMPTY_POST_ICTAL)) changedFields.push('after-seizure symptoms');
-      if (JSON.stringify(manualDurations) !== JSON.stringify(existing.manualDurations || {})) changedFields.push('durations');
-      if (overrideDateTime) changedFields.push('date/time');
-      newEditLog.push({ editedAt: new Date().getTime(), changedFields });
-    }
-
-    await db.events.update(targetId, {
-      type: type || 'Uncategorized',
-      symptoms: [...tempSymptomList],
-      notes,
-      triggers: [...triggers],
-      postIctal,
-      isComplete: true,
-      isEdited: !!editingId,
-      lastModified: new Date().getTime(),
-      manualDurations,
-      editedTimers,
-      editLog: newEditLog,
-      ...(manualDurations?.total != null ? { duration: manualDurations.total } : {}),
-      ...dateTimeOverride,
-    });
-
-    reset();
-  };
-
-  const handleDeferredSave = async () => {
+  // Saves the wizard into the event. complete: true for Save (tagging finished), false for "Skip for
+  // now" (timing kept, details later). An edit is recorded in the audit trail only when something changed.
+  const saveEvent = async ({ complete }) => {
     const targetId = editingId || activeEventId;
     if (!targetId) throw new Error('No active event to save');
 
     const existing = await db.events.get(targetId);
     const type = selections.type || existing?.type || 'Uncategorized';
-    const modifiedAt = new Date().getTime();
+    const savedAt = new Date().getTime();
 
     const dateTimeOverride = overrideDateTime
       ? (() => {
@@ -166,26 +134,25 @@ export function useTaggingWizard() {
     const newEditLog = existing?.editLog ? [...existing.editLog] : [];
     if (editingId && existing) {
       const changedFields = [];
-      if ((type || 'Uncategorized') !== (existing.type || 'Uncategorized')) changedFields.push('type');
+      if (type !== (existing.type || 'Uncategorized')) changedFields.push('type');
       if (notes !== (existing.notes || '')) changedFields.push('notes');
       if (JSON.stringify(triggers) !== JSON.stringify(existing.triggers || [])) changedFields.push('triggers');
       if (JSON.stringify(tempSymptomList) !== JSON.stringify(existing.symptoms || [])) changedFields.push('symptoms');
-      if (JSON.stringify(postIctal) !== JSON.stringify(existing.postIctal || EMPTY_POST_ICTAL)) changedFields.push('after-seizure symptoms');
+      if (JSON.stringify(postIctal) !== JSON.stringify(normalizePostIctal(existing.postIctal))) changedFields.push('after-seizure symptoms');
       if (JSON.stringify(manualDurations) !== JSON.stringify(existing.manualDurations || {})) changedFields.push('durations');
       if (overrideDateTime) changedFields.push('date/time');
-      if (changedFields.length) newEditLog.push({ editedAt: modifiedAt, changedFields });
+      if (changedFields.length) newEditLog.push({ editedAt: savedAt, changedFields });
     }
     const didEdit = newEditLog.length > (existing?.editLog?.length || 0);
 
     await db.events.update(targetId, {
-      type: type || 'Uncategorized',
+      type,
       symptoms: [...tempSymptomList],
       notes,
       triggers: [...triggers],
       postIctal,
-      isComplete: existing?.isComplete ?? false,
-      isEdited: existing?.isEdited || didEdit,
-      lastModified: modifiedAt,
+      isComplete: complete ? true : (existing?.isComplete ?? false),
+      isEdited: Boolean(existing?.isEdited || didEdit),
       manualDurations,
       editedTimers,
       editLog: newEditLog,
@@ -195,6 +162,8 @@ export function useTaggingWizard() {
 
     reset();
   };
+  const handleFinalSave = () => saveEvent({ complete: true });
+  const handleDeferredSave = () => saveEvent({ complete: false });
 
   const reset = () => {
     setNotes('');
@@ -211,18 +180,14 @@ export function useTaggingWizard() {
     setIsManualEntry(false);
   };
 
-  const moveSymptom = (index, direction) => {
-    const newList = [...tempSymptomList];
-    const targetIndex = direction === 'UP' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newList.length) return;
-    [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
-    setTempSymptomList(newList);
-    haptic(40);
-  };
-
   const addQuickNote = (label, elapsed) => {
     const newNote = `[T+${elapsed}s] ${label}`;
-    setNotes(prev => prev ? `${prev}\n${newNote}` : newNote);
+    setNotes(prev => {
+      const next = prev ? `${prev}\n${newNote}` : newNote;
+      // Kept with the crash-recovery record so a reopened recording still has its notes
+      try { localStorage.setItem('aura_notes', next); } catch { /* private browsing */ }
+      return next;
+    });
     haptic(50);
   };
 
@@ -232,7 +197,7 @@ export function useTaggingWizard() {
     tempSymptomList, setTempSymptomList,
     notes, setNotes,
     triggers, triggerToggle,
-    postIctal, togglePostIctalFinding, addPostIctalParalysisLocations, removePostIctalParalysisLocation,
+    postIctal, togglePostIctalFinding, addPostIctalLocations, removePostIctalLocation, addCustomPostIctal, removeCustomPostIctal, setPostIctalRecovery,
     editingId, activeEventId,
     manualDurations, editedTimers,
     overrideDateTime, isManualEntry,
@@ -244,7 +209,6 @@ export function useTaggingWizard() {
     handleFinalSave,
     handleDeferredSave,
     reset,
-    moveSymptom,
     addQuickNote
   };
 }

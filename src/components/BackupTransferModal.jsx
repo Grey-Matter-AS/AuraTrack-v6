@@ -12,7 +12,7 @@ import {
   suggestedEncryptedBackupName,
   summarizeBackupPayload,
 } from '../utils/backupFiles';
-import { saveTextFile } from '../utils/exportHelpers';
+import { saveTextFile } from '../utils/fileSave';
 import { mergeRemoteData } from '../utils/syncHelpers';
 
 function StepText({ children }) {
@@ -29,6 +29,7 @@ export function BackupTransferModal({
   onClose,
   onExportSuccess,
   onImportSuccess,
+  settingsScope,
 }) {
   const { t } = useTranslation();
   const [passphrase, setPassphrase] = useState('');
@@ -129,7 +130,7 @@ export function BackupTransferModal({
         throw new Error(t('backup.modal.not_encrypted', 'Selected file is not an encrypted backup.'));
       }
       const decrypted = await decryptEncryptedBackup(parsed.parsed, passphrase);
-      const result = await mergeRemoteData(decrypted);
+      const result = await mergeRemoteData(decrypted, { settingsScope });
       await onImportSuccess?.(result);
       onClose?.();
     } catch (importError) {
@@ -171,6 +172,7 @@ export function BackupTransferModal({
           <>
             <StepText>{t('backup.modal.export_body', 'AuraTrack will encrypt the backup before saving it. The file name can be changed in the save dialog.')}</StepText>
             <StepText>{t('backup.modal.export_warning', 'If you forget this passphrase, the backup cannot be recovered.')}</StepText>
+            <StepText>{t('backup.modal.videos_not_included')}</StepText>
           </>
         ) : (
           <>

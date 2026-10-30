@@ -1,4 +1,5 @@
 import React from 'react';
+import i18n from './i18n';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -18,9 +19,9 @@ export class ErrorBoundary extends React.Component {
           height: '100vh', display: 'flex', flexDirection: 'column',
           justifyContent: 'center', alignItems: 'center', gap: '1rem',
         }}>
-          <h2 style={{ color: '#fff', fontSize: '1.2rem', margin: 0 }}>Something went wrong</h2>
+          <h2 style={{ color: '#fff', fontSize: '1.2rem', margin: 0 }}>{i18n.t('error_boundary.title')}</h2>
           <p style={{ color: '#9ca3af', textAlign: 'center', maxWidth: '320px', margin: 0, lineHeight: 1.5 }}>
-            Please reload the page. If a recording was in progress, check your event history — the event may have been saved.
+            {i18n.t('error_boundary.body')}
           </p>
           <pre style={{ fontSize: '10px', color: '#ef4444', maxWidth: '320px', overflowX: 'auto', margin: 0 }}>
             {this.state.error?.message}
@@ -33,7 +34,7 @@ export class ErrorBoundary extends React.Component {
               cursor: 'pointer', letterSpacing: '0.1em', fontSize: '0.75rem',
             }}
           >
-            RELOAD APP
+            {i18n.t('error_boundary.reload')}
           </button>
         </div>
       );

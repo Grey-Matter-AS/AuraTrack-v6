@@ -45,7 +45,9 @@
     "stop_video": "Stop Video",
     "video_badge": "Video",
     "video_error_unavailable": "Camera permission or video recording is not available on this device.",
-    "switch_camera": "Switch Camera"
+    "switch_camera": "Switch Camera",
+    "no_aura": "Ei auraa",
+    "auto_stop_note": "Tallennus pysähtyi automaattisesti 12 minuutin kohdalla (status epilepticus)."
   },
   "alert": {
     "medical_alert": "LÄÄKETIETEELLINEN HÄLYTYS",
@@ -56,7 +58,11 @@
     "administer_med": "Anna hätälääkitys",
     "neurologist": "Neurologi",
     "emergency_contact": "Hätäyhteyshenkilö",
-    "elapsed": "Kulunut"
+    "elapsed": "Kulunut",
+    "title_carer": "KOHTAUS {{minutes}}+ MINUUTTIA",
+    "title_self": "{{minutes}}+ MINUUTTIA — HAE APUA",
+    "self_instruction": "Kerro lähellä olevalle tai soita hätänumeroon, jos pystyt.",
+    "seizure_time": "Kohtauksen kesto"
   },
   "tagging": {
     "step1_title": "Vaihe 1: Kohtaustyyppi",
@@ -75,7 +81,19 @@
     "todds_paralysis": "Toddin pareesi",
     "add_paralysis_area": "Lisää halvausalue",
     "add_paralysis_areas": "Lisää {{count}} halvausaluetta",
-    "remove_area": "Poista alue"
+    "remove_area": "Poista alue",
+    "add_custom_symptom": "+ Lisää oma oire",
+    "add_custom_detail": "+ Lisää oma tarkennus",
+    "save_continue_summary": "Tallenna ja jatka yhteenvetoon",
+    "add_selected_zero": "Lisää valitut",
+    "add_selected_one": "Lisää {{count}} valittu",
+    "add_selected_other": "Lisää {{count}} valittua",
+    "custom_symptom_title": "Oma oire",
+    "custom_detail_title": "Oma tarkennus",
+    "custom_symptom_placeholder": "Nimeä oire, joka lisätään tähän valikkoon",
+    "custom_detail_placeholder": "Kuvaa oireen tarkennus tai muunnelma",
+    "custom_remembered_help": "Tallennetaan seuraavaa kertaa varten. Voit nimetä sen uudelleen tai poistaa kohdassa Asetukset → Tallennus.",
+    "continue": "Jatka"
   },
   "history": {
     "title": "Historia",
@@ -95,7 +113,8 @@
     "from_date": "Alkaen",
     "to_date": "Asti",
     "from_date_hint": "Alkupäivä",
-    "to_date_hint": "Loppupäivä"
+    "to_date_hint": "Loppupäivä",
+    "uncategorized": "Tyyppiä ei asetettu"
   },
   "export": {
     "title": "Vienti & Raportit",
@@ -210,7 +229,7 @@
       "chart_phase_breakdown": "VAIHEJAKAUMA — VIIMEISET {{count}} TAPAHTUMAA",
       "no_phase_data": "Ei vaihetietoja",
       "self_subject": "Oma",
-      "flag_events_exceeding_5m": "Yli 5 minuuttia kestäneet tapahtumat ({{count}})",
+      "flag_events_exceeding_5m": "Vähintään {{minutes}} minuutin kohtaukset ({{count}})",
       "flag_increasing_frequency": "Kasvava esiintymistiheys",
       "flag_increasing_duration": "Kasvava kestotrendi",
       "flag_auto_terminated": "Automaattisesti päätetyt tapahtumat ({{count}})",
@@ -220,7 +239,7 @@
       "flag_detail_recent_avg_vs_earlier_avg": "Uudempi keskiarvo {{recent}} verrattuna aiempaan keskiarvoon {{earlier}}.",
       "flag_detail_auto_terminated": "Ajastin pysähtyi automaattisesti 12 minuutin kohdalla potilaan reagoimattomuuden vuoksi; voi viitata pitkittyneeseen toipumisvaiheeseen.",
       "flag_detail_edited_records": "Vaiheiden kestoja tai yksityiskohtia muutettiin alkuperäisen kirjauksen jälkeen, ja ne voivat poiketa reaaliaikaisesta tallennuksesta.",
-      "detail_badge_over5": ">5 MIN",
+      "detail_badge_over5": "≥{{minutes}} MIN",
       "detail_badge_auto_stopped": "AUTOPYSÄYTETTY",
       "detail_badge_edited": "MUOKATTU",
       "event_number": "Tapahtuma #{{count}}",
@@ -250,13 +269,19 @@
       "change_what": "Muutos",
       "adherence_line": "Suunnitellut annokset: {{taken}} vahvistettu, {{late}} myöhässä, {{assumed}} oletettu, {{missed}} väliin jäänyt",
       "assumed_note": "Käyttäjä ei ole vahvistanut oletettuja annoksia; ne kirjataan oletuksena otetuiksi.",
-      "stopped_on": "Lopetettu {{date}}"
+      "stopped_on": "Lopetettu {{date}}",
+      "emergency_plan_rule": "Merkinnöissä käytetty hätäsuunnitelma: hälytys {{minutes}} minuutin kohtausaktiivisuuden jälkeen; ryväs = vähintään {{count}} kohtausta {{window}} sisällä.",
+      "trigger_wellbeing_match_one": "{{count}} myös kirjattu päivän hyvinvointiin",
+      "trigger_wellbeing_match_other": "{{count}} myös kirjattu päivän hyvinvointiin"
     },
     "eeg_title": "EEG Diary",
     "eeg_label": "EEG Clinical Table",
     "eeg_desc": "Export the most recent EEG session as a table-first clinical PDF.",
     "privacy_notice_body": "Encrypted backups are protected with your passphrase before they are saved. CSV, PDF, and video exports are still regular files, so treat them like medical documents.",
-    "privacy_notice_title": "Tietosuojahuomautus"
+    "privacy_notice_title": "Tietosuojahuomautus",
+    "go_to_backup": "Siirry varmuuskopioon",
+    "export_button": "Vie",
+    "factor": "Tekijä"
   },
   "event_detail": {
     "title": "Tapahtuman tiedot",
@@ -278,9 +303,9 @@
     "triggers": "Mahdolliset laukaisijat",
     "notes": "Kliiniset havainnot",
     "danger_prolonged_title": "Pitkittynyt kohtaus",
-    "danger_prolonged_desc": "Tämä tapahtuma kesti yli 5 minuuttia. Hakeudu lääkärin arvioon, jos sitä ei ole vielä tehty.",
+    "danger_prolonged_desc": "Kohtaus kesti vähintään {{minutes}} minuuttia (hätäsuunnitelmasi hälytysaika). Hakeudu lääkärin arvioon, jos sitä ei ole vielä tehty.",
     "danger_cluster_title": "Ryväs ×{{count}} / Status epilepticuksen riski",
-    "danger_cluster_desc": "{{count}} kohtausta 8 minuutin sisällä. Ota välittömästi yhteyttä neurologiin.",
+    "danger_cluster_desc": "{{count}} kohtausta {{window}} sisällä. Ota välittömästi yhteyttä neurologiin.",
     "eeg_session": "EEG session",
     "linked": "Linked",
     "video_file": "Video file",
@@ -326,7 +351,7 @@
         "steps": [
           "Lisää lääkkeesi kohdassa Asetukset → Lääkkeet.",
           "Aloitusnäyttö näyttää tänään aikataulutetut annokset — napauta kutakin lääkepainiketta vaihtaaksesi sen tilan, napauta sitten Tallenna kirjataksesi annokset.",
-          "Ota käyttöön annospäivitykset lääkekohtaisesti kohdassa Asetukset → Lääkkeet."
+          "Ota käyttöön annospäivitykset lääkekohtaisesti kohdassa Asetukset → Lääkkeet. Muistutukset tulevat, kun AuraTrack on auki tai sitä on käytetty äskettäin; taattua hälytystä varten aseta myös herätys puhelimen kelloon."
         ]
       },
       "history": {
@@ -496,7 +521,20 @@
       "factor_type_number": "Numero",
       "factor_unit_placeholder": "Yksikkö",
       "factor_label": "Tekijän nimi",
-      "factor_type": "Tekijän tyyppi"
+      "factor_type": "Tekijän tyyppi",
+      "emergency_plan": "Hätäsuunnitelma",
+      "emergency_plan_help": "Käytä hätäsuunnitelmasi aikoja. Jos olet epävarma, pidä oletusarvot ja kysy neurologilta. Asetukset jaetaan muiden synkronoitujen laitteiden kanssa.",
+      "alert_after": "Hätähälytys, kun kulunut",
+      "alert_after_help": "Kohtauksen kesto ennen koko näytön hälytystä. Varoitus näkyy minuuttia aiemmin. Oletus 5 minuuttia.",
+      "unit_minutes": "minuuttia",
+      "unit_hours": "tuntia",
+      "cluster_rule": "Ryväsvaroitus",
+      "cluster_rule_help": "Kohtaukset merkitään ryppääksi, kun näin monta tapahtuu tämän ajan sisällä. Oletus 3 kohtausta 8 minuutin sisällä. Kysy neurologilta, mikä sinun kohdallasi on ryväs.",
+      "cluster_count": "Kohtausten määrä",
+      "seizures_within": "kohtausta, aikaväli",
+      "cluster_window": "Ryppään aikaväli",
+      "cluster_window_unit": "Aikayksikkö",
+      "reset_default": "Palauta oletukset"
     },
     "medications": {
       "section": "Lääkkeet",
@@ -511,7 +549,7 @@
       "active_days": "Aktiiviset päivät",
       "daily": "Päivittäin",
       "dose_reminders": "Annosten muistutukset",
-      "dose_reminders_help": "Push-ilmoitus jokaisena aikataulutettuna aikana",
+      "dose_reminders_help": "Ilmoitus jokaisena ajastettuna aikana, kun AuraTrack on auki tai sitä on käytetty äskettäin. Ei taattu hälytys: jos puhelin on sulkenut sovelluksen, muistutus ei tule.",
       "show_emergency": "Näytä hätänäytöllä",
       "show_emergency_help": "Näytetään pitkittyneen kohtauksen hälytyksen aikana",
       "save": "Tallenna",
@@ -525,7 +563,7 @@
       "reminder_granted": "🔔 Ilmoitukset käytössä",
       "reminder_denied": "🔕 Ilmoitukset estetty",
       "reminder_off": "🔕 Ilmoitukset pois päältä",
-      "reminder_granted_help": "Muistutukset laukeavat kun sovellus on auki tai taustalla.",
+      "reminder_granted_help": "Muistutukset tulevat, kun sovellus on auki tai sitä on käytetty äskettäin. Napautus avaa päivän annokset. Taattua hälytystä varten aseta myös herätys puhelimen kelloon.",
       "reminder_denied_help": "Estetty selaimen asetuksissa — nollaa sivuston luvat ottaaksesi uudelleen käyttöön.",
       "reminder_off_help": "Ota käyttöön saadaksesi annosten muistutuksia.",
       "reminder_enable": "Ota käyttöön",
@@ -680,7 +718,18 @@
       "import_summary_meds_updated_one": "{{count}} lääke päivitetty",
       "import_summary_meds_updated_other": "{{count}} lääkettä päivitetty",
       "import_summary_meds_deleted_one": "{{count}} lääke poistettu",
-      "import_summary_meds_deleted_other": "{{count}} lääkettä poistettu"
+      "import_summary_meds_deleted_other": "{{count}} lääkettä poistettu",
+      "import_summary_updated_one": "{{count}} merkintä päivitetty",
+      "import_summary_updated_other": "{{count}} merkintää päivitetty",
+      "import_summary_deleted_one": "{{count}} merkintä poistettu (poistettu toisella laitteella)",
+      "import_summary_deleted_other": "{{count}} merkintää poistettu (poistettu toisella laitteella)",
+      "import_summary_unmatched_one": "{{count}} merkintää ei voitu yhdistää tämän laitteen lääkkeeseen tai EEG-jaksoon, joten se ohitettiin.",
+      "import_summary_unmatched_other": "{{count}} merkintää ei voitu yhdistää tämän laitteen lääkkeeseen tai EEG-jaksoon, joten ne ohitettiin.",
+      "import_summary_rejected_one": "{{count}} merkintä ohitettiin, koska sen tiedot olivat virheellisiä (esim. päivämäärä puuttui).",
+      "import_summary_rejected_other": "{{count}} merkintää ohitettiin, koska niiden tiedot olivat virheellisiä (esim. päivämäärä puuttui).",
+      "restore_copy_all": "Palautettaessa kopioi myös näyttö- ja laiteasetukset",
+      "restore_copy_all_help": "Uuden puhelimen käyttöönottoon: tarkka kopio tila, kieli, teema ja muistutukset mukaan lukien. Oletuksena päällä, kun tällä puhelimella ei ole kirjattuja kohtauksia.",
+      "after_full_restore": "Seuraavaksi tällä puhelimella: salli ilmoitukset ja asenna AuraTrack aloitusnäytölle (niitä ei voi kopioida)."
     },
     "about_section": {
       "section": "Tietoja",
@@ -719,9 +768,9 @@
     "delete": "Poista",
     "untagged": "Merkitsemätön",
     "notes_placeholder": "Clinical observations, after-seizure notes, medication given...",
-    "long_duration_title": "Seizure lasted more than 5 minutes",
+    "long_duration_title": "Kohtaus kesti vähintään {{minutes}} minuuttia",
     "long_duration_badge": ">5 MIN",
-    "cluster_title": "Cluster seizures / Status Epilepticus risk - {{count}} events within 8 minutes",
+    "cluster_title": "Ryväs: {{count}} kohtausta {{window}} sisällä",
     "cluster_badge": "CLUSTER x{{count}}",
     "unknown": "Unknown"
   },
@@ -740,10 +789,29 @@
     "recovery": "Toipuminen",
     "total": "Yhteensä",
     "manual_durations": "Säädä kestoja manuaalisesti",
-    "remove_symptom": "Poista",
-    "drag_to_reorder": "Drag to reorder",
+    "remove_symptom": "Poista oire",
+    "drag_to_reorder": "Pidä ja vedä ≡ järjestääksesi (ensimmäinen on pääoire)",
     "event_datetime": "Event Date & Time",
-    "event_date_time": "Tapahtuman päivä ja aika"
+    "event_date_time": "Tapahtuman päivä ja aika",
+    "seizure_type": "Kohtaustyyppi",
+    "type_not_set": "Ei asetettu",
+    "change_type": "Vaihda",
+    "no_aura": "Auraa ei ollut",
+    "edited": "muokattu",
+    "edit": "MUOKKAA",
+    "edit_phase_question": "Muokataanko: {{phase}}?",
+    "yes": "KYLLÄ",
+    "no": "EI",
+    "total_duration": "Kokonaiskesto",
+    "edit_total_question": "Muokataanko kokonaiskestoa?",
+    "yes_edit": "KYLLÄ, MUOKKAA",
+    "logged_symptoms": "Kirjatut oireet",
+    "possible_triggers": "Mahdolliset laukaisijat",
+    "optional": "valinnainen",
+    "clinical_observations": "Kliiniset havainnot",
+    "finish_save": "VALMIS JA TALLENNA",
+    "cancel_discard": "PERUUTA JA HYLKÄÄ",
+    "cancel_edit": "PERUUTA MUUTOKSET"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -968,7 +1036,10 @@
     "export_import": "Export / Import",
     "invalid_qr": "That QR code is not a valid AuraTrack sync code.",
     "title": "Sync to Another Device",
-    "medication_history_summary": "Lääkehistoria: {{changes}} muutosmerkintä(ä), {{updated}} päivitetty, {{deleted}} poistettu."
+    "medication_history_summary": "Lääkehistoria: {{changes}} muutosmerkintä(ä), {{updated}} päivitetty, {{deleted}} poistettu.",
+    "copy_device_settings": "Kopioi myös näyttö- ja laiteasetukset",
+    "copy_device_settings_help": "Tila (itse tai hoitaja), kieli, teema, tekstikoko ja muistutukset. Jätä pois, jos molemmat puhelimet ovat käytössä, esim. potilaan ja hoitajan.",
+    "backup_elsewhere": "Jos haluat siirtää tiedot tiedostolla, käytä Varmuuskopioi / Palauta -toimintoa Tiedot ja varmuuskopio -näkymässä."
   },
   "install": {
     "add_to_home": "Lisää aloitusnäyttöön",
@@ -1055,7 +1126,8 @@
       "hide": "Piilota",
       "show": "Näytä",
       "working": "Working...",
-      "cancel": "Peruuta"
+      "cancel": "Peruuta",
+      "videos_not_included": "Videot tallennetaan erikseen tälle laitteelle, eivätkä ne sisälly varmuuskopioon."
     },
     "reminder": {
       "eyebrow": "Recovery reminder",
@@ -1148,7 +1220,8 @@
   },
   "common": {
     "close": "Sulje",
-    "section": "Osio"
+    "section": "Osio",
+    "back": "Takaisin"
   },
   "ui": {
     "select_date": "Valitse päivä",
@@ -1156,5 +1229,125 @@
     "select_datetime": "Valitse päivä ja aika",
     "select_month": "Valitse kuukausi",
     "choose": "Valitse…"
+  },
+  "post_ictal": {
+    "group": {
+      "responsiveness": "Reagointi",
+      "movement": "Liikkuminen",
+      "sensation": "Tunto",
+      "speech": "Puhe",
+      "head": "Pää ja näkö",
+      "body": "Keho",
+      "mood": "Mieliala ja käytös",
+      "other": "Muu (omin sanoin)"
+    },
+    "finding": {
+      "not_responding": "Ei reagoi",
+      "confused": "Sekava / desorientoitunut",
+      "drowsy": "Uninen / nukahti",
+      "agitated": "Kiihtynyt / levoton",
+      "no_memory": "Ei muista tapahtumaa",
+      "paralysis": "Halvaus (Toddin)",
+      "weakness": "Heikkous",
+      "heaviness": "Raskauden tunne",
+      "clumsiness": "Kömpelyys / koordinaatiovaikeus",
+      "numbness": "Puutuminen",
+      "tingling": "Kihelmöinti / pistely",
+      "pain": "Kipu / lihassärky",
+      "unable_to_speak": "Ei pysty puhumaan",
+      "slurred_speech": "Puuroutunut puhe",
+      "word_finding": "Sananlöytämisen vaikeus",
+      "headache": "Päänsärky",
+      "vision_changes": "Näköhäiriöt",
+      "nausea": "Pahoinvointi / oksentelu",
+      "incontinence": "Inkontinenssi",
+      "tongue_bite": "Kielen purema",
+      "injury": "Vamma",
+      "exhaustion": "Uupumus",
+      "anxious": "Ahdistunut / pelokas",
+      "low_mood": "Alakuloinen / itkuinen",
+      "unusual_behaviour": "Epätavallinen käytös"
+    },
+    "add_area": "+ Lisää alue",
+    "no_area": "Aluetta ei kirjattu.",
+    "add_areas_one": "Lisää {{count}} alue",
+    "add_areas_other": "Lisää {{count}} aluetta",
+    "other_placeholder": "Kuvaa muu kohtauksen jälkeinen oire",
+    "add_other": "Lisää",
+    "recovery_title": "Palautui normaaliksi",
+    "recovery_ongoing": "Ei vielä palautunut normaaliksi",
+    "recovery_ongoing_text": "Ei palautunut normaaliksi kirjattaessa",
+    "recovery_after_text": "Palautui normaaliksi {{time}} jälkeen",
+    "add_areas_zero": "Lisää valitut alueet"
+  },
+  "wizard": {
+    "selected": "VALITTU",
+    "tap_to_add": "LISÄÄ NAPAUTTAMALLA"
+  },
+  "symptom_sets": {
+    "title": "Tallennetut oireryhmät",
+    "entry": "Tallennetut oireryhmät — {{type}}",
+    "entry_no_type": "Tallennetut oireryhmät",
+    "sets_heading": "Tallennetut ryhmät",
+    "most_used": "Eniten käytetyt: {{type}}",
+    "untyped": "Ei liitetty kohtaustyyppiin",
+    "no_type": "Ei kohtaustyyppiä",
+    "more_one": "+ {{count}} muu",
+    "more_other": "+ {{count}} muuta",
+    "added_by_you": "Itse lisätty",
+    "save": "Tallenna oireryhmänä",
+    "save_set": "Tallenna ryhmä",
+    "name_title": "Ryhmän nimi",
+    "name_placeholder": "Nimi tälle ryhmälle",
+    "name_help": "Ehdotettu kohtaustyypin ja ensimmäisen oireen perusteella. Voit muuttaa sitä; nimet ovat yksilöllisiä kohtaustyypin sisällä.",
+    "use_suggested": "Käytä ehdotettua nimeä: {{name}}",
+    "symptoms_in_set": "Ryhmän oireet ({{count}})",
+    "remove_symptom": "Poista oire",
+    "move_up": "Siirrä ylös",
+    "move_down": "Siirrä alas",
+    "delete": "Poista",
+    "delete_title": "Poistetaanko ”{{name}}”?",
+    "delete_body": "Aiemmat kohtaukset säilyttävät oireensa. Se poistetaan vain seuraavan kerran listalta.",
+    "settings_title": "Tallennetut oireryhmät ja omat oireet",
+    "settings_help": "Jokainen ryhmä kuuluu kohtaustyyppiin, ja sitä tarjotaan, kun valitset tyypin kirjatessa. Itse kirjoittamasi oireet tarjotaan uudelleen seuraavalla kerralla. Uudelleennimeäminen tai poistaminen ei koskaan muuta aiempia kohtauksia.",
+    "none_yet": "Ei vielä tallennettuja oireryhmiä. Tallenna ryhmä yhteenvedosta kohtauksen kirjaamisen jälkeen.",
+    "your_symptoms": "Omat oireet",
+    "no_custom": "Itse kirjoittamasi oireet näkyvät tässä.",
+    "kind_post_ictal": "Kohtauksen jälkeinen oire"
+  },
+  "triggers": {
+    "sleep_deprivation": "Univaje",
+    "missed_medication": "Unohtunut lääke",
+    "stress": "Stressi",
+    "illness_fever": "Sairaus / kuume",
+    "hormonal": "Hormonaalinen / kuukautiset",
+    "alcohol": "Alkoholi",
+    "flashing_lights": "Vilkkuvat valot",
+    "heat": "Kuumuus / ylikuumeneminen",
+    "exercise": "Liikunta",
+    "hunger": "Nälkä / matala verensokeri",
+    "unknown": "Tuntematon"
+  },
+  "med_history": {
+    "mark_taken": "Merkitse otetuksi",
+    "mark_missed": "Merkitse unohtuneeksi",
+    "previously_edited": "Muokattu aiemmin"
+  },
+  "error_boundary": {
+    "title": "Jokin meni vikaan",
+    "body": "Lataa sovellus uudelleen. Jos tallennus oli käynnissä, se jatkuu alkuajastaan, kun sovellus avataan uudelleen.",
+    "reload": "LATAA UUDELLEEN"
+  },
+  "notifications": {
+    "dose_title": "Aika ottaa {{name}}",
+    "dose_body": "{{dose}} — kirjaa se AuraTrackissa"
+  },
+  "seizure_types": {
+    "tonic_clonic": "Toonis-klooninen",
+    "focal_aware": "Fokaalinen tajunta säilyy",
+    "focal_impaired": "Fokaalinen tajunta heikentynyt",
+    "absence": "Poissaolokohtaus",
+    "aura_only": "Pelkkä aura",
+    "uncategorized": "Tyyppiä ei asetettu"
   }
 }

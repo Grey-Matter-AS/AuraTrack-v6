@@ -1,21 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMedications } from '../hooks/useMedications';
 import { getScheduledDosesForDay, getDoseStatus } from '../utils/medicationSchedule';
 import { changeTypeLabel, describeChange } from '../utils/medicationChanges';
 import { EditIcon } from './AppIcons';
 import { BottomSheet, Button, DateInput, EmptyState } from './ui';
+import { parseLocalDate, startOfLocalDay } from '../utils/dates';
 
 function parseHHMM(hhMM) {
   const [h, m] = hhMM.split(':').map(Number);
   return (h * 60 + m) * 60000;
 }
 
-function startOfDay(ms) {
-  const d = new Date(ms);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
-}
+const startOfDay = startOfLocalDay;
 
 function fmtDay(ms, todayMs) {
   const d = new Date(ms);
@@ -63,8 +60,11 @@ export function MedicationHistoryTab({ settings = {} }) {
     setLoading(false);
   };
 
+  // Reload when the medication list changes (latest loadLogs through a ref: it is a new function each render)
+  const loadLogsRef = useRef(loadLogs);
+  useEffect(() => { loadLogsRef.current = loadLogs; });
   useEffect(() => {
-    const id = setTimeout(loadLogs, 0);
+    const id = setTimeout(() => loadLogsRef.current(), 0);
     return () => clearTimeout(id);
   }, [medications]);
 
@@ -78,7 +78,7 @@ export function MedicationHistoryTab({ settings = {} }) {
 
     const candidates = [];
     if (settings.medicationStartDate) {
-      const d = startOfDay(new Date(settings.medicationStartDate).getTime());
+      const d = startOfDay(parseLocalDate(settings.medicationStartDate));
       if (!isNaN(d)) candidates.push(d);
     }
     if (allLogs.length > 0) {
@@ -323,16 +323,16 @@ export function MedicationHistoryTab({ settings = {} }) {
                 </Button>
               )}
               <div className="ui-button-row">
-                <Button variant="success" onClick={handleMarkTaken}>Mark Taken</Button>
-                <Button variant="danger" onClick={handleMarkMissed}>Mark Missed</Button>
+                <Button variant="success" onClick={handleMarkTaken}>{t('med_history.mark_taken')}</Button>
+                <Button variant="danger" onClick={handleMarkMissed}>{t('med_history.mark_missed')}</Button>
               </div>
-              <Button variant="secondary" fullWidth onClick={() => setEditCell(null)}>Cancel</Button>
+              <Button variant="secondary" fullWidth onClick={() => setEditCell(null)}>{t('summary.cancel')}</Button>
             </>
           )}
         >
           <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
             {fmtDay(editCell.dayMs)} · Scheduled {editCell.hhMM}
-            {editCell.log?.isEdited && <span className="app-status-badge app-status-badge--info ml-2">Previously edited</span>}
+            {editCell.log?.isEdited && <span className="app-status-badge app-status-badge--info ml-2">{t('med_history.previously_edited')}</span>}
           </p>
           <DateInput type="time" label="Actual time taken" value={editTime} onChange={setEditTime} />
         </BottomSheet>

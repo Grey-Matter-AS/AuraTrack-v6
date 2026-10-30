@@ -1,20 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '../data/db';
-
-function makeUUID() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-  return `uuid-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-}
+import { makeUUID } from '../utils/ids';
+import { buildEditLog } from '../utils/editLog';
+import { deleteRecord } from '../data/records';
 
 function deriveDuration(startTime, endTime) {
   if (!startTime || !endTime || endTime < startTime) return 0;
   return Math.floor((endTime - startTime) / 1000);
-}
-
-function buildEditLog(existing, changedFields) {
-  const log = existing?.editLog ? [...existing.editLog] : [];
-  if (changedFields.length) log.push({ editedAt: Date.now(), changedFields });
-  return log;
 }
 
 async function getRunningActivity(sessionId) {
@@ -142,6 +134,7 @@ export function useEegDiary() {
     const id = await db.eegActivities.add({
       uuid: makeUUID(),
       sessionId: activeSession.id,
+      sessionUuid: activeSession.uuid || '',
       kind: 'ACTIVITY',
       activityLabel: activityLabel.trim(),
       customActivityText: customActivityText.trim(),
@@ -203,7 +196,7 @@ export function useEegDiary() {
   }, [refreshActiveSession]);
 
   const deleteActivity = useCallback(async (activityId) => {
-    await db.eegActivities.delete(activityId);
+    await deleteRecord('eegActivities', activityId);
     await refreshActiveSession();
   }, [refreshActiveSession]);
 
@@ -212,15 +205,20 @@ export function useEegDiary() {
     await stopActivity(currentActivity.id, seizureStartTime);
   }, [activeSession, currentActivity, stopActivity]);
 
+  // The reference goes in the seizure's own EEG session (an edited old seizure never moves into
+  // today's session); a new seizure without one joins the session running now.
   const addSeizureReference = useCallback(async (event) => {
-    if (!activeSession?.id || !event?.id) return null;
+    const sessionId = event?.eegSessionId ?? activeSession?.id;
+    if (!sessionId || !event?.id) return null;
     const now = Date.now();
     const existing = await db.eegActivities
       .where('linkedEventId')
       .equals(event.id)
       .first();
+    const session = await db.eegSessions.get(sessionId);
     const payload = {
-      sessionId: activeSession.id,
+      sessionId,
+      sessionUuid: session?.uuid || '',
       kind: 'SEIZURE_REFERENCE',
       activityLabel: event.type && event.type !== 'Uncategorized' ? event.type : 'Seizure recorded',
       customActivityText: '',

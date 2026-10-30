@@ -45,7 +45,9 @@
     "stop_video": "Stop Video",
     "video_badge": "Video",
     "video_error_unavailable": "Camera permission or video recording is not available on this device.",
-    "switch_camera": "Switch Camera"
+    "switch_camera": "Switch Camera",
+    "no_aura": "Pas d’aura",
+    "auto_stop_note": "Enregistrement arrêté automatiquement à 12 minutes (état de mal épileptique)."
   },
   "alert": {
     "medical_alert": "ALERTE MÉDICALE",
@@ -56,7 +58,11 @@
     "administer_med": "Administrer le médicament d'urgence",
     "neurologist": "Neurologue",
     "emergency_contact": "Contact d'urgence",
-    "elapsed": "Écoulé"
+    "elapsed": "Écoulé",
+    "title_carer": "CRISE DE {{minutes}}+ MINUTES",
+    "title_self": "{{minutes}}+ MINUTES — DEMANDEZ DE L’AIDE",
+    "self_instruction": "Prévenez quelqu’un à proximité ou appelez les secours si vous le pouvez.",
+    "seizure_time": "Durée de la crise"
   },
   "tagging": {
     "step1_title": "Étape 1 : Type de crise",
@@ -75,7 +81,19 @@
     "todds_paralysis": "Paralysie de Todd",
     "add_paralysis_area": "Ajouter une zone de paralysie",
     "add_paralysis_areas": "Ajouter {{count}} zone(s) de paralysie",
-    "remove_area": "Retirer la zone"
+    "remove_area": "Retirer la zone",
+    "add_custom_symptom": "+ Ajouter votre propre symptôme",
+    "add_custom_detail": "+ Ajouter votre propre détail",
+    "save_continue_summary": "Enregistrer et passer au résumé",
+    "add_selected_zero": "Ajouter la sélection",
+    "add_selected_one": "Ajouter {{count}} élément",
+    "add_selected_other": "Ajouter {{count}} éléments",
+    "custom_symptom_title": "Votre symptôme",
+    "custom_detail_title": "Votre détail",
+    "custom_symptom_placeholder": "Nommez le symptôme à ajouter à ce menu",
+    "custom_detail_placeholder": "Décrivez le détail ou la variante du symptôme",
+    "custom_remembered_help": "Enregistré pour la prochaine fois. Vous pouvez le renommer ou le supprimer dans Réglages → Enregistrement.",
+    "continue": "Continuer"
   },
   "history": {
     "title": "Historique",
@@ -95,7 +113,8 @@
     "from_date": "Du",
     "to_date": "Au",
     "from_date_hint": "Date de début",
-    "to_date_hint": "Date de fin"
+    "to_date_hint": "Date de fin",
+    "uncategorized": "Type non indiqué"
   },
   "export": {
     "title": "Export & Rapports",
@@ -210,7 +229,7 @@
       "chart_phase_breakdown": "RÉPARTITION DES PHASES — {{count}} DERNIERS ÉVÉNEMENTS",
       "no_phase_data": "Aucune donnée de phase",
       "self_subject": "Personnel",
-      "flag_events_exceeding_5m": "Événements dépassant 5 minutes ({{count}})",
+      "flag_events_exceeding_5m": "Crises de {{minutes}} minutes ou plus ({{count}})",
       "flag_increasing_frequency": "Fréquence en augmentation",
       "flag_increasing_duration": "Tendance à l'allongement des durées",
       "flag_auto_terminated": "Événements arrêtés automatiquement ({{count}})",
@@ -220,7 +239,7 @@
       "flag_detail_recent_avg_vs_earlier_avg": "Moyenne récente {{recent}} contre moyenne antérieure {{earlier}}.",
       "flag_detail_auto_terminated": "Le minuteur s'est arrêté automatiquement après 12 minutes en raison de l'absence de réponse du patient ; cela peut indiquer un état de récupération prolongé.",
       "flag_detail_edited_records": "Les durées de phase ou certains détails ont été modifiés après l'enregistrement initial et peuvent différer de la capture en temps réel.",
-      "detail_badge_over5": ">5 MIN",
+      "detail_badge_over5": "≥{{minutes}} MIN",
       "detail_badge_auto_stopped": "ARRÊT AUTO",
       "detail_badge_edited": "MODIFIÉ",
       "event_number": "Événement #{{count}}",
@@ -250,13 +269,19 @@
       "change_what": "Modification",
       "adherence_line": "Prises prévues : {{taken}} confirmées, {{late}} en retard, {{assumed}} présumées, {{missed}} manquées",
       "assumed_note": "Les prises présumées n'ont pas été confirmées par l'utilisateur ; elles sont enregistrées comme prises par défaut.",
-      "stopped_on": "Arrêté le {{date}}"
+      "stopped_on": "Arrêté le {{date}}",
+      "emergency_plan_rule": "Plan d’urgence utilisé pour ces signalements : alerte après {{minutes}} minutes d’activité critique ; série = {{count}} crises ou plus en {{window}}.",
+      "trigger_wellbeing_match_one": "{{count}} aussi noté dans le bien-être du jour",
+      "trigger_wellbeing_match_other": "{{count}} aussi notés dans le bien-être du jour"
     },
     "eeg_title": "EEG Diary",
     "eeg_label": "EEG Clinical Table",
     "eeg_desc": "Export the most recent EEG session as a table-first clinical PDF.",
     "privacy_notice_body": "Encrypted backups are protected with your passphrase before they are saved. CSV, PDF, and video exports are still regular files, so treat them like medical documents.",
-    "privacy_notice_title": "Avis de confidentialité"
+    "privacy_notice_title": "Avis de confidentialité",
+    "go_to_backup": "Aller à la sauvegarde",
+    "export_button": "Exporter",
+    "factor": "Facteur"
   },
   "event_detail": {
     "title": "Détails de l'événement",
@@ -278,9 +303,9 @@
     "triggers": "Déclencheurs possibles",
     "notes": "Observations cliniques",
     "danger_prolonged_title": "Crise prolongée",
-    "danger_prolonged_desc": "Cet événement a duré plus de 5 minutes. Consultez un médecin si ce n'est pas déjà fait.",
+    "danger_prolonged_desc": "La crise a duré {{minutes}} minutes ou plus (le délai d’alerte de votre plan d’urgence). Consultez un médecin si ce n’est pas déjà fait.",
     "danger_cluster_title": "Cluster ×{{count}} / Risque d'état de mal épileptique",
-    "danger_cluster_desc": "{{count}} crises en 8 minutes. Consultez immédiatement un neurologue.",
+    "danger_cluster_desc": "{{count}} crises en {{window}}. Consultez immédiatement un neurologue.",
     "eeg_session": "EEG session",
     "linked": "Linked",
     "video_file": "Video file",
@@ -326,7 +351,7 @@
         "steps": [
           "Ajoutez vos médicaments dans Paramètres → Médicaments.",
           "L'écran d'accueil affiche les doses prévues aujourd'hui — appuyez sur chaque bouton de médicament pour le basculer, puis appuyez sur Enregistrer pour journaliser les doses.",
-          "Activez les rappels de doses par médicament dans Paramètres → Médicaments."
+          "Activez les rappels de doses par médicament dans Paramètres → Médicaments. Les rappels arrivent tant qu’AuraTrack est ouverte ou a été utilisée récemment ; pour une alarme garantie, réglez aussi un réveil sur le téléphone."
         ]
       },
       "history": {
@@ -496,7 +521,20 @@
       "factor_type_number": "Nombre",
       "factor_unit_placeholder": "Unité",
       "factor_label": "Nom du facteur",
-      "factor_type": "Type de facteur"
+      "factor_type": "Type de facteur",
+      "emergency_plan": "Plan d’urgence",
+      "emergency_plan_help": "Utilisez les durées de votre plan d’urgence. En cas de doute, gardez les valeurs par défaut et demandez à votre neurologue. Ces réglages sont partagés avec vos autres appareils synchronisés.",
+      "alert_after": "Alerte d’urgence après",
+      "alert_after_help": "Durée de crise avant l’alerte plein écran. Un avertissement s’affiche une minute avant. Par défaut 5 minutes.",
+      "unit_minutes": "minutes",
+      "unit_hours": "heures",
+      "cluster_rule": "Alerte de crises en série",
+      "cluster_rule_help": "Les crises sont signalées comme une série quand ce nombre survient dans ce délai. Par défaut 3 en 8 minutes. Demandez à votre neurologue ce qui constitue une série pour vous.",
+      "cluster_count": "Nombre de crises",
+      "seizures_within": "crises en",
+      "cluster_window": "Fenêtre de temps de la série",
+      "cluster_window_unit": "Unité de temps",
+      "reset_default": "Rétablir les valeurs par défaut"
     },
     "medications": {
       "section": "Médicaments",
@@ -511,7 +549,7 @@
       "active_days": "Jours actifs",
       "daily": "Quotidien",
       "dose_reminders": "Rappels de doses",
-      "dose_reminders_help": "Notification push à chaque horaire prévu",
+      "dose_reminders_help": "Une notification à chaque heure prévue tant qu’AuraTrack est ouverte ou a été utilisée récemment. Ce n’est pas une alarme garantie : si le téléphone a fermé l’app, le rappel n’arrive pas.",
       "show_emergency": "Afficher sur l'écran d'urgence",
       "show_emergency_help": "Affiché lors d'une alerte de crise prolongée",
       "save": "Enregistrer",
@@ -525,7 +563,7 @@
       "reminder_granted": "🔔 Notifications activées",
       "reminder_denied": "🔕 Notifications bloquées",
       "reminder_off": "🔕 Notifications désactivées",
-      "reminder_granted_help": "Les rappels se déclencheront quand l'application est ouverte ou suspendue.",
+      "reminder_granted_help": "Les rappels arrivent tant que l’app est ouverte ou a été utilisée récemment. Les toucher ouvre les doses du jour. Pour une alarme garantie, réglez aussi un réveil sur le téléphone.",
       "reminder_denied_help": "Bloqué dans les paramètres du navigateur — réinitialisez les autorisations du site pour réactiver.",
       "reminder_off_help": "Activez pour recevoir des notifications de rappel de doses.",
       "reminder_enable": "Activer",
@@ -680,7 +718,18 @@
       "import_summary_meds_updated_one": "{{count}} médicament mis à jour",
       "import_summary_meds_updated_other": "{{count}} médicaments mis à jour",
       "import_summary_meds_deleted_one": "{{count}} médicament supprimé",
-      "import_summary_meds_deleted_other": "{{count}} médicaments supprimés"
+      "import_summary_meds_deleted_other": "{{count}} médicaments supprimés",
+      "import_summary_updated_one": "{{count}} enregistrement mis à jour",
+      "import_summary_updated_other": "{{count}} enregistrements mis à jour",
+      "import_summary_deleted_one": "{{count}} enregistrement supprimé (supprimé sur l’autre appareil)",
+      "import_summary_deleted_other": "{{count}} enregistrements supprimés (supprimés sur l’autre appareil)",
+      "import_summary_unmatched_one": "{{count}} enregistrement n’a pu être associé à aucun médicament ni session EEG de cet appareil et a été ignoré.",
+      "import_summary_unmatched_other": "{{count}} enregistrements n’ont pu être associés à aucun médicament ni session EEG de cet appareil et ont été ignorés.",
+      "import_summary_rejected_one": "{{count}} enregistrement a été ignoré car ses données étaient invalides (par exemple une date manquante).",
+      "import_summary_rejected_other": "{{count}} enregistrements ont été ignorés car leurs données étaient invalides (par exemple une date manquante).",
+      "restore_copy_all": "Lors d’une restauration, copier aussi les réglages d’affichage et de l’appareil",
+      "restore_copy_all_help": "Pour configurer un nouveau téléphone : une copie exacte avec mode, langue, thème et rappels. Activé par défaut tant qu’aucune crise n’est enregistrée sur ce téléphone.",
+      "after_full_restore": "Ensuite sur ce téléphone : autorisez les notifications et installez AuraTrack sur l’écran d’accueil (cela ne peut pas être copié)."
     },
     "about_section": {
       "section": "À propos",
@@ -719,9 +768,9 @@
     "delete": "Supprimer",
     "untagged": "Non renseigné",
     "notes_placeholder": "Clinical observations, after-seizure notes, medication given...",
-    "long_duration_title": "Seizure lasted more than 5 minutes",
+    "long_duration_title": "Crise de {{minutes}} minutes ou plus",
     "long_duration_badge": ">5 MIN",
-    "cluster_title": "Cluster seizures / Status Epilepticus risk - {{count}} events within 8 minutes",
+    "cluster_title": "Série : {{count}} crises en {{window}}",
     "cluster_badge": "CLUSTER x{{count}}",
     "unknown": "Unknown"
   },
@@ -740,10 +789,29 @@
     "recovery": "Récupération",
     "total": "Total",
     "manual_durations": "Ajuster les durées manuellement",
-    "remove_symptom": "Supprimer",
-    "drag_to_reorder": "Drag to reorder",
+    "remove_symptom": "Retirer le symptôme",
+    "drag_to_reorder": "Maintenez et glissez ≡ pour réordonner (le premier est le symptôme principal)",
     "event_datetime": "Event Date & Time",
-    "event_date_time": "Date et heure de l'événement"
+    "event_date_time": "Date et heure de l'événement",
+    "seizure_type": "Type de crise",
+    "type_not_set": "Non indiqué",
+    "change_type": "Modifier",
+    "no_aura": "Il n’y a pas eu d’aura",
+    "edited": "modifié",
+    "edit": "MODIFIER",
+    "edit_phase_question": "Modifier {{phase}} ?",
+    "yes": "OUI",
+    "no": "NON",
+    "total_duration": "Durée totale",
+    "edit_total_question": "Modifier la durée totale ?",
+    "yes_edit": "OUI, MODIFIER",
+    "logged_symptoms": "Symptômes enregistrés",
+    "possible_triggers": "Déclencheurs possibles",
+    "optional": "facultatif",
+    "clinical_observations": "Observations cliniques",
+    "finish_save": "TERMINER ET ENREGISTRER",
+    "cancel_discard": "ANNULER ET SUPPRIMER",
+    "cancel_edit": "ANNULER LES MODIFICATIONS"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -968,7 +1036,10 @@
     "export_import": "Export / Import",
     "invalid_qr": "That QR code is not a valid AuraTrack sync code.",
     "title": "Sync to Another Device",
-    "medication_history_summary": "Historique des médicaments : {{changes}} modification(s), {{updated}} mis à jour, {{deleted}} supprimé(s)."
+    "medication_history_summary": "Historique des médicaments : {{changes}} modification(s), {{updated}} mis à jour, {{deleted}} supprimé(s).",
+    "copy_device_settings": "Copier aussi les réglages d’affichage et de l’appareil",
+    "copy_device_settings_help": "Mode (vous-même ou aidant), langue, thème, taille du texte et rappels. Laissez décoché si les deux téléphones sont utilisés, par exemple celui du patient et celui de l’aidant.",
+    "backup_elsewhere": "Pour transférer les données par fichier, utilisez Sauvegarder / Restaurer dans l’écran Données et sauvegarde."
   },
   "install": {
     "add_to_home": "Ajouter à l'écran d'accueil",
@@ -1055,7 +1126,8 @@
       "hide": "Masquer",
       "show": "Afficher",
       "working": "Working...",
-      "cancel": "Annuler"
+      "cancel": "Annuler",
+      "videos_not_included": "Les vidéos sont enregistrées séparément sur cet appareil et ne font pas partie de la sauvegarde."
     },
     "reminder": {
       "eyebrow": "Recovery reminder",
@@ -1148,7 +1220,8 @@
   },
   "common": {
     "close": "Fermer",
-    "section": "Section"
+    "section": "Section",
+    "back": "Retour"
   },
   "ui": {
     "select_date": "Choisir une date",
@@ -1156,5 +1229,125 @@
     "select_datetime": "Choisir date et heure",
     "select_month": "Choisir le mois",
     "choose": "Choisir…"
+  },
+  "post_ictal": {
+    "group": {
+      "responsiveness": "Réactivité",
+      "movement": "Mouvement",
+      "sensation": "Sensibilité",
+      "speech": "Parole",
+      "head": "Tête et vision",
+      "body": "Corps",
+      "mood": "Humeur et comportement",
+      "other": "Autre (avec vos mots)"
+    },
+    "finding": {
+      "not_responding": "Ne répond pas",
+      "confused": "Confus / désorienté",
+      "drowsy": "Somnolent / s’est endormi",
+      "agitated": "Agité / nerveux",
+      "no_memory": "Aucun souvenir de l’épisode",
+      "paralysis": "Paralysie (de Todd)",
+      "weakness": "Faiblesse",
+      "heaviness": "Lourdeur",
+      "clumsiness": "Maladresse / mauvaise coordination",
+      "numbness": "Engourdissement",
+      "tingling": "Fourmillements",
+      "pain": "Douleur / courbatures",
+      "unable_to_speak": "Incapable de parler",
+      "slurred_speech": "Parole pâteuse",
+      "word_finding": "Difficulté à trouver ses mots",
+      "headache": "Mal de tête",
+      "vision_changes": "Troubles de la vision",
+      "nausea": "Nausées / vomissements",
+      "incontinence": "Incontinence",
+      "tongue_bite": "Morsure de langue",
+      "injury": "Blessure",
+      "exhaustion": "Épuisement",
+      "anxious": "Anxieux / effrayé",
+      "low_mood": "Moral bas / larmes",
+      "unusual_behaviour": "Comportement inhabituel"
+    },
+    "add_area": "+ Ajouter une zone",
+    "no_area": "Zone non indiquée.",
+    "add_areas_one": "Ajouter {{count}} zone",
+    "add_areas_other": "Ajouter {{count}} zones",
+    "other_placeholder": "Décrivez un autre symptôme après la crise",
+    "add_other": "Ajouter",
+    "recovery_title": "Revenu à la normale après",
+    "recovery_ongoing": "Pas encore revenu à la normale",
+    "recovery_ongoing_text": "Pas revenu à la normale au moment de la saisie",
+    "recovery_after_text": "Revenu à la normale après {{time}}",
+    "add_areas_zero": "Ajouter les zones choisies"
+  },
+  "wizard": {
+    "selected": "SÉLECTIONNÉ",
+    "tap_to_add": "TOUCHER POUR AJOUTER"
+  },
+  "symptom_sets": {
+    "title": "Ensembles de symptômes enregistrés",
+    "entry": "Ensembles enregistrés — {{type}}",
+    "entry_no_type": "Ensembles de symptômes enregistrés",
+    "sets_heading": "Ensembles enregistrés",
+    "most_used": "Les plus utilisés pour {{type}}",
+    "untyped": "Non associé à un type de crise",
+    "no_type": "Sans type de crise",
+    "more_one": "+ {{count}} autre",
+    "more_other": "+ {{count}} autres",
+    "added_by_you": "Ajouté par vous",
+    "save": "Enregistrer comme ensemble",
+    "save_set": "Enregistrer l’ensemble",
+    "name_title": "Nom de l’ensemble",
+    "name_placeholder": "Nom de cet ensemble",
+    "name_help": "Proposé à partir du type de crise et du premier symptôme. Modifiez-le si vous le souhaitez ; les noms sont uniques par type de crise.",
+    "use_suggested": "Utiliser le nom proposé : {{name}}",
+    "symptoms_in_set": "Symptômes de cet ensemble ({{count}})",
+    "remove_symptom": "Retirer le symptôme",
+    "move_up": "Monter",
+    "move_down": "Descendre",
+    "delete": "Supprimer",
+    "delete_title": "Supprimer « {{name}} » ?",
+    "delete_body": "Les crises passées gardent leurs symptômes. Il est seulement retiré de la liste pour la prochaine fois.",
+    "settings_title": "Ensembles enregistrés et vos symptômes",
+    "settings_help": "Chaque ensemble appartient à un type de crise et est proposé quand vous choisissez ce type lors de la saisie. Les symptômes saisis par vous sont reproposés la prochaine fois. Renommer ou supprimer ne modifie jamais les crises passées.",
+    "none_yet": "Aucun ensemble enregistré. Enregistrez-en un depuis le résumé après la saisie d’une crise.",
+    "your_symptoms": "Vos propres symptômes",
+    "no_custom": "Les symptômes que vous saisissez apparaîtront ici.",
+    "kind_post_ictal": "Symptôme après la crise"
+  },
+  "triggers": {
+    "sleep_deprivation": "Manque de sommeil",
+    "missed_medication": "Médicament oublié",
+    "stress": "Stress",
+    "illness_fever": "Maladie / fièvre",
+    "hormonal": "Hormonal / menstruation",
+    "alcohol": "Alcool",
+    "flashing_lights": "Lumières clignotantes",
+    "heat": "Chaleur / surchauffe",
+    "exercise": "Exercice",
+    "hunger": "Faim / hypoglycémie",
+    "unknown": "Inconnu"
+  },
+  "med_history": {
+    "mark_taken": "Marquer comme prise",
+    "mark_missed": "Marquer comme oubliée",
+    "previously_edited": "Déjà modifié"
+  },
+  "error_boundary": {
+    "title": "Un problème est survenu",
+    "body": "Rechargez l’application. Si un enregistrement était en cours, il reprend à son heure de début à la réouverture.",
+    "reload": "RECHARGER"
+  },
+  "notifications": {
+    "dose_title": "C’est l’heure de prendre {{name}}",
+    "dose_body": "{{dose}} — ouvrez AuraTrack pour l’enregistrer"
+  },
+  "seizure_types": {
+    "tonic_clonic": "Tonico-clonique",
+    "focal_aware": "Focale consciente",
+    "focal_impaired": "Focale avec altération de la conscience",
+    "absence": "Absence",
+    "aura_only": "Aura seule",
+    "uncategorized": "Type non indiqué"
   }
 }

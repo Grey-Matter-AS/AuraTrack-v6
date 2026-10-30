@@ -1,8 +1,13 @@
 import i18n from '../i18n';
 import { phaseDurs } from '../utils/phaseCalculations';
+import { findingLabel, findingText, normalizePostIctal, recoveryText } from '../utils/postIctal';
+import { clusterWindowLabel, emergencyPlan, isLongSeizure } from '../utils/dangerFlags';
 import { esc } from '../utils/htmlEscape';
 import { getScheduledDosesForDay, regimenAt, regimenSnapshot } from '../utils/medicationSchedule';
 import { changeTypeLabel, describeChange, formLabel, regimenDoseSummary } from '../utils/medicationChanges';
+import { localDateKey } from '../utils/dates';
+import { formatDurationLabel } from '../utils/formatters';
+import { TRIGGER_DEFINITIONS } from '../data/constants';
 
 const DAY_MS = 86400000;
 
@@ -68,13 +73,7 @@ export function getTranslator() {
   return (key, options) => i18n.t(key, options);
 }
 
-export function formatDurationLabel(seconds) {
-  if (!seconds || seconds <= 0) return '-';
-  const whole = Math.max(0, Math.round(seconds));
-  const minutes = Math.floor(whole / 60);
-  const secs = whole % 60;
-  return minutes > 0 ? `${minutes}m ${secs}s` : `${secs}s`;
-}
+export { formatDurationLabel };
 
 export function describeSymptomPath(symptom = {}) {
   const path = [symptom.symptom, symptom.detail].filter(Boolean).join(' > ');
@@ -88,26 +87,30 @@ export function describeSymptomPath(symptom = {}) {
   };
 }
 
+// findings: one line per finding, with the body areas it affected; summary: all of it in one line
 export function describePostIctal(postIctal = {}, t = getTranslator()) {
-  const findings = Array.isArray(postIctal.findings) ? postIctal.findings : [];
-  const paralysisLocations = Array.isArray(postIctal.paralysisLocations) ? postIctal.paralysisLocations : [];
-
-  const paralysisSummary = paralysisLocations.map((location) =>
-    [location.region, location.subRegion, location.specificPart].filter(Boolean).join(' > ')
-  );
-
+  const normalized = normalizePostIctal(postIctal);
+  const findings = normalized.findings.map(finding => findingText(finding, t));
+  const recovery = recoveryText(normalized, t);
   const summaryParts = [
     findings.length ? `${t('export.docs.post_ictal_findings', 'After-seizure symptoms')}: ${findings.join(', ')}` : '',
-    paralysisSummary.length ? `${t('export.docs.post_ictal_paralysis', 'After-seizure paralysis')}: ${paralysisSummary.join('; ')}` : '',
+    recovery,
   ].filter(Boolean);
 
   return {
     findings,
-    paralysisLocations,
-    paralysisSummary,
+    labels: normalized.findings.map(finding => findingLabel(finding, t)),
+    recovery,
     summary: summaryParts.join(' | '),
   };
 }
+
+// A wellbeing factor counts as logged when it was recorded as present (yes, a level above none, or an amount)
+const factorPresent = (factor) => {
+  if (!factor) return false;
+  if (factor.type === 'boolean') return factor.value === true;
+  return Number(factor.value) > 0;
+};
 
 function wellbeingIntensityLabel(value, t) {
   return ['', t('wellbeing.mild', 'Mild'), t('wellbeing.moderate', 'Moderate'), t('wellbeing.strong', 'Strong')][value] || String(value || '-');
@@ -172,6 +175,7 @@ export function buildEventLogData(events, medicationChanges = []) {
 export function buildNeurologistReportData(events, settings = {}, medications = [], medicationLogs = [], reportRange = {}, wellbeingEntries = [], medicationChanges = []) {
   const locale = getCurrentLocale();
   const t = getTranslator();
+  const plan = emergencyPlan(settings);
   const now = Date.now();
   const selectedFromMs = reportRange.fromMs ?? (events.length ? Math.min(...events.map(event => event.startTime || now)) : now);
   const selectedToMs = reportRange.toMs ?? (events.length ? Math.max(...events.map(event => event.startTime || now)) : now);
@@ -236,14 +240,10 @@ export function buildNeurologistReportData(events, settings = {}, medications = 
       else if (value.includes('confused') || value.includes('dream')) awareness.confused += 1;
       else if (value.includes('blackout') || value.includes('loss')) awareness.blackout += 1;
     });
-    const postIctal = describePostIctal(event.postIctal, t);
-    postIctal.findings.forEach((finding) => {
-      postIctalCounts[finding] = (postIctalCounts[finding] || 0) + 1;
+    // Counted by finding (not by area), so "Numbness" in two seizures reads 2x
+    describePostIctal(event.postIctal, t).labels.forEach((label) => {
+      postIctalCounts[label] = (postIctalCounts[label] || 0) + 1;
     });
-    if (postIctal.paralysisLocations.length > 0) {
-      const paralysisLabel = t('export.docs.post_ictal_paralysis', 'After-seizure paralysis');
-      postIctalCounts[paralysisLabel] = (postIctalCounts[paralysisLabel] || 0) + postIctal.paralysisLocations.length;
-    }
   });
 
   const postIctalSummary = Object.entries(postIctalCounts)
@@ -255,22 +255,28 @@ export function buildNeurologistReportData(events, settings = {}, medications = 
   const detailMap = new Map();
   const addDetail = event => { if (event?.id != null) detailMap.set(event.id, event); };
   allSorted.slice(0, 3).forEach(addDetail);
-  periodEvents.filter(event => (event.duration || 0) > 300 || event.isEdited).forEach(addDetail);
+  periodEvents.filter(event => isLongSeizure(event, plan) || event.isEdited).forEach(addDetail);
   const detailEvents = [...detailMap.values()].sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
 
+  // Triggers, and how often the same thing was also logged in that day's wellbeing check-in
   const triggerCounts = {};
+  const triggerConfirmed = {};
+  const factorLoggedOn = (factorId, startTime) => wellbeingEntries.some(entry =>
+    (entry.dayKey || localDateKey(entry.recordedAt || 0)) === localDateKey(startTime || 0) && factorPresent(entry.factors?.[factorId]));
   periodEvents.forEach(event => {
     (event.triggers || []).forEach(trigger => {
       triggerCounts[trigger] = (triggerCounts[trigger] || 0) + 1;
+      const factorId = TRIGGER_DEFINITIONS.find(def => def.value === trigger)?.factorId;
+      if (factorId && factorLoggedOn(factorId, event.startTime)) triggerConfirmed[trigger] = (triggerConfirmed[trigger] || 0) + 1;
     });
   });
 
-  const longEvents = periodEvents.filter(event => (event.duration || 0) > 300);
+  const longEvents = periodEvents.filter(event => isLongSeizure(event, plan));
   const flags = [];
   if (longEvents.length > 0) {
     flags.push({
       level: 'warning',
-      label: t('export.docs.flag_events_exceeding_5m', { count: longEvents.length }),
+      label: t('export.docs.flag_events_exceeding_5m', { count: longEvents.length, minutes: plan.alertMinutes }),
       detail: longEvents.map(event => `${event.date} ${event.time} (${formatDurationLabel(event.duration || 0)})`).join('; '),
     });
   }
@@ -328,7 +334,13 @@ export function buildNeurologistReportData(events, settings = {}, medications = 
       label: t('export.docs.flag_reported_triggers', {
         count: periodEvents.filter(event => (event.triggers || []).length > 0).length,
       }),
-      detail: topTriggers.map(([trigger, count]) => `${trigger} (${count}x)`).join(', '),
+      detail: topTriggers.map(([trigger, count]) => {
+        const label = t(TRIGGER_DEFINITIONS.find(def => def.value === trigger)?.labelKey || '', trigger);
+        const confirmed = triggerConfirmed[trigger]
+          ? `; ${t('export.docs.trigger_wellbeing_match', { count: triggerConfirmed[trigger] })}`
+          : '';
+        return `${label} (${count}x${confirmed})`;
+      }).join(', '),
     });
   }
 
@@ -374,7 +386,7 @@ export function buildNeurologistReportData(events, settings = {}, medications = 
   });
   const wellbeingTopMoods = Object.entries(wellbeingMoodCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const wellbeingTopFactors = Object.entries(wellbeingFactorCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const wellbeingDaysCovered = new Set(periodWellbeingEntries.map(entry => entry.dayKey || new Date(entry.recordedAt || 0).toISOString().slice(0, 10))).size;
+  const wellbeingDaysCovered = new Set(periodWellbeingEntries.map(entry => entry.dayKey || localDateKey(entry.recordedAt || 0))).size;
 
   return {
     locale,
@@ -382,6 +394,13 @@ export function buildNeurologistReportData(events, settings = {}, medications = 
     periodStartStr,
     periodEndStr,
     periodDays,
+    plan,
+    // The thresholds behind every flag in this report, so the reader knows the rule used
+    planRule: t('export.docs.emergency_plan_rule', {
+      minutes: plan.alertMinutes,
+      count: plan.clusterMinCount,
+      window: clusterWindowLabel(plan.clusterWindowMinutes),
+    }),
     settings: {
       personName,
       caretakerName,
@@ -493,7 +512,7 @@ export function buildNeurologistReportData(events, settings = {}, medications = 
         notes: event.notes || '',
         videoFileName: event.videoFileName || '',
         badges: [
-          (event.duration || 0) > 300 ? t('export.docs.detail_badge_over5') : '',
+          isLongSeizure(event, plan) ? t('export.docs.detail_badge_over5', { minutes: plan.alertMinutes }) : '',
           event.isEmergencyStop ? t('export.docs.detail_badge_auto_stopped') : '',
           event.isEdited ? t('export.docs.detail_badge_edited') : '',
           ...(event.triggers || []),

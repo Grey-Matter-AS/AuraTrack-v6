@@ -1,12 +1,12 @@
 /* global Cypress, cy */
 
 const DB_NAME = 'AuraTrackDB';
-const DB_VERSION = 110; // Dexie version 11 × 10
+const DB_VERSION = 130; // Dexie version 13 × 10
 
 const STORE_DEFINITIONS = {
   events: {
     options: { keyPath: 'id', autoIncrement: true },
-    indexes: ['uuid', 'startTime', 'date', 'type', 'isComplete', 'isEdited', 'notes', 'eegSessionId', 'videoAttached'],
+    indexes: ['uuid', 'startTime'],
   },
   settings: {
     options: { keyPath: 'key' },
@@ -18,23 +18,27 @@ const STORE_DEFINITIONS = {
   },
   medicationLogs: {
     options: { keyPath: 'id', autoIncrement: true },
-    indexes: ['uuid', 'medicationId', 'medicationUuid', 'takenAt', 'scheduledTime'],
+    indexes: ['uuid', 'medicationId', 'medicationUuid', 'takenAt'],
   },
   medicationChanges: {
     options: { keyPath: 'id', autoIncrement: true },
-    indexes: ['uuid', 'medicationId', 'medicationUuid', 'effectiveAt', 'type'],
+    indexes: ['uuid', 'medicationId', 'medicationUuid', 'effectiveAt'],
   },
   eegSessions: {
     options: { keyPath: 'id', autoIncrement: true },
-    indexes: ['uuid', 'startTime', 'status', 'actualEndTime'],
+    indexes: ['uuid', 'startTime', 'status'],
   },
   eegActivities: {
     options: { keyPath: 'id', autoIncrement: true },
-    indexes: ['uuid', 'sessionId', 'kind', 'startTime', 'endTime', 'linkedEventId', 'isEdited'],
+    indexes: ['uuid', 'sessionId', 'startTime', 'linkedEventId'],
   },
   wellbeingEntries: {
     options: { keyPath: 'id', autoIncrement: true },
-    indexes: ['uuid', 'recordedAt', 'dayKey', 'primaryMood', 'intensity', 'isEdited'],
+    indexes: ['uuid', 'recordedAt'],
+  },
+  tombstones: {
+    options: { keyPath: 'uuid' },
+    indexes: ['table', 'deletedAt'],
   },
 };
 
@@ -70,6 +74,7 @@ export function clearAndSeedDatabase(win, seed) {
       eegSessions: seed.eegSessions ?? [],
       eegActivities: seed.eegActivities ?? [],
       wellbeingEntries: seed.wellbeingEntries ?? [],
+      tombstones: seed.tombstones ?? [],
     };
 
     return new Cypress.Promise((resolve, reject) => {

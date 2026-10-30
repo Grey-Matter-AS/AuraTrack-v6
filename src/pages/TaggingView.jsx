@@ -1,13 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WizardMenu } from '../components/WizardMenu';
 import { ArrowRightIcon } from '../components/AppIcons';
 import Summary from '../components/Summary';
-import { SYMPTOM_WIZARD, REGION_WIZARD, SEIZURE_TYPES } from '../data/constants';
+import { SYMPTOM_WIZARD, REGION_WIZARD, SEIZURE_TYPES, seizureTypeLabel } from '../data/constants';
 import { db } from '../data/db';
-import { TextArea } from '../components/ui';
+import { TextArea, TextInput } from '../components/ui';
+import {
+  CUSTOM_SYMPTOMS_KEY, MAX_SET_NAME, SETS_KEY, capitalise, customDetailsFor, customPostIctal, customSymptomsFor,
+  mostUsedSymptoms, rememberCustom, setsForType, suggestSetName, symptomLabel, uniqueSetName,
+} from '../utils/symptomSets';
 
-const FAVORITES_KEY = 'favoriteSymptomSets';
+// Option values that aren't symptom names
+const SAVED_SETS = '__saved_sets';
+const ADD_SYMPTOM = '__add_symptom';
+const ADD_DETAIL = '__add_detail';
 
 function addSymptomBundles(existingSymptoms, bundleBase, specificParts) {
   return [
@@ -27,7 +34,10 @@ function TextEntryStep({
   onBack,
   placeholder,
   submitLabel,
+  singleLine = false,
+  help,
 }) {
+  const { t } = useTranslation();
   return (
     <div className="app-page-shell flex flex-col h-full mx-auto animate-in fade-in zoom-in duration-300">
       <div className="flex justify-between items-center mb-8 shrink-0">
@@ -36,7 +46,7 @@ function TextEntryStep({
             onClick={onBack}
             className="ui-btn ui-btn--secondary ui-btn--md"
           >
-            ← BACK
+            ← {t('common.back')}
           </button>
         ) : <div className="w-10" />}
         <p className="text-center font-black uppercase text-[11px] tracking-[0.3em]" style={{ color: 'var(--text-dim)' }}>{title}</p>
@@ -44,14 +54,19 @@ function TextEntryStep({
       </div>
 
       <div className="space-y-4">
-        <TextArea
-          aria-label={placeholder}
-          value={value}
-          onChange={onChange}
-          className="min-h-[140px]"
-          placeholder={placeholder}
-          autoFocus
-        />
+        {singleLine ? (
+          <TextInput aria-label={title} value={value} onChange={onChange} placeholder={placeholder} maxLength={MAX_SET_NAME} autoFocus />
+        ) : (
+          <TextArea
+            aria-label={placeholder}
+            value={value}
+            onChange={onChange}
+            className="min-h-[140px]"
+            placeholder={placeholder}
+            autoFocus
+          />
+        )}
+        {help && <p className="ui-help">{help}</p>}
         <button
           onClick={onSubmit}
           disabled={!value.trim()}
@@ -70,60 +85,60 @@ export default function TaggingView({
   tempSymptomList, setTempSymptomList,
   notes, setNotes,
   triggers, triggerToggle,
-  postIctal, togglePostIctalFinding, addPostIctalParalysisLocations, removePostIctalParalysisLocation,
+  postIctal, togglePostIctalFinding, addPostIctalLocations, removePostIctalLocation, addCustomPostIctal, removeCustomPostIctal, setPostIctalRecovery,
   editingId, activeEventId,
   manualDurations, editedTimers, setManualDuration,
   overrideDateTime, isManualEntry, setEventDateTime,
   elapsed, laps, startTime,
   onSave, onSkip, onCancel,
   durationFormat = 'seconds',
+  savedSets = [],
+  customSymptoms = [],
+  history = [],
+  onUpdateSetting,
 }) {
   const { t } = useTranslation();
   const skipLabel = t('tagging.skip_for_now');
-  const [favoriteSets, setFavoriteSets] = useState([]);
+  const seizureType = selections.type;
+  const typeSets = useMemo(() => setsForType(savedSets, seizureType), [savedSets, seizureType]);
+  const mostUsed = useMemo(() => mostUsedSymptoms(history, seizureType), [history, seizureType]);
   const [pendingSpecificParts, setPendingSpecificParts] = useState([]);
   const [customDraft, setCustomDraft] = useState('');
   const [customMode, setCustomMode] = useState(null);
+  const [typeFromSummary, setTypeFromSummary] = useState(false);
 
-  const finalizePostIctalParalysisSelection = (specificParts) => {
-    if (!specificParts.length) return;
-    addPostIctalParalysisLocations(specificParts.map((specificPart) => ({
+  // Which after-seizure finding the body-area picker is choosing areas for
+  const [postIctalTarget, setPostIctalTarget] = useState(null);
+  const finalizePostIctalAreaSelection = (specificParts) => {
+    if (!specificParts.length || !postIctalTarget) return;
+    addPostIctalLocations(postIctalTarget, specificParts.map((specificPart) => ({
       region: selections.region,
       subRegion: selections.subRegion,
       specificPart,
-      label: "After-seizure Paralysis",
-      med: "Todd's paralysis",
     })));
     setPendingSpecificParts([]);
+    setPostIctalTarget(null);
     setTaggingStep('SUMMARY');
   };
+  const postIctalPickerTitle = postIctalTarget ? t(`post_ictal.finding.${postIctalTarget}`) : '';
 
-  useEffect(() => {
-    let mounted = true;
-    db.settings.get(FAVORITES_KEY).then(row => {
-      if (mounted) setFavoriteSets(Array.isArray(row?.value) ? row.value : []);
-    }).catch(() => {
-      if (mounted) setFavoriteSets([]);
-    });
-    return () => { mounted = false; };
-  }, []);
+  // Custom symptoms are remembered for next time (Settings → Recording lists and edits them)
+  const remember = (entry) => onUpdateSetting?.(CUSTOM_SYMPTOMS_KEY, rememberCustom(customSymptoms, entry));
 
-  const updateFavoriteSets = async (nextSets) => {
-    setFavoriteSets(nextSets);
-    await db.settings.put({ key: FAVORITES_KEY, value: nextSets });
-  };
+  const suggestedName = () => suggestSetName(seizureType, tempSymptomList, savedSets, t);
 
   const openCustomStep = (mode) => {
     setCustomMode(mode);
-    setCustomDraft('');
+    setCustomDraft(mode === 'set' ? suggestedName() : '');
     setTaggingStep('CUSTOM_INPUT');
   };
 
   const submitCustomEntry = async () => {
-    const value = customDraft.trim();
+    const value = customMode === 'set' ? customDraft.trim() : capitalise(customDraft);
     if (!value) return;
 
     if (customMode === 'symptom') {
+      remember({ kind: 'symptom', group: selections.group, label: value });
       setSelections({
         ...selections,
         symptom: value,
@@ -132,35 +147,60 @@ export default function TaggingView({
       });
       setTaggingStep('S_DET');
     } else if (customMode === 'detail') {
+      remember({ kind: 'detail', group: selections.group, symptom: selections.symptom, label: value });
       setSelections({
         ...selections,
         detail: value,
         medical: selections.medical || 'Custom',
       });
       setTaggingStep('R_CAT');
-    } else if (customMode === 'favorite') {
+    } else if (customMode === 'set') {
+      const suggestion = suggestedName();
       const nextSets = [
-        ...favoriteSets,
+        ...savedSets,
         {
           id: crypto.randomUUID(),
-          name: value,
+          name: uniqueSetName(value, seizureType, savedSets),
+          seizureType: seizureType && seizureType !== 'Uncategorized' ? seizureType : '',
           symptoms: tempSymptomList.map(symptom => ({ ...symptom })),
+          // A name left as suggested follows the set when its type or symptoms change in Settings
+          autoName: value === suggestion,
         },
       ];
-      await updateFavoriteSets(nextSets);
+      await onUpdateSetting?.(SETS_KEY, nextSets);
       setTaggingStep('SUMMARY');
     }
     setCustomDraft('');
     setCustomMode(null);
   };
 
-  const addFavoriteSetToSelection = (favorite) => {
+  const addSymptomsToSelection = (symptoms) => {
     setTempSymptomList([
       ...tempSymptomList,
-      ...favorite.symptoms.map(symptom => ({ ...symptom })),
+      ...symptoms.map(symptom => ({ ...symptom })),
     ]);
     setTaggingStep('SUMMARY');
   };
+
+  // "Saved symptom sets — Focal Aware": the type's sets, then the symptoms used most for it.
+  // With no type chosen, every set, grouped by type.
+  const savedPickOptions = useMemo(() => {
+    const options = [];
+    const setOption = (set) => ({ value: `set:${set.id}`, label: set.name, hint: set.seizureType ? '' : t('symptom_sets.untyped') });
+    if (seizureType && seizureType !== 'Uncategorized') {
+      if (typeSets.length) options.push({ heading: t('symptom_sets.sets_heading') }, ...typeSets.map(setOption));
+    } else {
+      const byType = new Map();
+      typeSets.forEach(set => byType.set(set.seizureType || '', [...(byType.get(set.seizureType || '') || []), set]));
+      for (const [type, sets] of byType) options.push({ heading: seizureTypeLabel(type, t) || t('symptom_sets.untyped') }, ...sets.map(setOption));
+    }
+    if (mostUsed.length) {
+      options.push({ heading: t('symptom_sets.most_used', { type: seizureTypeLabel(seizureType, t) }) },
+        ...mostUsed.map((symptom, index) => ({ value: `sym:${index}`, label: symptomLabel(symptom) })));
+    }
+    return options;
+  }, [mostUsed, seizureType, t, typeSets]);
+  const hasSavedPicks = savedPickOptions.length > 0;
 
   const finalizeSymptomSelection = (specificParts) => {
     if (!specificParts.length) return;
@@ -187,12 +227,16 @@ export default function TaggingView({
     setTaggingStep('SUMMARY');
   };
 
+  // A new seizure saves its type straight away (so a skipped wizard keeps it). When the type is
+  // changed from the summary, or a saved seizure is edited, it is saved with the rest on Save, so
+  // the change is recorded in the edit history.
   const handleTypeSelect = async (val) => {
     const targetId = editingId || activeEventId;
     if (!targetId) { console.error('No active event found'); return; }
-    await db.events.update(targetId, { type: val });
+    if (!editingId) await db.events.update(targetId, { type: val });
     setSelections({ ...selections, type: val });
-    setTaggingStep('S_CAT');
+    setTaggingStep(typeFromSummary ? 'SUMMARY' : 'S_CAT');
+    setTypeFromSummary(false);
   };
 
   return (
@@ -210,12 +254,16 @@ export default function TaggingView({
               onTriggerToggle={triggerToggle}
               postIctal={postIctal}
               onTogglePostIctalFinding={togglePostIctalFinding}
-              onEditPostIctalParalysis={() => {
+              onPickPostIctalArea={(key) => {
+                setPostIctalTarget(key);
                 setPendingSpecificParts([]);
                 setSelections({ ...selections, region: '', subRegion: '' });
                 setTaggingStep('PI_R_CAT');
               }}
-              onRemovePostIctalParalysisLocation={removePostIctalParalysisLocation}
+              onRemovePostIctalArea={removePostIctalLocation}
+              onAddCustomPostIctal={(label) => { addCustomPostIctal(capitalise(label)); remember({ kind: 'post_ictal', label }); }}
+              onRemoveCustomPostIctal={removeCustomPostIctal}
+              onSetPostIctalRecovery={setPostIctalRecovery}
               elapsed={elapsed}
               laps={laps}
               startTime={startTime}
@@ -223,7 +271,8 @@ export default function TaggingView({
               editedTimers={editedTimers}
               onSetManualDuration={setManualDuration}
               onAddAnother={() => setTaggingStep('S_CAT')}
-              onSaveFavorite={() => openCustomStep('favorite')}
+              onSaveFavorite={() => openCustomStep('set')}
+              savedCustomPostIctal={customPostIctal(customSymptoms)}
               onSave={onSave}
               onSkip={onSkip}
               onCancel={onCancel}
@@ -233,6 +282,8 @@ export default function TaggingView({
               overrideDateTime={overrideDateTime}
               onSetEventDateTime={setEventDateTime}
               durationFormat={durationFormat}
+              seizureType={seizureTypeLabel(selections.type, t)}
+              onChangeType={() => { setTypeFromSummary(true); setTaggingStep('TYPE'); }}
             />
           </div>
         ) : (
@@ -241,9 +292,10 @@ export default function TaggingView({
             {taggingStep === 'TYPE' && (
               <WizardMenu
                 title={t('tagging.step1_title')}
-                options={SEIZURE_TYPES}
+                options={SEIZURE_TYPES.map(type => ({ value: type, label: seizureTypeLabel(type, t) }))}
                 onPick={handleTypeSelect}
-                onSkip={onSkip}
+                onBack={typeFromSummary ? () => { setTypeFromSummary(false); setTaggingStep('SUMMARY'); } : undefined}
+                onSkip={typeFromSummary ? undefined : onSkip}
                 skipLabel={skipLabel}
               />
             )}
@@ -253,11 +305,14 @@ export default function TaggingView({
               <WizardMenu
                 title={t('tagging.feeling_title')}
                 options={[
-                  ...(favoriteSets.length ? ['Favorite Symptom Sets'] : []),
+                  ...(hasSavedPicks ? [{
+                    value: SAVED_SETS,
+                    label: seizureType && seizureType !== 'Uncategorized' ? t('symptom_sets.entry', { type: seizureTypeLabel(seizureType, t) }) : t('symptom_sets.entry_no_type'),
+                  }] : []),
                   ...Object.keys(SYMPTOM_WIZARD),
                 ]}
                 onPick={v => {
-                  if (v === 'Favorite Symptom Sets') {
+                  if (v === SAVED_SETS) {
                     setTaggingStep('FAV_PICK');
                     return;
                   }
@@ -271,13 +326,18 @@ export default function TaggingView({
                 skipLabel={skipLabel}
               />
             )}
-            {taggingStep === 'FAV_PICK' && favoriteSets.length > 0 && (
+            {taggingStep === 'FAV_PICK' && hasSavedPicks && (
               <WizardMenu
-                title="Favorite Sets"
-                options={favoriteSets.map(set => set.name)}
-                onPick={name => {
-                  const favorite = favoriteSets.find(set => set.name === name);
-                  if (favorite) addFavoriteSetToSelection(favorite);
+                title={t('symptom_sets.title')}
+                options={savedPickOptions}
+                onPick={value => {
+                  const [kind, id] = value.split(/:(.+)/);
+                  if (kind === 'set') {
+                    const set = savedSets.find(item => String(item.id) === id);
+                    if (set) addSymptomsToSelection(set.symptoms || []);
+                  } else if (kind === 'sym' && mostUsed[Number(id)]) {
+                    addSymptomsToSelection([mostUsed[Number(id)]]);
+                  }
                 }}
                 onBack={() => setTaggingStep('S_CAT')}
                 onSkip={onSkip}
@@ -287,9 +347,15 @@ export default function TaggingView({
             {taggingStep === 'S_SYM' && selections.group && SYMPTOM_WIZARD[selections.group] && (
               <WizardMenu
                 title={selections.group}
-                options={[...Object.keys(SYMPTOM_WIZARD[selections.group]), '+ Add Custom Symptom']}
+                options={[
+                  ...Object.keys(SYMPTOM_WIZARD[selections.group]),
+                  ...customSymptomsFor(customSymptoms, selections.group)
+                    .filter(label => !(label in SYMPTOM_WIZARD[selections.group]))
+                    .map(label => ({ value: label, label, hint: t('symptom_sets.added_by_you') })),
+                  { value: ADD_SYMPTOM, label: t('tagging.add_custom_symptom') },
+                ]}
                 onPick={v => {
-                  if (v === '+ Add Custom Symptom') {
+                  if (v === ADD_SYMPTOM) {
                     openCustomStep('symptom');
                     return;
                   }
@@ -307,13 +373,14 @@ export default function TaggingView({
                 return (
               <WizardMenu
                 title={selections.symptom}
-                options={
-                  !isCustomSymptom
-                    ? [...SYMPTOM_WIZARD[selections.group][selections.symptom].options.map(o => o.label), '+ Add Custom Detail']
-                    : ['+ Add Custom Detail']
-                }
+                options={[
+                  ...(!isCustomSymptom ? SYMPTOM_WIZARD[selections.group][selections.symptom].options.map(o => o.label) : []),
+                  ...customDetailsFor(customSymptoms, selections.group, selections.symptom)
+                    .map(label => ({ value: label, label, hint: t('symptom_sets.added_by_you') })),
+                  { value: ADD_DETAIL, label: t('tagging.add_custom_detail') },
+                ]}
                 onPick={label => {
-                  if (label === '+ Add Custom Detail') {
+                  if (label === ADD_DETAIL) {
                     openCustomStep('detail');
                     return;
                   }
@@ -349,7 +416,7 @@ export default function TaggingView({
                   }
                 }}
                 onPrimaryAction={isCustomSymptom ? saveCustomSymptomToSummary : undefined}
-                primaryActionLabel={isCustomSymptom ? 'Save and Continue to Summary' : undefined}
+                primaryActionLabel={isCustomSymptom ? t('tagging.save_continue_summary') : undefined}
                 primaryActionIcon={isCustomSymptom ? <ArrowRightIcon className="w-4 h-4" /> : null}
                 onBack={() => setTaggingStep('S_SYM')}
                 onSkip={onSkip}
@@ -393,7 +460,7 @@ export default function TaggingView({
                   setPendingSpecificParts(prev => prev.includes(v) ? prev.filter(part => part !== v) : [...prev, v]);
                 }}
                 onConfirmSelection={() => finalizeSymptomSelection(pendingSpecificParts)}
-                confirmLabel={pendingSpecificParts.length > 0 ? `Add ${pendingSpecificParts.length} Selected` : 'Add Selected'}
+                confirmLabel={t('tagging.add_selected', { count: pendingSpecificParts.length })}
                 onBack={() => {
                   setPendingSpecificParts([]);
                   const optionObj = SYMPTOM_WIZARD[selections.group]?.[selections.symptom]?.options.find(o => o.label === selections.detail);
@@ -405,10 +472,10 @@ export default function TaggingView({
             )}
             {taggingStep === 'PI_R_CAT' && (
               <WizardMenu
-                title={t('tagging.post_ictal_paralysis', 'After-seizure paralysis')}
+                title={postIctalPickerTitle}
                 options={Object.keys(REGION_WIZARD)}
                 onPick={v => { setPendingSpecificParts([]); setSelections({ ...selections, region: v, subRegion: '' }); setTaggingStep('PI_R_SUB'); }}
-                onBack={() => setTaggingStep('SUMMARY')}
+                onBack={() => { setPostIctalTarget(null); setTaggingStep('SUMMARY'); }}
               />
             )}
             {taggingStep === 'PI_R_SUB' && selections.region && REGION_WIZARD[selections.region] && (
@@ -429,10 +496,8 @@ export default function TaggingView({
                 onToggleOption={v => {
                   setPendingSpecificParts(prev => prev.includes(v) ? prev.filter(part => part !== v) : [...prev, v]);
                 }}
-                onConfirmSelection={() => finalizePostIctalParalysisSelection(pendingSpecificParts)}
-                confirmLabel={pendingSpecificParts.length > 0
-                  ? t('tagging.add_paralysis_areas', { count: pendingSpecificParts.length })
-                  : t('tagging.add_paralysis_area', 'Add Paralysis Area')}
+                onConfirmSelection={() => finalizePostIctalAreaSelection(pendingSpecificParts)}
+                confirmLabel={t('post_ictal.add_areas', { count: pendingSpecificParts.length })}
                 onBack={() => {
                   setPendingSpecificParts([]);
                   setTaggingStep('PI_R_SUB');
@@ -441,24 +506,26 @@ export default function TaggingView({
             )}
             {taggingStep === 'CUSTOM_INPUT' && (
               <TextEntryStep
-                title={customMode === 'favorite' ? 'Favorite Set Name' : customMode === 'detail' ? 'Custom Detail' : 'Custom Symptom'}
+                title={customMode === 'set' ? t('symptom_sets.name_title') : customMode === 'detail' ? t('tagging.custom_detail_title') : t('tagging.custom_symptom_title')}
                 value={customDraft}
                 onChange={setCustomDraft}
                 onSubmit={submitCustomEntry}
+                singleLine={customMode === 'set'}
+                help={customMode === 'set' ? t('symptom_sets.name_help') : t('tagging.custom_remembered_help')}
                 onBack={() => {
                   setCustomDraft('');
-                  const previousStep = customMode === 'favorite' ? 'SUMMARY' : customMode === 'detail' ? 'S_DET' : 'S_SYM';
+                  const previousStep = customMode === 'set' ? 'SUMMARY' : customMode === 'detail' ? 'S_DET' : 'S_SYM';
                   setCustomMode(null);
                   setTaggingStep(previousStep);
                 }}
                 placeholder={
-                  customMode === 'favorite'
-                    ? 'For example: Left arm sensory cluster'
+                  customMode === 'set'
+                    ? t('symptom_sets.name_placeholder')
                     : customMode === 'detail'
-                      ? 'Describe the symptom detail or variant'
-                      : 'Name the symptom to add under this menu'
+                      ? t('tagging.custom_detail_placeholder')
+                      : t('tagging.custom_symptom_placeholder')
                 }
-                submitLabel={customMode === 'favorite' ? 'Save Favorite Set' : 'Continue'}
+                submitLabel={customMode === 'set' ? t('symptom_sets.save_set') : t('tagging.continue')}
               />
             )}
           </>

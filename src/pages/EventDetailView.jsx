@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from '../data/db';
-import { formatDuration, formatEventDate, formatEventTime } from '../utils/formatters';
+import { formatDurationSetting, formatEventDate, formatEventTime } from '../utils/formatters';
 import { ScrollFade } from '../components/ScrollFade';
-import { computeDangerFlags } from '../utils/dangerFlags';
+import { computeDangerFlags, emergencyPlan } from '../utils/dangerFlags';
 import { EditIcon, WarningIcon } from '../components/AppIcons';
-
-const CLUSTER_WINDOW_MS = 8 * 60 * 1000;
+import { findingLabel, hasPostIctal, locationLabel, normalizePostIctal, recoveryText } from '../utils/postIctal';
+import { seizureTypeLabel } from '../data/constants';
 
 function DangerAlert({ dangerFlags }) {
   const { t } = useTranslation();
@@ -22,7 +22,7 @@ function DangerAlert({ dangerFlags }) {
           <div>
             <p className="font-black text-xs uppercase tracking-widest">{t('event_detail.danger_prolonged_title')}</p>
             <p className="app-alert__muted text-[11px] mt-0.5">
-              {t('event_detail.danger_prolonged_desc')}
+              {t('event_detail.danger_prolonged_desc', { minutes: dangerFlags.alertMinutes })}
             </p>
           </div>
         </div>
@@ -35,7 +35,7 @@ function DangerAlert({ dangerFlags }) {
           <div>
             <p className="font-black text-xs uppercase tracking-widest">{t('event_detail.danger_cluster_title', { count: dangerFlags.clusterCount })}</p>
             <p className="app-alert__muted text-[11px] mt-0.5">
-              {t('event_detail.danger_cluster_desc', { count: dangerFlags.clusterCount })}
+              {t('event_detail.danger_cluster_desc', { count: dangerFlags.clusterCount, window: dangerFlags.clusterWindow })}
             </p>
           </div>
         </div>
@@ -44,9 +44,9 @@ function DangerAlert({ dangerFlags }) {
   );
 }
 
-export default function EventDetailView({ eventId, onEdit, onClose, durationFormat = 'seconds', dateFormat = 'locale', timeFormat = '12h' }) {
+export default function EventDetailView({ eventId, plan = emergencyPlan(), onEdit, onClose, durationFormat = 'seconds', dateFormat = 'locale', timeFormat = '12h' }) {
   const { t } = useTranslation();
-  const fmtDur = (s) => durationFormat === 'human' ? formatDuration(s) : `${s}s`;
+  const fmtDur = (s) => formatDurationSetting(s, durationFormat);
   const [event, setEvent] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [dangerFlags, setDangerFlags] = useState({ flags: [], clusterCount: 0 });
@@ -62,15 +62,15 @@ export default function EventDetailView({ eventId, onEdit, onClose, durationForm
       setEvent(ev);
       const nearby = await db.events
         .where('startTime')
-        .between(ev.startTime - CLUSTER_WINDOW_MS, ev.startTime + CLUSTER_WINDOW_MS, true, true)
+        .between(ev.startTime - plan.clusterWindowMs, ev.startTime + plan.clusterWindowMs, true, true)
         .toArray();
-      setDangerFlags(computeDangerFlags(ev, nearby));
+      setDangerFlags(computeDangerFlags(ev, nearby, plan));
     }).catch(err => {
       console.error('Failed to load event:', err);
       setNotFound(true);
     });
     return () => clearTimeout(resetTimer);
-  }, [eventId]);
+  }, [eventId, plan]);
 
   if (notFound) {
     return (
@@ -142,7 +142,7 @@ export default function EventDetailView({ eventId, onEdit, onClose, durationForm
             </div>
             <div className="text-right">
               <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>{t('event_detail.type')}</p>
-              <p className="text-xs font-black uppercase tracking-tighter" style={{ color: 'var(--text-primary)' }}>{event.type || t('event_detail.unknown', 'Unknown')}</p>
+              <p className="text-xs font-black uppercase tracking-tighter" style={{ color: 'var(--text-primary)' }}>{seizureTypeLabel(event.type, t) || t('event_detail.unknown', 'Unknown')}</p>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
@@ -252,41 +252,35 @@ export default function EventDetailView({ eventId, onEdit, onClose, durationForm
         )}
 
         {/* Post-ictal findings */}
-        {(event.postIctal?.findings?.length > 0 || event.postIctal?.paralysisLocations?.length > 0) && (
-          <div className="p-5 rounded-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-            <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--text-dim)' }}>
-              {t('event_detail.post_ictal', 'After-seizure symptoms')}
-            </p>
-
-            {event.postIctal?.findings?.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {event.postIctal.findings.map((finding) => (
-                  <span
-                    key={finding}
-                    className="app-status-badge app-status-badge--info"
-                  >
-                    {finding}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {event.postIctal?.paralysisLocations?.length > 0 && (
-              <div className="space-y-2">
-                {event.postIctal.paralysisLocations.map((location, index) => (
-                  <div key={`${location.region}-${location.subRegion}-${location.specificPart}-${index}`} className="rounded-2xl px-3 py-2" style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)' }}>
-                    <p className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>
-                      {t('tagging.todds_paralysis', "Todd's paralysis")}
-                    </p>
-                    <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
-                      {location.region} › {location.subRegion} › {location.specificPart}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {hasPostIctal(event.postIctal) && (() => {
+          const postIctal = normalizePostIctal(event.postIctal);
+          const recovery = recoveryText(postIctal, t);
+          return (
+            <div className="p-5 rounded-2xl space-y-3" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+              <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-dim)' }}>
+                {t('event_detail.post_ictal', 'After-seizure symptoms')}
+              </p>
+              {postIctal.findings.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {postIctal.findings.map((finding) => (
+                    <span key={`${finding.key}-${finding.label || ''}`} className="app-status-badge app-status-badge--info">
+                      {findingLabel(finding, t)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {postIctal.findings.filter(f => f.locations.length).map((finding) => (
+                <div key={`areas-${finding.key}-${finding.label || ''}`} className="ui-inset">
+                  <p className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>{findingLabel(finding, t)}</p>
+                  {finding.locations.map((location, index) => (
+                    <p key={index} className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{locationLabel(location)}</p>
+                  ))}
+                </div>
+              ))}
+              {recovery && <p className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{recovery}</p>}
+            </div>
+          );
+        })()}
 
         {/* Notes */}
         {event.notes && (

@@ -16,7 +16,6 @@ import {
   GripVertical,
   History,
   LoaderCircle,
-  LockKeyhole,
   Pencil,
   Pill,
   RefreshCw,
@@ -75,7 +74,6 @@ export const PillIcon = createIcon(Pill);
 export const ShieldIcon = createIcon(Shield);
 export const WifiIcon = createIcon(Wifi);
 export const GlobeIcon = createIcon(Globe);
-export const LockKeyholeIcon = createIcon(LockKeyhole);
 export const LoaderIcon = createIcon(LoaderCircle);
 export const ClockIcon = createIcon(Clock);
 export const SirenIcon = createIcon(Siren);

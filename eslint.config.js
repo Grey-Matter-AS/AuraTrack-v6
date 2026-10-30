@@ -4,6 +4,12 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
+// toISOString() is the UTC date: wrong near midnight for a calendar day (use src/utils/dates.js)
+const LOCAL_DATE_RULE = {
+  selector: "CallExpression[callee.property.name='slice'][callee.object.callee.property.name='toISOString']",
+  message: 'toISOString() gives the UTC date. Use localDateKey / localMonthKey from src/utils/dates.js.',
+};
+
 export default defineConfig([
   globalIgnores(['dist']),
   {
@@ -16,6 +22,14 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+  {
+    files: ['src/**/*.{js,jsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', LOCAL_DATE_RULE],
+      // `const { id, ...rest } = row` is how a field is left out of a copy
+      'no-unused-vars': ['error', { ignoreRestSiblings: true }],
     },
   },
   {
@@ -32,17 +46,14 @@ export default defineConfig([
           selector: "JSXAttribute[name.name='className'] > Literal[value=/\\bfixed inset-0\\b/]",
           message: 'Use BottomSheet or Dialog from src/components/ui for overlays.',
         },
+        LOCAL_DATE_RULE,
       ],
     },
   },
   {
-    files: ['playwright.config.js', 'tests/**/*.js'],
+    files: ['src/**/*.test.js', 'src/test/**/*.js', 'vitest.config.js'],
     languageOptions: {
-      globals: globals.node,
-    },
-    rules: {
-      'react-hooks/rules-of-hooks': 'off',
-      'react-hooks/set-state-in-effect': 'off',
+      globals: { ...globals.browser, ...globals.node },
     },
   },
   {

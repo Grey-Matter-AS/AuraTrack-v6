@@ -5,6 +5,7 @@ import { formatEventDate, formatEventTime } from '../utils/formatters';
 import { WellbeingEntrySheet } from './WellbeingEntrySheet';
 import { EditIcon, TrashIcon } from './AppIcons';
 import { Card, ChipGroup, DateInput, EmptyState, Select } from './ui';
+import { endOfLocalDay, parseLocalDate } from '../utils/dates';
 
 const WINDOWS = [
   { label: '7D', days: 7 },
@@ -182,8 +183,8 @@ export function WellbeingTab({ events = [], wellbeing, settings = {} }) {
   );
 
   const filtered = entries.filter(entry => {
-    if (fromDate && entry.recordedAt < new Date(fromDate).setHours(0, 0, 0, 0)) return false;
-    if (toDate && entry.recordedAt > new Date(toDate).setHours(23, 59, 59, 999)) return false;
+    if (fromDate && entry.recordedAt < parseLocalDate(fromDate).getTime()) return false;
+    if (toDate && entry.recordedAt > endOfLocalDay(parseLocalDate(toDate))) return false;
     if (factorFilter && !entry.factors?.[factorFilter]) return false;
     return true;
   });

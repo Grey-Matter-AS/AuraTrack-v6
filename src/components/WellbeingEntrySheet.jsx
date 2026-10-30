@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WELLBEING_MOOD_OPTIONS } from '../data/constants';
 import { BottomSheet, Button, Checkbox, ChipGroup, DateInput, DecimalInput, Field, Inset, TextArea } from './ui';
+import { localDateTimeInputValue } from '../utils/dates';
 
 const INTENSITY_OPTIONS = [
   { value: 1, label: 'Mild', labelKey: 'wellbeing.mild' },
@@ -82,11 +83,7 @@ export function WellbeingEntrySheet({ entry = null, factorDefinitions = [], onSa
   const { t } = useTranslation();
   const [primaryMood, setPrimaryMood] = useState(entry?.primaryMood || WELLBEING_MOOD_OPTIONS[0].label);
   const [intensity, setIntensity] = useState(entry?.intensity || 1);
-  const [recordedAt, setRecordedAt] = useState(() => {
-    const source = entry?.recordedAt ? new Date(entry.recordedAt) : new Date();
-    const offset = source.getTimezoneOffset() * 60000;
-    return new Date(source.getTime() - offset).toISOString().slice(0, 16);
-  });
+  const [recordedAt, setRecordedAt] = useState(() => localDateTimeInputValue(entry?.recordedAt ?? Date.now()));
   const [factors, setFactors] = useState(() => {
     const initial = {};
     Object.entries(entry?.factors || {}).forEach(([key, factor]) => {

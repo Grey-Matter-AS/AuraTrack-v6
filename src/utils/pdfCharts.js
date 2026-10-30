@@ -3,6 +3,8 @@
 
 import { esc } from './htmlEscape';
 import { phaseDurs } from './phaseCalculations';
+import { emergencyPlan, isLongSeizure } from './dangerFlags';
+import { formatDuration } from './formatters';
 import i18n from '../i18n';
 
 const SVG_FONT_ATTR = `font-family="Helvetica Neue, Arial, sans-serif"`;
@@ -20,13 +22,7 @@ function formatNumberLabel(value) {
   return Number.isInteger(number) ? String(number) : number.toFixed(1);
 }
 
-function formatDurationLabel(seconds) {
-  const whole = Math.max(0, Math.round(Number(seconds) || 0));
-  if (whole < 60) return `${whole}s`;
-  const minutes = Math.floor(whole / 60);
-  const secs = whole % 60;
-  return secs ? `${minutes}m ${secs}s` : `${minutes}m`;
-}
+const formatDurationLabel = (seconds) => formatDuration(seconds, { compact: true });
 
 function svgValueLabel(x, y, text, { anchor = 'middle', fill = '#111827', bg = true } = {}) {
   if (!text) return '';
@@ -127,7 +123,7 @@ function selectMultiSeriesLabelKeys(renderedSeries, limit = MAX_VALUE_LABELS) {
 }
 
 // ── A. Seizure frequency bar chart (last N days) ─────────────
-export function freqBarChartSVG(events, days = 30, endMs = Date.now()) {
+export function freqBarChartSVG(events, days = 30, endMs = Date.now(), plan = emergencyPlan()) {
   const locale = i18n.resolvedLanguage || i18n.language || 'en';
   if (!events.length) return NO_DATA(i18n.t('export.docs.chart_seizure_frequency', { count: days }));
 
@@ -144,7 +140,7 @@ export function freqBarChartSVG(events, days = 30, endMs = Date.now()) {
   events.forEach(e => {
     const t = e.startTime || 0;
     for (const b of buckets) {
-      if (t >= b.start && t <= b.end) { b.count++; if ((e.duration || 0) > 300) b.hasLong = true; break; }
+      if (t >= b.start && t <= b.end) { b.count++; if (isLongSeizure(e, plan)) b.hasLong = true; break; }
     }
   });
 
@@ -190,12 +186,12 @@ export function freqBarChartSVG(events, days = 30, endMs = Date.now()) {
   <rect x="${W - 90}" y="${H - 18}" width="8" height="8" fill="#1e3a5f"/>
   <text x="${W - 79}" y="${H - 11}" font-size="7" fill="#6b7280">${esc(i18n.t('export.docs.normal'))}</text>
   <rect x="${W - 40}" y="${H - 18}" width="8" height="8" fill="#dc2626"/>
-  <text x="${W - 29}" y="${H - 11}" font-size="7" fill="#6b7280">&gt;5 min</text>
+  <text x="${W - 29}" y="${H - 11}" font-size="7" fill="#6b7280">&#8805;${plan.alertMinutes} min</text>
 </svg>`;
 }
 
 // ── B. Duration trend line chart ──────────────────────────────
-export function durationLineSVG(events, days = events.length) {
+export function durationLineSVG(events, days = events.length, plan = emergencyPlan()) {
   if (!events.length) return NO_DATA(i18n.t('export.docs.chart_duration_trend', { count: days }));
 
   const W = 520, H = 150, ml = 45, mr = 15, mt = 18, mb = 28;
@@ -208,10 +204,10 @@ export function durationLineSVG(events, days = events.length) {
   const py = d => (mt + ch - Math.min(d / maxDur, 1) * ch).toFixed(1);
 
   const pts = sorted.map((e, i) => `${px(i)},${py(e.duration || 0)}`).join(' ');
-  const labelIndexes = selectLineLabelIndexes(sorted.map(e => e.duration || 0), { threshold: 300 });
+  const labelIndexes = selectLineLabelIndexes(sorted.map(e => e.duration || 0), { threshold: plan.alertSec });
 
   const dots = sorted.map((e, i) => {
-    const isLong = (e.duration || 0) > 300;
+    const isLong = isLongSeizure(e, plan);
     return `<circle cx="${px(i)}" cy="${py(e.duration || 0)}" r="${isLong ? 4 : 3}" fill="${isLong ? '#dc2626' : '#1e3a5f'}"/>`;
   }).join('');
 
@@ -222,14 +218,14 @@ export function durationLineSVG(events, days = events.length) {
     const anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
     return svgValueLabel(x, Math.max(mt + 8, y - 6), formatDurationLabel(e.duration || 0), {
       anchor,
-      fill: (e.duration || 0) > 300 ? '#dc2626' : '#111827',
+      fill: isLongSeizure(e, plan) ? '#dc2626' : '#111827',
     });
   }).join('');
 
-  const ty = +py(300);
+  const ty = +py(plan.alertSec);
   const thresh = ty > mt && ty < mt + ch
     ? `<line x1="${ml}" y1="${ty.toFixed(1)}" x2="${ml + cw}" y2="${ty.toFixed(1)}" stroke="#dc2626" stroke-width="0.8" stroke-dasharray="4 3"/>` +
-      `<text x="${ml + 3}" y="${(ty - 3).toFixed(1)}" font-size="7" fill="#dc2626">5 min</text>`
+      `<text x="${ml + 3}" y="${(ty - 3).toFixed(1)}" font-size="7" fill="#dc2626">${plan.alertMinutes} min</text>`
     : '';
 
   const yTicks = [0, Math.round(maxDur * 0.5), maxDur].map(v => {

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '../data/db';
-import i18n from '../i18n';
+import { DATA_CHANGED_EVENT } from '../utils/dataEvents';
+import i18n, { setLanguage } from '../i18n';
 import { DEFAULT_WELLBEING_FACTORS } from '../data/constants';
 
 const DEFAULTS = {
@@ -38,6 +39,13 @@ const DEFAULTS = {
   wellbeingFactorDefinitions: DEFAULT_WELLBEING_FACTORS,
   quickNoteLabels: ['FELL', 'RESCUE MED', 'NOT RESPONDING', 'FULL BODY', 'LEFT SIDE', 'RIGHT SIDE'],
 
+  // Emergency plan (Settings → Recording): alert time and what counts as a cluster
+  emergencyAlertMinutes: 5,
+  clusterMinCount: 3,
+  clusterWindowMinutes: 8,
+  favoriteSymptomSets: [],      // saved symptom sets, one seizure type each (key kept for existing data)
+  customSymptoms: [],           // symptoms the user typed in, remembered for next time
+
   // Data & Backup
   backupReminderEnabled: true,
   backupReminderIntervalDays: 7,
@@ -53,27 +61,37 @@ const DEFAULTS = {
   language: 'en',               // ISO 639-1 language code
 };
 
+// Things the user built up, not preferences: "reset settings" keeps them
+const KEPT_ON_RESET = ['favoriteSymptomSets', 'customSymptoms', 'lastSuccessfulBackupAt', 'lastBackupReminderDismissedAt'];
+
 export function useSettings() {
   const [settings, setSettings] = useState(DEFAULTS);
   const [lastError, setLastError] = useState(null);
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const rows = await db.settings.toArray();
-        const merged = { ...DEFAULTS };
-        rows.forEach(row => { merged[row.key] = row.value; });
-        if (merged.language && merged.language !== i18n.language) {
-          i18n.changeLanguage(merged.language);
-        }
-        setSettings(merged);
-      } catch (err) {
-        console.error('Failed to load settings, using defaults:', err);
-        setLastError({ scope: 'load_settings', message: 'Failed to load saved settings.' });
+  const loadSettings = useCallback(async () => {
+    try {
+      const rows = await db.settings.toArray();
+      const merged = { ...DEFAULTS };
+      rows.forEach(row => { merged[row.key] = row.value; });
+      if (merged.language && merged.language !== i18n.language) {
+        await setLanguage(merged.language);
       }
-    };
-    loadSettings();
+      setSettings(merged);
+    } catch (err) {
+      console.error('Failed to load settings, using defaults:', err);
+      setLastError({ scope: 'load_settings', message: 'Failed to load saved settings.' });
+    }
   }, []);
+
+  // Loaded once, and again whenever a sync or restore changed the stored settings
+  useEffect(() => {
+    const id = setTimeout(loadSettings, 0);
+    window.addEventListener(DATA_CHANGED_EVENT, loadSettings);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener(DATA_CHANGED_EVENT, loadSettings);
+    };
+  }, [loadSettings]);
 
   const updateSettings = async (key, value) => {
     try {
@@ -90,8 +108,14 @@ export function useSettings() {
 
   const resetSettings = async () => {
     try {
-      await db.settings.clear();
-      setSettings(DEFAULTS);
+      const kept = await db.settings.bulkGet(KEPT_ON_RESET);
+      await db.transaction('rw', db.settings, async () => {
+        await db.settings.clear();
+        await db.settings.bulkPut(kept.filter(Boolean));
+      });
+      const next = { ...DEFAULTS };
+      kept.filter(Boolean).forEach(row => { next[row.key] = row.value; });
+      setSettings(next);
       setLastError(null);
       return true;
     } catch (err) {

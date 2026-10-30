@@ -30,6 +30,7 @@
   --phase-recovery: #5b8def;
   --text-warning: #f59e0b;
   --text-danger: #ef4444;
+  --text-success: #4ade80;
 
   /* Medication status — dark mode */
   --status-missed-bg:     rgba(220,38,38,0.20);
@@ -88,6 +89,7 @@
   --phase-recovery: #1d4ed8;
   --text-warning: #b45309;
   --text-danger: #b91c1c;
+  --text-success: #15803d;
   --border-subtle: rgba(226, 232, 240, 0.7);
 
   /* Medication status — light mode */
@@ -119,6 +121,7 @@
     --phase-recovery: #1d4ed8;
     --text-warning: #b45309;
     --text-danger: #b91c1c;
+    --text-success: #15803d;
     --border-subtle: rgba(226, 232, 240, 0.7);
 
     /* Medication status — light mode */
@@ -897,6 +900,10 @@ html, body, #root {
     overscroll-behavior: contain;
     padding: 0.75rem 1.5rem 1rem;
   }
+  /* A scrolling column: its children keep their full height (never squeezed so text spills over the next one) */
+  .ui-sheet__body > * { flex-shrink: 0; }
+  /* Focus moves to the sheet/dialog itself when it opens; the panel needs no ring (its fields have one) */
+  .ui-sheet:focus, .ui-dialog:focus { outline: none; }
   .ui-sheet__footer {
     display: flex;
     flex-direction: column;
@@ -1070,5 +1077,15 @@ html, body, #root {
     margin: 0;
     opacity: 0;
     cursor: pointer;
+  }
+}
+
+/* "Reduce motion" in the phone's settings (common with photosensitivity): no animations or slides */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -45,7 +45,9 @@
     "stop_video": "Stop Video",
     "video_badge": "Video",
     "video_error_unavailable": "Camera permission or video recording is not available on this device.",
-    "switch_camera": "Switch Camera"
+    "switch_camera": "Switch Camera",
+    "no_aura": "Ingen aura",
+    "auto_stop_note": "Inspelningen stoppades automatiskt efter 12 minuter (status epilepticus)."
   },
   "alert": {
     "medical_alert": "MEDICINSK VARNING",
@@ -56,7 +58,11 @@
     "administer_med": "Ge akutmedicinering",
     "neurologist": "Neurolog",
     "emergency_contact": "Nödkontakt",
-    "elapsed": "Tid"
+    "elapsed": "Tid",
+    "title_carer": "ANFALL {{minutes}}+ MINUTER",
+    "title_self": "{{minutes}}+ MINUTER — SKAFFA HJÄLP",
+    "self_instruction": "Säg till någon i närheten eller ring larmnumret om du kan.",
+    "seizure_time": "Anfallstid"
   },
   "tagging": {
     "step1_title": "Steg 1: Anfallstyp",
@@ -75,7 +81,19 @@
     "todds_paralysis": "Todds pares",
     "add_paralysis_area": "Lägg till förlamningsområde",
     "add_paralysis_areas": "Lägg till {{count}} förlamningsområde(n)",
-    "remove_area": "Ta bort område"
+    "remove_area": "Ta bort område",
+    "add_custom_symptom": "+ Lägg till eget symtom",
+    "add_custom_detail": "+ Lägg till egen detalj",
+    "save_continue_summary": "Spara och fortsätt till sammanfattning",
+    "add_selected_zero": "Lägg till valda",
+    "add_selected_one": "Lägg till {{count}} vald",
+    "add_selected_other": "Lägg till {{count}} valda",
+    "custom_symptom_title": "Eget symtom",
+    "custom_detail_title": "Egen detalj",
+    "custom_symptom_placeholder": "Namnge symtomet som ska läggas till i den här menyn",
+    "custom_detail_placeholder": "Beskriv symtomets detalj eller variant",
+    "custom_remembered_help": "Sparas till nästa gång. Du kan byta namn på det eller ta bort det under Inställningar → Inspelning.",
+    "continue": "Fortsätt"
   },
   "history": {
     "title": "Historik",
@@ -95,7 +113,8 @@
     "from_date": "Från",
     "to_date": "Till",
     "from_date_hint": "Från datum",
-    "to_date_hint": "Till datum"
+    "to_date_hint": "Till datum",
+    "uncategorized": "Typ inte angiven"
   },
   "export": {
     "title": "Export & Rapporter",
@@ -210,7 +229,7 @@
       "chart_phase_breakdown": "FASFÖRDELNING — SENASTE {{count}} HÄNDELSER",
       "no_phase_data": "Ingen fasdata",
       "self_subject": "Själv",
-      "flag_events_exceeding_5m": "Händelser över 5 minuter ({{count}})",
+      "flag_events_exceeding_5m": "Anfall på {{minutes}} minuter eller längre ({{count}})",
       "flag_increasing_frequency": "Ökande frekvens",
       "flag_increasing_duration": "Ökande varaktighetstrend",
       "flag_auto_terminated": "Automatiskt avslutade händelser ({{count}})",
@@ -220,7 +239,7 @@
       "flag_detail_recent_avg_vs_earlier_avg": "Nyligt snitt {{recent}} jämfört med tidigare snitt {{earlier}}.",
       "flag_detail_auto_terminated": "Timern stoppades automatiskt efter 12 minuter på grund av att patienten inte svarade; kan tyda på en förlängd återhämtningsfas.",
       "flag_detail_edited_records": "Faslängder eller detaljer ändrades efter den första registreringen och kan skilja sig från realtidsregistrering.",
-      "detail_badge_over5": ">5 MIN",
+      "detail_badge_over5": "≥{{minutes}} MIN",
       "detail_badge_auto_stopped": "AUTOSTOPPAD",
       "detail_badge_edited": "REDIGERAD",
       "event_number": "Händelse #{{count}}",
@@ -250,13 +269,19 @@
       "change_what": "Ändring",
       "adherence_line": "Schemalagda doser: {{taken}} bekräftade, {{late}} sena, {{assumed}} antagna, {{missed}} missade",
       "assumed_note": "Antagna doser har inte bekräftats av användaren; de registreras som tagna som standard.",
-      "stopped_on": "Utsatt {{date}}"
+      "stopped_on": "Utsatt {{date}}",
+      "emergency_plan_rule": "Nödplan som använts för dessa markeringar: larm efter {{minutes}} minuters anfallsaktivitet; kluster = {{count}} eller fler anfall inom {{window}}.",
+      "trigger_wellbeing_match_one": "{{count}} även registrerat i dagens välmående",
+      "trigger_wellbeing_match_other": "{{count}} även registrerade i dagens välmående"
     },
     "eeg_title": "EEG Diary",
     "eeg_label": "EEG Clinical Table",
     "eeg_desc": "Export the most recent EEG session as a table-first clinical PDF.",
     "privacy_notice_body": "Encrypted backups are protected with your passphrase before they are saved. CSV, PDF, and video exports are still regular files, so treat them like medical documents.",
-    "privacy_notice_title": "Integritetsmeddelande"
+    "privacy_notice_title": "Integritetsmeddelande",
+    "go_to_backup": "Gå till säkerhetskopia",
+    "export_button": "Exportera",
+    "factor": "Faktor"
   },
   "event_detail": {
     "title": "Händelsedetaljer",
@@ -278,9 +303,9 @@
     "triggers": "Möjliga utlösare",
     "notes": "Kliniska observationer",
     "danger_prolonged_title": "Långvarigt anfall",
-    "danger_prolonged_desc": "Den här händelsen varade mer än 5 minuter. Sök medicinsk bedömning om det inte redan skett.",
+    "danger_prolonged_desc": "Anfallet varade {{minutes}} minuter eller längre (larmtiden i din nödplan). Sök medicinsk bedömning om det inte redan skett.",
     "danger_cluster_title": "Kluster ×{{count}} / Risk för status epilepticus",
-    "danger_cluster_desc": "{{count}} anfall inträffade inom 8 minuter. Kontakta neurolog omedelbart.",
+    "danger_cluster_desc": "{{count}} anfall inträffade inom {{window}}. Kontakta neurolog omedelbart.",
     "eeg_session": "EEG session",
     "linked": "Linked",
     "video_file": "Video file",
@@ -326,7 +351,7 @@
         "steps": [
           "Lägg till dina mediciner i Inställningar → Mediciner.",
           "Startskärmen visar dagens schemalagda doser — tryck på varje medicinknapp för att växla den, tryck sedan på Spara för att logga doserna.",
-          "Aktivera dospåminnelser per medicin i Inställningar → Mediciner."
+          "Aktivera dospåminnelser per medicin i Inställningar → Mediciner. Påminnelser kommer medan AuraTrack är öppen eller nyligen använd; för ett garanterat larm, ställ även ett i telefonens klocka."
         ]
       },
       "history": {
@@ -496,7 +521,20 @@
       "factor_type_number": "Nummer",
       "factor_unit_placeholder": "Enhet",
       "factor_label": "Faktorns namn",
-      "factor_type": "Faktortyp"
+      "factor_type": "Faktortyp",
+      "emergency_plan": "Nödplan",
+      "emergency_plan_help": "Använd tiderna i din nödplan. Om du är osäker, behåll standardvärdena och fråga din neurolog. Inställningarna delas med dina andra synkade enheter.",
+      "alert_after": "Nödlarm efter",
+      "alert_after_help": "Anfallstid innan helskärmslarmet. En varning visas en minut innan. Standard 5 minuter.",
+      "unit_minutes": "minuter",
+      "unit_hours": "timmar",
+      "cluster_rule": "Klustervarning",
+      "cluster_rule_help": "Anfall markeras som ett kluster när så många inträffar inom denna tid. Standard 3 inom 8 minuter. Fråga din neurolog vad som räknas som ett kluster för dig.",
+      "cluster_count": "Antal anfall",
+      "seizures_within": "anfall inom",
+      "cluster_window": "Tidsfönster för kluster",
+      "cluster_window_unit": "Tidsenhet",
+      "reset_default": "Återställ standard"
     },
     "medications": {
       "section": "Mediciner",
@@ -511,7 +549,7 @@
       "active_days": "Aktiva dagar",
       "daily": "Dagligen",
       "dose_reminders": "Dospåminnelser",
-      "dose_reminders_help": "Push-avisering vid varje schemalagd tid",
+      "dose_reminders_help": "En avisering vid varje schemalagd tid medan AuraTrack är öppen eller nyligen använd. Inget garanterat larm: om telefonen har stängt appen kommer påminnelsen inte.",
       "show_emergency": "Visa på nödskärm",
       "show_emergency_help": "Visas vid lång anfallsvarning",
       "save": "Spara",
@@ -525,7 +563,7 @@
       "reminder_granted": "🔔 Aviseringar aktiverade",
       "reminder_denied": "🔕 Aviseringar blockerade",
       "reminder_off": "🔕 Aviseringar av",
-      "reminder_granted_help": "Påminnelser utlöses medan appen är öppen eller pausad.",
+      "reminder_granted_help": "Påminnelser kommer medan appen är öppen eller nyligen använd. Ett tryck öppnar dagens doser. För ett garanterat larm, ställ även ett i telefonens klocka.",
       "reminder_denied_help": "Blockerad i webbläsarinställningar — återställ webbplatsbehörigheter för att återaktivera.",
       "reminder_off_help": "Aktivera för att ta emot dospåminnelseaviseringar.",
       "reminder_enable": "Aktivera",
@@ -680,7 +718,18 @@
       "import_summary_meds_updated_one": "{{count}} läkemedel uppdaterat",
       "import_summary_meds_updated_other": "{{count}} läkemedel uppdaterade",
       "import_summary_meds_deleted_one": "{{count}} läkemedel raderat",
-      "import_summary_meds_deleted_other": "{{count}} läkemedel raderade"
+      "import_summary_meds_deleted_other": "{{count}} läkemedel raderade",
+      "import_summary_updated_one": "{{count}} post uppdaterad",
+      "import_summary_updated_other": "{{count}} poster uppdaterade",
+      "import_summary_deleted_one": "{{count}} post raderad (raderad på den andra enheten)",
+      "import_summary_deleted_other": "{{count}} poster raderade (raderade på den andra enheten)",
+      "import_summary_unmatched_one": "{{count}} post kunde inte kopplas till ett läkemedel eller en EEG-session på den här enheten och hoppades över.",
+      "import_summary_unmatched_other": "{{count}} poster kunde inte kopplas till ett läkemedel eller en EEG-session på den här enheten och hoppades över.",
+      "import_summary_rejected_one": "{{count}} post hoppades över eftersom dess data var ogiltiga (till exempel ett saknat datum).",
+      "import_summary_rejected_other": "{{count}} poster hoppades över eftersom deras data var ogiltiga (till exempel ett saknat datum).",
+      "restore_copy_all": "Kopiera även visnings- och enhetsinställningar vid återställning",
+      "restore_copy_all_help": "För att ställa in en ny telefon: en exakt kopia med läge, språk, tema och påminnelser. På som standard så länge inga anfall är registrerade på den här telefonen.",
+      "after_full_restore": "Nästa steg på den här telefonen: tillåt aviseringar och installera AuraTrack på hemskärmen (det kan inte kopieras)."
     },
     "about_section": {
       "section": "Om",
@@ -719,9 +768,9 @@
     "delete": "Radera",
     "untagged": "Otaggad",
     "notes_placeholder": "Clinical observations, after-seizure notes, medication given...",
-    "long_duration_title": "Seizure lasted more than 5 minutes",
+    "long_duration_title": "Anfallet varade {{minutes}} minuter eller längre",
     "long_duration_badge": ">5 MIN",
-    "cluster_title": "Cluster seizures / Status Epilepticus risk - {{count}} events within 8 minutes",
+    "cluster_title": "Kluster: {{count}} anfall inom {{window}}",
     "cluster_badge": "CLUSTER x{{count}}",
     "unknown": "Unknown"
   },
@@ -740,10 +789,29 @@
     "recovery": "Återhämtning",
     "total": "Totalt",
     "manual_durations": "Justera varaktigheter manuellt",
-    "remove_symptom": "Ta bort",
-    "drag_to_reorder": "Drag to reorder",
+    "remove_symptom": "Ta bort symtom",
+    "drag_to_reorder": "Håll och dra ≡ för att ändra ordning (det första är huvudsymtomet)",
     "event_datetime": "Event Date & Time",
-    "event_date_time": "Datum och tid för händelsen"
+    "event_date_time": "Datum och tid för händelsen",
+    "seizure_type": "Anfallstyp",
+    "type_not_set": "Inte angiven",
+    "change_type": "Ändra",
+    "no_aura": "Det fanns ingen aura",
+    "edited": "redigerad",
+    "edit": "REDIGERA",
+    "edit_phase_question": "Redigera {{phase}}?",
+    "yes": "JA",
+    "no": "NEJ",
+    "total_duration": "Total varaktighet",
+    "edit_total_question": "Redigera total varaktighet?",
+    "yes_edit": "JA, REDIGERA",
+    "logged_symptoms": "Registrerade symtom",
+    "possible_triggers": "Möjliga utlösare",
+    "optional": "valfritt",
+    "clinical_observations": "Kliniska observationer",
+    "finish_save": "SLUTFÖR OCH SPARA",
+    "cancel_discard": "AVBRYT OCH KASTA",
+    "cancel_edit": "AVBRYT ÄNDRINGAR"
   },
   "eeg": {
     "title": "EEG Diary",
@@ -968,7 +1036,10 @@
     "export_import": "Export / Import",
     "invalid_qr": "That QR code is not a valid AuraTrack sync code.",
     "title": "Sync to Another Device",
-    "medication_history_summary": "Läkemedelshistorik: {{changes}} ändringspost(er), {{updated}} uppdaterade, {{deleted}} raderade."
+    "medication_history_summary": "Läkemedelshistorik: {{changes}} ändringspost(er), {{updated}} uppdaterade, {{deleted}} raderade.",
+    "copy_device_settings": "Kopiera även visnings- och enhetsinställningar",
+    "copy_device_settings_help": "Läge (själv eller vårdare), språk, tema, textstorlek och påminnelser. Låt vara av när båda telefonerna används, till exempel patientens och vårdarens.",
+    "backup_elsewhere": "För att flytta data med en fil i stället, använd Säkerhetskopiera / Återställ på skärmen Data och säkerhetskopia."
   },
   "install": {
     "add_to_home": "Lägg till på hemskärmen",
@@ -1055,7 +1126,8 @@
       "hide": "Dölj",
       "show": "Visa",
       "working": "Working...",
-      "cancel": "Avbryt"
+      "cancel": "Avbryt",
+      "videos_not_included": "Videor sparas separat på den här enheten och ingår inte i säkerhetskopian."
     },
     "reminder": {
       "eyebrow": "Recovery reminder",
@@ -1148,7 +1220,8 @@
   },
   "common": {
     "close": "Stäng",
-    "section": "Avsnitt"
+    "section": "Avsnitt",
+    "back": "Tillbaka"
   },
   "ui": {
     "select_date": "Välj datum",
@@ -1156,5 +1229,125 @@
     "select_datetime": "Välj datum och tid",
     "select_month": "Välj månad",
     "choose": "Välj…"
+  },
+  "post_ictal": {
+    "group": {
+      "responsiveness": "Kontaktbarhet",
+      "movement": "Rörelse",
+      "sensation": "Känsel",
+      "speech": "Tal",
+      "head": "Huvud och syn",
+      "body": "Kropp",
+      "mood": "Humör och beteende",
+      "other": "Annat (med egna ord)"
+    },
+    "finding": {
+      "not_responding": "Svarar inte",
+      "confused": "Förvirrad / desorienterad",
+      "drowsy": "Dåsig / somnade",
+      "agitated": "Upprörd / rastlös",
+      "no_memory": "Minns inte händelsen",
+      "paralysis": "Förlamning (Todds)",
+      "weakness": "Svaghet",
+      "heaviness": "Tyngdkänsla",
+      "clumsiness": "Klumpighet / dålig koordination",
+      "numbness": "Domningar",
+      "tingling": "Stickningar / myrkrypningar",
+      "pain": "Smärta / muskelvärk",
+      "unable_to_speak": "Kan inte tala",
+      "slurred_speech": "Sluddrigt tal",
+      "word_finding": "Svårt att hitta ord",
+      "headache": "Huvudvärk",
+      "vision_changes": "Synstörningar",
+      "nausea": "Illamående / kräkningar",
+      "incontinence": "Inkontinens",
+      "tongue_bite": "Tungbett",
+      "injury": "Skada",
+      "exhaustion": "Utmattning",
+      "anxious": "Ängslig / rädd",
+      "low_mood": "Nedstämd / gråtmild",
+      "unusual_behaviour": "Ovanligt beteende"
+    },
+    "add_area": "+ Lägg till område",
+    "no_area": "Område inte registrerat.",
+    "add_areas_one": "Lägg till {{count}} område",
+    "add_areas_other": "Lägg till {{count}} områden",
+    "other_placeholder": "Beskriv ett annat symtom efter anfallet",
+    "add_other": "Lägg till",
+    "recovery_title": "Tillbaka till det normala efter",
+    "recovery_ongoing": "Inte tillbaka till det normala än",
+    "recovery_ongoing_text": "Inte tillbaka till det normala vid registreringen",
+    "recovery_after_text": "Tillbaka till det normala efter {{time}}",
+    "add_areas_zero": "Lägg till valda områden"
+  },
+  "wizard": {
+    "selected": "VALD",
+    "tap_to_add": "TRYCK FÖR ATT LÄGGA TILL"
+  },
+  "symptom_sets": {
+    "title": "Sparade symtomgrupper",
+    "entry": "Sparade symtomgrupper — {{type}}",
+    "entry_no_type": "Sparade symtomgrupper",
+    "sets_heading": "Sparade grupper",
+    "most_used": "Mest använda vid {{type}}",
+    "untyped": "Inte kopplad till en anfallstyp",
+    "no_type": "Ingen anfallstyp",
+    "more_one": "+ {{count}} till",
+    "more_other": "+ {{count}} till",
+    "added_by_you": "Tillagt av dig",
+    "save": "Spara som symtomgrupp",
+    "save_set": "Spara grupp",
+    "name_title": "Gruppens namn",
+    "name_placeholder": "Namn på den här gruppen",
+    "name_help": "Föreslaget utifrån anfallstypen och det första symtomet. Ändra om du vill; namn är unika inom en anfallstyp.",
+    "use_suggested": "Använd föreslaget namn: {{name}}",
+    "symptoms_in_set": "Symtom i gruppen ({{count}})",
+    "remove_symptom": "Ta bort symtom",
+    "move_up": "Flytta upp",
+    "move_down": "Flytta ned",
+    "delete": "Ta bort",
+    "delete_title": "Ta bort ”{{name}}”?",
+    "delete_body": "Tidigare anfall behåller sina symtom. Det tas bara bort från listan till nästa gång.",
+    "settings_title": "Sparade symtomgrupper och dina symtom",
+    "settings_help": "Varje grupp hör till en anfallstyp och erbjuds när du valt typen vid registreringen. Symtom du skrivit själv erbjuds igen nästa gång. Att byta namn eller ta bort ändrar aldrig tidigare anfall.",
+    "none_yet": "Inga sparade symtomgrupper än. Spara en från sammanfattningen efter att ha registrerat ett anfall.",
+    "your_symptoms": "Dina egna symtom",
+    "no_custom": "Symtom du skriver själv visas här.",
+    "kind_post_ictal": "Symtom efter anfall"
+  },
+  "triggers": {
+    "sleep_deprivation": "Sömnbrist",
+    "missed_medication": "Missad medicin",
+    "stress": "Stress",
+    "illness_fever": "Sjukdom / feber",
+    "hormonal": "Hormonell / mens",
+    "alcohol": "Alkohol",
+    "flashing_lights": "Blinkande ljus",
+    "heat": "Värme / överhettning",
+    "exercise": "Träning",
+    "hunger": "Hunger / lågt blodsocker",
+    "unknown": "Okänd"
+  },
+  "med_history": {
+    "mark_taken": "Markera som tagen",
+    "mark_missed": "Markera som missad",
+    "previously_edited": "Tidigare redigerad"
+  },
+  "error_boundary": {
+    "title": "Något gick fel",
+    "body": "Ladda om appen. Om en inspelning pågick fortsätter den från starttiden när appen öppnas igen.",
+    "reload": "LADDA OM APPEN"
+  },
+  "notifications": {
+    "dose_title": "Dags att ta {{name}}",
+    "dose_body": "{{dose}} — öppna AuraTrack för att registrera"
+  },
+  "seizure_types": {
+    "tonic_clonic": "Tonisk-klonisk",
+    "focal_aware": "Fokal med bibehållen medvetenhet",
+    "focal_impaired": "Fokal med påverkad medvetenhet",
+    "absence": "Absens",
+    "aura_only": "Endast aura",
+    "uncategorized": "Typ inte angiven"
   }
 }

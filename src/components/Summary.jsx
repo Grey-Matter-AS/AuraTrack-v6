@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDuration } from '../utils/formatters';
+import { formatDurationSetting } from '../utils/formatters';
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor,
   useSensor, useSensors, DragOverlay,
@@ -9,16 +9,12 @@ import {
   SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { TRIGGERS } from '../data/constants';
+import { TRIGGER_DEFINITIONS } from '../data/constants';
 import { CheckIcon, CloseIcon, EditIcon, GripIcon, TrashIcon } from './AppIcons';
 import { Button, DateInput, FieldRow, IconButton, TextArea, TextInput } from './ui';
+import { PostIctalSection } from './PostIctalSection';
+import { EMPTY_POST_ICTAL } from '../utils/postIctal';
 
-const POST_ICTAL_FINDINGS = [
-  'Confusion',
-  'Sleepiness',
-  'Weakness',
-  'Speech difficulty',
-];
 
 // ─── Drag handle ───────────────────────────────────────────────
 function DragHandle(props) {
@@ -37,6 +33,7 @@ function DragHandle(props) {
 
 // ─── One sortable symptom row ─────────────────────────────────
 function SortableSymptomRow({ symptom, index, onRemove }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: symptom._id });
 
   const style = {
@@ -67,7 +64,7 @@ function SortableSymptomRow({ symptom, index, onRemove }) {
       <button
         onClick={() => onRemove(index)}
         className="ui-icon-btn ui-icon-btn--danger"
-        aria-label="Remove symptom"
+        aria-label={t('summary.remove_symptom')}
       >
         <TrashIcon className="w-4 h-4" />
       </button>
@@ -76,7 +73,8 @@ function SortableSymptomRow({ symptom, index, onRemove }) {
 }
 
 // ─── Inline editable timer (phase: aura / seizure / recovery) ─
-function EditableTimer({ phase, label, color, calcValue, manualDurations, editedTimers, onSetManualDuration }) {
+function EditableTimer({ phase, label, color, calcValue, manualDurations, editedTimers, onSetManualDuration, durationFormat = 'seconds' }) {
+  const { t } = useTranslation();
   const [stage, setStage] = useState('idle'); // idle | confirm | editing
   const [inputVal, setInputVal] = useState('');
 
@@ -98,10 +96,10 @@ function EditableTimer({ phase, label, color, calcValue, manualDurations, edited
       {stage === 'idle' && (
         <div className="flex flex-col items-center gap-1">
           <p className="text-lg font-mono font-black" style={{ color: 'var(--text-primary)' }}>
-            {displayValue}s
+            {formatDurationSetting(displayValue, durationFormat)}
             {isEdited && (
               <span className="app-status-badge app-status-badge--info ml-1.5 align-middle !px-1.5 !py-0.5 !text-[8px]">
-                edited
+                {t('summary.edited')}
               </span>
             )}
           </p>
@@ -110,17 +108,17 @@ function EditableTimer({ phase, label, color, calcValue, manualDurations, edited
             className="ui-btn ui-btn--primary ui-btn--sm shrink-0"
           >
             <EditIcon className="w-3.5 h-3.5 shrink-0" />
-            EDIT
+            {t('summary.edit')}
           </button>
         </div>
       )}
 
       {stage === 'confirm' && (
         <div className="space-y-1.5">
-          <p className="text-[9px] font-bold" style={{ color: 'var(--text-dim)' }}>Edit {label.toLowerCase()}?</p>
+          <p className="text-[9px] font-bold" style={{ color: 'var(--text-dim)' }}>{t('summary.edit_phase_question', { phase: label })}</p>
           <div className="ui-inline justify-center">
-            <Button variant="warning" size="sm" onClick={startEdit}>YES</Button>
-            <Button variant="secondary" size="sm" onClick={cancelEdit}>NO</Button>
+            <Button variant="warning" size="sm" onClick={startEdit}>{t('summary.yes')}</Button>
+            <Button variant="secondary" size="sm" onClick={cancelEdit}>{t('summary.no')}</Button>
           </div>
         </div>
       )}
@@ -141,8 +139,8 @@ function EditableTimer({ phase, label, color, calcValue, manualDurations, edited
             <span className="text-xs font-bold" style={{ color: 'var(--text-dim)' }}>s</span>
           </span>
           <span className="ui-inline justify-center">
-            <IconButton label="Save" tone="success" onClick={saveEdit}><CheckIcon className="w-4 h-4" /></IconButton>
-            <IconButton label="Cancel" onClick={cancelEdit}><CloseIcon className="w-4 h-4" /></IconButton>
+            <IconButton label={t('summary.save')} tone="success" onClick={saveEdit}><CheckIcon className="w-4 h-4" /></IconButton>
+            <IconButton label={t('summary.cancel')} onClick={cancelEdit}><CloseIcon className="w-4 h-4" /></IconButton>
           </span>
         </div>
       )}
@@ -153,7 +151,7 @@ function EditableTimer({ phase, label, color, calcValue, manualDurations, edited
 // ─── Editable total duration (larger display) ─────────────────
 function EditableTotalTimer({ calcValue, manualDurations, editedTimers, onSetManualDuration, durationFormat = 'seconds' }) {
   const { t } = useTranslation();
-  const fmtDur = (s) => durationFormat === 'human' ? formatDuration(s) : `${s}s`;
+  const fmtDur = (s) => formatDurationSetting(s, durationFormat);
   const [stage, setStage] = useState('idle');
   const [inputVal, setInputVal] = useState('');
 
@@ -171,7 +169,7 @@ function EditableTotalTimer({ calcValue, manualDurations, editedTimers, onSetMan
   return (
     <div>
       <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>
-        TOTAL DURATION
+        {t('summary.total_duration')}
       </p>
 
       {stage === 'idle' && (
@@ -181,7 +179,7 @@ function EditableTotalTimer({ calcValue, manualDurations, editedTimers, onSetMan
           </p>
           {isEdited && (
             <span className="app-status-badge app-status-badge--info !px-1.5 !py-0.5 !text-[8px]">
-              edited
+              {t('summary.edited')}
             </span>
           )}
           <button
@@ -189,17 +187,17 @@ function EditableTotalTimer({ calcValue, manualDurations, editedTimers, onSetMan
             className="ui-btn ui-btn--primary ui-btn--sm shrink-0"
           >
             <EditIcon className="w-3.5 h-3.5 shrink-0" />
-            EDIT
+            {t('summary.edit')}
           </button>
         </div>
       )}
 
       {stage === 'confirm' && (
         <div className="space-y-2">
-          <p className="text-[10px] font-bold" style={{ color: 'var(--text-dim)' }}>Edit total duration?</p>
+          <p className="text-[10px] font-bold" style={{ color: 'var(--text-dim)' }}>{t('summary.edit_total_question')}</p>
           <div className="ui-button-row">
-            <Button variant="warning" onClick={startEdit}>YES, EDIT</Button>
-            <Button variant="secondary" onClick={cancelEdit}>CANCEL</Button>
+            <Button variant="warning" onClick={startEdit}>{t('summary.yes_edit')}</Button>
+            <Button variant="secondary" onClick={cancelEdit}>{t('summary.cancel')}</Button>
           </div>
         </div>
       )}
@@ -212,7 +210,7 @@ function EditableTotalTimer({ calcValue, manualDurations, editedTimers, onSetMan
               pattern="[0-9]*"
               value={inputVal}
               onChange={value => setInputVal(value.replace(/\D/g, ''))}
-              aria-label="TOTAL DURATION"
+              aria-label={t('summary.total_duration')}
               placeholder="0"
               className="!w-24 text-center"
               autoFocus
@@ -221,7 +219,7 @@ function EditableTotalTimer({ calcValue, manualDurations, editedTimers, onSetMan
           </span>
           <span className="ui-inline">
             <Button variant="success" icon={<CheckIcon className="w-4 h-4" />} onClick={saveEdit}>{t('summary.save')}</Button>
-            <IconButton label="Cancel" onClick={cancelEdit}><CloseIcon className="w-4 h-4" /></IconButton>
+            <IconButton label={t('summary.cancel')} onClick={cancelEdit}><CloseIcon className="w-4 h-4" /></IconButton>
           </span>
         </div>
       )}
@@ -260,10 +258,14 @@ function Summary({
   setNotes,
   triggers = [],
   onTriggerToggle,
-  postIctal = { findings: [], paralysisLocations: [] },
+  postIctal = EMPTY_POST_ICTAL,
+  savedCustomPostIctal = [],
   onTogglePostIctalFinding,
-  onEditPostIctalParalysis,
-  onRemovePostIctalParalysisLocation,
+  onPickPostIctalArea,
+  onRemovePostIctalArea,
+  onAddCustomPostIctal,
+  onRemoveCustomPostIctal,
+  onSetPostIctalRecovery,
   elapsed,
   laps,
   startTime,
@@ -282,6 +284,8 @@ function Summary({
   overrideDateTime,
   onSetEventDateTime,
   durationFormat = 'seconds',
+  seizureType,
+  onChangeType,
 }) {
   const { t } = useTranslation();
   const [activeId, setActiveId] = useState(null);
@@ -289,6 +293,13 @@ function Summary({
   const auraDur     = laps?.aura    ? Math.floor((laps.aura    - startTime)          / 1000) : 0;
   const seizureDur  = laps?.aura  && laps?.seizure   ? Math.floor((laps.seizure  - laps.aura)    / 1000) : 0;
   const recoveryDur = laps?.seizure && laps?.recovery ? Math.floor((laps.recovery - laps.seizure) / 1000) : 0;
+
+  const currentAura = manualDurations?.aura ?? auraDur;
+  const markNoAura = () => {
+    const seizure = manualDurations?.seizure ?? seizureDur;
+    onSetManualDuration('aura', 0);
+    onSetManualDuration('seizure', currentAura + seizure);
+  };
 
   // When a phase timer is edited, recompute total as sum of all three phases
   const handleSetManualDuration = (phase, val) => {
@@ -344,20 +355,29 @@ function Summary({
             onSetManualDuration={onSetManualDuration}
             durationFormat={durationFormat}
           />
-          <div className="text-right shrink-0">
-            <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>LOG STATUS</p>
-            <p className="app-status-badge app-status-badge--success">VERIFIED</p>
-          </div>
+          {onChangeType && (
+            <div className="text-right shrink-0 max-w-[50%] min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--text-dim)' }}>{t('summary.seizure_type')}</p>
+              <p className="text-sm font-black break-words" style={{ color: 'var(--text-primary)' }}>{seizureType || t('summary.type_not_set')}</p>
+              <Button variant="secondary" size="sm" className="mt-1" onClick={onChangeType}>{t('summary.change_type')}</Button>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-2 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-          <EditableTimer phase="aura"     label="AURA"     color="var(--phase-aura)"
+          <EditableTimer phase="aura" durationFormat={durationFormat} label={t('summary.aura')}     color="var(--phase-aura)"
             calcValue={auraDur}     manualDurations={manualDurations} editedTimers={editedTimers} onSetManualDuration={handleSetManualDuration} />
-          <EditableTimer phase="seizure"  label="SEIZURE"  color="var(--phase-seizure)"
+          <EditableTimer phase="seizure" durationFormat={durationFormat} label={t('summary.seizure')}  color="var(--phase-seizure)"
             calcValue={seizureDur}  manualDurations={manualDurations} editedTimers={editedTimers} onSetManualDuration={handleSetManualDuration} />
-          <EditableTimer phase="recovery" label="RECOVERY" color="var(--phase-recovery)"
+          <EditableTimer phase="recovery" durationFormat={durationFormat} label={t('summary.recovery')} color="var(--phase-recovery)"
             calcValue={recoveryDur} manualDurations={manualDurations} editedTimers={editedTimers} onSetManualDuration={handleSetManualDuration} />
         </div>
+        {currentAura > 0 && (
+          <div className="mt-3 flex justify-center">
+            {/* One tap when the aura was marked by mistake: its time moves into the seizure */}
+            <Button variant="secondary" size="sm" onClick={markNoAura}>{t('summary.no_aura')}</Button>
+          </div>
+        )}
       </div>
 
       {/* 2. MIDDLE CONTENT */}
@@ -366,11 +386,11 @@ function Summary({
         {/* Symptom list with drag-to-reorder */}
         <div className="app-section-card">
           <p className="text-center font-black uppercase text-[11px] tracking-[0.3em] mb-1" style={{ color: 'var(--text-faint)' }}>
-            LOGGED SYMPTOMS
+            {t('summary.logged_symptoms')}
           </p>
           {tempSymptomList.length > 1 && (
             <p className="text-center text-[9px] mb-4" style={{ color: 'var(--text-faint)' }}>
-              Hold &amp; drag ≡ to reorder
+              {t('summary.drag_to_reorder')}
             </p>
           )}
 
@@ -424,7 +444,7 @@ function Summary({
               className="app-action-tile app-action-tile--compact app-action-tile--center font-black uppercase text-xs tracking-widest active:scale-95 transition-all"
               style={{ backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1px solid var(--border)' }}
             >
-              <span className="app-chip-text">+ ADD ANOTHER SYMPTOM</span>
+              <span className="app-chip-text">{t('summary.add_another')}</span>
             </button>
 
             {onSaveFavorite && tempSymptomList.length > 0 && (
@@ -433,101 +453,44 @@ function Summary({
                 className="app-action-tile app-action-tile--compact app-action-tile--center font-black uppercase text-[11px] tracking-widest active:scale-95 transition-all"
                 style={{ backgroundColor: 'var(--action-blue)', color: '#fff', border: '1px solid var(--action-blue-border)' }}
               >
-                <span className="app-chip-text">Save Current Symptoms as Favorite Set</span>
+                <span className="app-chip-text">{t('symptom_sets.save')}</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Post-ictal findings */}
-        <div className="app-section-card w-full">
-          <p className="text-[10px] font-black uppercase tracking-widest mb-3 ml-1" style={{ color: 'var(--text-dim)' }}>
-            {t('tagging.post_ictal_findings', 'After-seizure symptoms')} <span className="font-normal normal-case tracking-normal" style={{ color: 'var(--text-faint)' }}>({t('tagging.recovery_phase', 'recovery phase')})</span>
-          </p>
-          <div className="app-choice-grid--compact mb-4">
-            {POST_ICTAL_FINDINGS.map((finding) => {
-              const selected = postIctal.findings.includes(finding);
-              return (
-                <button
-                  key={finding}
-                  onClick={() => onTogglePostIctalFinding?.(finding)}
-                  className="app-action-tile app-action-tile--compact app-action-tile--center text-[11px] font-black tracking-wide transition-all active:scale-95"
-                  style={selected
-                    ? { backgroundColor: 'var(--action-blue)', color: '#fff', border: '1.5px solid var(--action-blue-border)' }
-                    : { backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1.5px solid var(--border)' }}
-                >
-                  <span className="app-chip-text">{finding}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="ui-card">
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-              <div className="min-w-0 flex-1 basis-40">
-                <p className="text-sm font-black uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>{t('tagging.post_ictal_paralysis', 'After-seizure paralysis')}</p>
-              </div>
-              <button
-                onClick={onEditPostIctalParalysis}
-                className="ui-btn ui-btn--secondary ui-btn--sm"
-              >
-                {t('tagging.add_area', '+ Add Area')}
-              </button>
-            </div>
-
-            {postIctal.paralysisLocations.length === 0 ? (
-              <p className="text-[11px] mb-3" style={{ color: 'var(--text-faint)' }}>
-                {t('tagging.no_paralysis_areas', 'No paralysis areas logged.')}
-              </p>
-            ) : (
-              <div className="space-y-2 mb-3">
-                {postIctal.paralysisLocations.map((location, index) => (
-                  <div key={`${location.region}-${location.subRegion}-${location.specificPart}-${index}`} className="flex items-center gap-3 rounded-2xl px-3 py-2" style={{ backgroundColor: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)' }}>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-black uppercase tracking-wide" style={{ color: 'var(--accent-text)' }}>
-                        {t('tagging.todds_paralysis', "Todd's paralysis")}
-                      </p>
-                      <p className="text-[11px] leading-snug break-words" style={{ color: 'var(--text-secondary)' }}>
-                        {location.region} › {location.subRegion} › {location.specificPart}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => onRemovePostIctalParalysisLocation?.(index)}
-                      className="ui-icon-btn ui-icon-btn--danger"
-                      aria-label={t('tagging.remove_area', 'Remove area')}
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>
-              {t('tagging.post_ictal_paralysis_help', "Record Todd's paralysis with exact affected body parts.")}
-            </p>
-          </div>
-        </div>
+        <PostIctalSection
+          postIctal={postIctal}
+          savedCustom={savedCustomPostIctal}
+          onToggle={onTogglePostIctalFinding}
+          onPickArea={onPickPostIctalArea}
+          onRemoveArea={onRemovePostIctalArea}
+          onAddCustom={onAddCustomPostIctal}
+          onRemoveCustom={onRemoveCustomPostIctal}
+          onSetRecovery={onSetPostIctalRecovery}
+        />
 
         {/* Trigger chips */}
         <div className="app-section-card w-full">
           <p className="text-[10px] font-black uppercase tracking-widest mb-3 ml-1" style={{ color: 'var(--text-dim)' }}>
-            POSSIBLE TRIGGERS <span className="font-normal normal-case tracking-normal" style={{ color: 'var(--text-faint)' }}>(optional)</span>
+            {t('summary.possible_triggers')} <span className="font-normal normal-case tracking-normal" style={{ color: 'var(--text-faint)' }}>({t('summary.optional')})</span>
           </p>
           <div className="app-choice-grid--compact">
-            {TRIGGERS.map(t => {
-              const selected = triggers.includes(t);
+            {TRIGGER_DEFINITIONS.map(trigger => {
+              const selected = triggers.includes(trigger.value);
               return (
                 <button
-                  key={t}
-                  onClick={() => onTriggerToggle?.(t)}
+                  key={trigger.value}
+                  aria-pressed={selected}
+                  onClick={() => onTriggerToggle?.(trigger.value)}
                   className="app-action-tile app-action-tile--compact app-action-tile--center text-[11px] font-black uppercase tracking-wide transition-all active:scale-95"
                   style={selected
                     ? { backgroundColor: 'var(--action-blue)', color: '#fff', border: '1.5px solid var(--action-blue-border)' }
                     : { backgroundColor: 'var(--bg-raised)', color: 'var(--text-on-raised)', border: '1.5px solid var(--border)' }
                   }
                 >
-                  <span className="app-chip-text">{t}</span>
+                  <span className="app-chip-text">{t(trigger.labelKey, trigger.value)}</span>
                 </button>
               );
             })}
@@ -537,7 +500,7 @@ function Summary({
         {/* Notes */}
         <div className="app-section-card w-full">
           <p className="text-[10px] font-black uppercase tracking-widest mb-3 ml-1" style={{ color: 'var(--text-dim)' }}>
-            CLINICAL OBSERVATIONS
+            {t('summary.clinical_observations')}
           </p>
           <TextArea
             aria-label={t('event_card.notes_placeholder')}
@@ -555,7 +518,7 @@ function Summary({
           onClick={onSave}
           className="ui-btn ui-btn--success ui-btn--md ui-btn--full min-h-[4.75rem]"
         >
-          FINISH & SAVE LOG
+          {t('summary.finish_save')}
         </button>
 
         <div className="app-balanced-grid mt-3">
@@ -574,7 +537,8 @@ function Summary({
             className="app-action-tile app-action-tile--compact app-action-tile--center font-black uppercase text-[10px] tracking-widest active:scale-95 transition-all"
             style={{ backgroundColor: '#dc2626', border: '2px solid #991b1b', color: '#fff' }}
           >
-            CANCEL & DISCARD
+            {/* Editing a saved seizure discards only the changes; a new recording is discarded entirely */}
+            {editingId ? t('summary.cancel_edit') : t('summary.cancel_discard')}
           </button>
         </div>
       </div>

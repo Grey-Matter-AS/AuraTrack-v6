@@ -1,26 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import i18n from '../i18n';
 import { db } from '../data/db';
+import { makeUUID } from '../utils/ids';
+import { buildEditLog } from '../utils/editLog';
+import { localDateKey } from '../utils/dates';
+import { deleteRecord } from '../data/records';
 import { DEFAULT_WELLBEING_FACTORS } from '../data/constants';
 
-function makeUUID() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-  return `uuid-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-}
-
-export function localDayKey(value = Date.now()) {
-  const date = new Date(value);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function buildEditLog(existing, changedFields) {
-  const log = existing?.editLog ? [...existing.editLog] : [];
-  if (changedFields.length) log.push({ editedAt: Date.now(), changedFields });
-  return log;
-}
+export const localDayKey = localDateKey;
 
 export function normalizeFactorDefinitions(definitions = DEFAULT_WELLBEING_FACTORS) {
   const source = Array.isArray(definitions) && definitions.length ? definitions : DEFAULT_WELLBEING_FACTORS;
@@ -160,7 +147,7 @@ export function useWellbeing(settings = {}) {
   }, [factorDefinitions, load]);
 
   const deleteEntry = useCallback(async (id) => {
-    await db.wellbeingEntries.delete(id);
+    await deleteRecord('wellbeingEntries', id);
     await load();
   }, [load]);
 

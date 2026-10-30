@@ -76,8 +76,8 @@ export function renderEventLogHtml(data) {
 
 export function renderNeurologistReportHtml(data) {
   const t = translator();
-  const chart1 = freqBarChartSVG(data.charts.periodEvents, data.periodDays, data.charts.periodEndMs);
-  const chart2 = durationLineSVG(data.charts.periodEvents, data.periodDays);
+  const chart1 = freqBarChartSVG(data.charts.periodEvents, data.periodDays, data.charts.periodEndMs, data.plan);
+  const chart2 = durationLineSVG(data.charts.periodEvents, data.periodDays, data.plan);
   const chart3 = typeBarSVG(data.charts.byType, data.charts.totalEvents);
   const chart4 = phaseStackSVG(data.charts.periodEvents, 10);
   const chart5 = wellbeingCorrelationSVG(data.charts.periodEvents, data.charts.wellbeingEntries, data.periodDays, data.charts.periodEndMs);
@@ -320,6 +320,7 @@ export function renderNeurologistReportHtml(data) {
         ${data.flags.length
           ? `<ul style="margin:0;padding-left:16px;font-size:11px;color:#111827;line-height:1.8">${data.flags.map(flag => `<li><strong>${esc(flag.label)}:</strong> ${esc(flag.detail)}</li>`).join('')}</ul>`
           : `<p style="color:#059669;font-size:11px;font-weight:700;margin:0">OK ${esc(t('export.docs.no_clinical_flags'))}</p>`}
+        <p style="color:#6b7280;font-size:10px;margin:8px 0 0">${esc(data.planRule)}</p>
       </div>
 
       <div class="section">

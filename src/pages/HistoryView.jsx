@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EventCard } from '../components/EventCard';
-import { SEIZURE_TYPES } from '../data/constants';
+import { SEIZURE_TYPES, seizureTypeLabel } from '../data/constants';
 import SeizureTrendChart from '../components/SeizureTrendChart';
-import { buildDangerMap } from '../utils/dangerFlags';
+import { buildDangerMap, emergencyPlan } from '../utils/dangerFlags';
 import { Tabs } from '../components/ui';
 import { MedicationHistoryTab } from '../components/MedicationHistoryTab';
 import { EEGDiaryTab } from '../components/EEGDiaryTab';
@@ -12,35 +12,49 @@ import ExportView from './ExportView';
 import { ScrollFade } from '../components/ScrollFade';
 import { useMedications } from '../hooks/useMedications';
 import { DateInput, EmptyState, Select } from '../components/ui';
+import { endOfLocalDay, parseLocalDate } from '../utils/dates';
 
-export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, historyPageSize = 10, settings = {}, initialTab = 'seizures', eeg = null, wellbeing = null, events = [], onBackupSuccess = null }) {
+export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, historyPageSize = 10, settings = {}, initialTab = 'seizures', eeg = null, wellbeing = null, events = [], onOpenBackup = null, viewState: navState, onViewStateChange }) {
   const { t } = useTranslation();
   const { changes: medicationChanges } = useMedications();
   const { durationFormat = 'seconds', dateFormat = 'locale', timeFormat = '12h' } = settings;
-  const [activeTab, setActiveTab] = useState(initialTab);
-  const [page, setPage] = useState(0);
-  const [typeFilter, setTypeFilter] = useState('');
-  const [completionFilter, setCompletionFilter] = useState('all');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  // Tab, page and filters live in the navigation entry (when given), so they are still there when the
+  // user opens a seizure and comes back
+  const [localState, setLocalState] = useState({});
+  const viewState = navState ?? localState;
+  const setView = (patch) => (onViewStateChange ? onViewStateChange(patch) : setLocalState(prev => ({ ...prev, ...patch })));
+  const {
+    tab: requestedTab = initialTab, page = 0, typeFilter = '', completionFilter = 'all', fromDate = '', toDate = '',
+  } = viewState;
+  const setPage = (next) => setView({ page: next });
+  const [hasEegData, setHasEegData] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    eeg?.getSessions?.().then(sessions => { if (alive) setHasEegData(sessions.length > 0); }).catch(() => {});
+    return () => { alive = false; };
+  }, [eeg]);
 
+  // Wellbeing and EEG show when switched on, or when there is already data to look back at
+  const showWellbeing = settings.wellbeingEnabled !== false || (wellbeing?.entries?.length ?? 0) > 0;
+  const showEeg = settings.eegDiaryEnabled === true || hasEegData || Boolean(eeg?.activeSession);
   const HISTORY_TABS = [
     { id: 'seizures',    label: t('history.tab_seizures')    },
     { id: 'medications', label: t('history.tab_medications') },
-    { id: 'wellbeing',   label: t('history.tab_wellbeing', 'Wellbeing') },
-    { id: 'eeg',         label: t('history.tab_eeg', 'EEG Diary') },
+    ...(showWellbeing ? [{ id: 'wellbeing', label: t('history.tab_wellbeing', 'Wellbeing') }] : []),
+    ...(showEeg ? [{ id: 'eeg', label: t('history.tab_eeg', 'EEG Diary') }] : []),
     { id: 'export',      label: t('history.tab_export')      },
   ];
+  const activeTab = HISTORY_TABS.some(tab => tab.id === requestedTab) ? requestedTab : 'seizures';
 
   const allEvents = events;
 
   const filtered = allEvents.filter(e => {
-    if (typeFilter && e.type !== typeFilter) return false;
+    if (typeFilter && (e.type || 'Uncategorized') !== typeFilter) return false;
     if (completionFilter === 'needs_details' && e.isComplete) return false;
     if (fromDate || toDate) {
       const eventTs = e.startTime ?? NaN;
-      if (fromDate && eventTs < new Date(fromDate).setHours(0, 0, 0, 0)) return false;
-      if (toDate   && eventTs > new Date(toDate).setHours(23, 59, 59, 999)) return false;
+      if (fromDate && eventTs < parseLocalDate(fromDate).getTime()) return false;
+      if (toDate   && eventTs > endOfLocalDay(parseLocalDate(toDate))) return false;
     }
     return true;
   });
@@ -50,7 +64,12 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
   const paged = filtered.slice(currentPage * historyPageSize, (currentPage + 1) * historyPageSize);
   const needsDetailsCount = allEvents.filter(e => !e.isComplete).length;
 
-  const dangerMap = useMemo(() => buildDangerMap(allEvents), [allEvents]);
+  const { emergencyAlertMinutes, clusterMinCount, clusterWindowMinutes } = settings;
+  const plan = useMemo(
+    () => emergencyPlan({ emergencyAlertMinutes, clusterMinCount, clusterWindowMinutes }),
+    [emergencyAlertMinutes, clusterMinCount, clusterWindowMinutes]
+  );
+  const dangerMap = useMemo(() => buildDangerMap(allEvents, plan), [allEvents, plan]);
 
   return (
     <div className="app-page-shell flex-1 flex flex-col w-full overflow-hidden mx-auto">
@@ -73,7 +92,7 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
 
       {/* Tabs */}
       <div className="mb-4 shrink-0">
-        <Tabs tabs={HISTORY_TABS} activeTab={activeTab} onTabChange={tab => { setActiveTab(tab); setPage(0); }} />
+        <Tabs tabs={HISTORY_TABS} activeTab={activeTab} onTabChange={tab => setView({ tab, page: 0 })} />
       </div>
 
       {/* ── SEIZURES TAB ── */}
@@ -88,21 +107,21 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
                   aria-label={t('history.all_types')}
                   placeholder={t('history.all_types')}
                   value={typeFilter}
-                  onChange={value => { setTypeFilter(value); setPage(0); }}
-                  options={SEIZURE_TYPES.map(type => ({ value: type, label: type }))}
+                  onChange={value => setView({ typeFilter: value, page: 0 })}
+                  options={[...SEIZURE_TYPES, 'Uncategorized'].map(type => ({ value: type, label: type === 'Uncategorized' ? t('history.uncategorized') : seizureTypeLabel(type, t) }))}
                 />
               </div>
               <button
                 type="button"
                 aria-pressed={completionFilter === 'needs_details'}
-                onClick={() => { setCompletionFilter(f => f === 'needs_details' ? 'all' : 'needs_details'); setPage(0); }}
+                onClick={() => setView({ completionFilter: completionFilter === 'needs_details' ? 'all' : 'needs_details', page: 0 })}
                 className="ui-chip shrink-0"
               >
                 {t('history.needs_details', 'Needs details')} {needsDetailsCount > 0 ? `(${needsDetailsCount})` : ''}
               </button>
-              {(fromDate || toDate || completionFilter !== 'all') && (
+              {(typeFilter || fromDate || toDate || completionFilter !== 'all') && (
                 <button
-                  onClick={() => { setFromDate(''); setToDate(''); setCompletionFilter('all'); setPage(0); }}
+                  onClick={() => setView({ typeFilter: '', fromDate: '', toDate: '', completionFilter: 'all', page: 0 })}
                   className="ui-btn ui-btn--secondary ui-btn--sm shrink-0"
                 >
                   {t('history.clear')}
@@ -113,14 +132,14 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
               <DateInput
                 value={fromDate}
                 max={toDate || undefined}
-                onChange={value => { setFromDate(value); setPage(0); }}
+                onChange={value => setView({ fromDate: value, page: 0 })}
                 aria-label={t('history.from_date', 'From')}
                 placeholder={t('history.from_date_hint', 'From date')}
               />
               <DateInput
                 value={toDate}
                 min={fromDate || undefined}
-                onChange={value => { setToDate(value); setPage(0); }}
+                onChange={value => setView({ toDate: value, page: 0 })}
                 aria-label={t('history.to_date', 'To')}
                 placeholder={t('history.to_date_hint', 'To date')}
               />
@@ -149,7 +168,7 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
             <div className="flex flex-wrap justify-between items-center gap-2 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
               <button
                 disabled={page === 0}
-                onClick={() => setPage(p => Math.max(0, p - 1))}
+                onClick={() => setPage(Math.max(0, currentPage - 1))}
                 className="ui-btn ui-btn--secondary ui-btn--sm"
               >
                 {t('history.prev')}
@@ -159,7 +178,7 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
               </span>
               <button
                 disabled={currentPage >= totalPages - 1}
-                onClick={() => setPage(p => Math.min(Math.max(0, totalPages - 1), p + 1))}
+                onClick={() => setPage(Math.min(Math.max(0, totalPages - 1), currentPage + 1))}
                 className="ui-btn ui-btn--secondary ui-btn--sm"
               >
                 {t('history.next')}
@@ -198,7 +217,7 @@ export default function HistoryView({ onBack, onEdit, onDelete, onViewDetail, hi
       {/* ── EXPORT TAB ── */}
       {activeTab === 'export' && (
         <ScrollFade wrapperClassName="flex-1">
-          <ExportView isEmbedded settings={settings} eeg={eeg} onBackupSuccess={onBackupSuccess} />
+          <ExportView settings={settings} eeg={eeg} onOpenBackup={onOpenBackup} />
         </ScrollFade>
       )}
 

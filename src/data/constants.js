@@ -5,8 +5,7 @@ export const SYMPTOM_WIZARD = {
       options: [
         { label: "Muscle Flickering", med: "Fasciculation" },
         { label: "Single Muscle Jerks", med: "Myoclonic jerks" },
-        { label: "Muscle Rippling", med: "Myokymia" },
-        { label: "Eye/Lid Twitching", med: "Eyelid myoclonia", forceRegion: "Head & Face", forceSubRegion: "Eyes" }
+        { label: "Muscle Rippling", med: "Myokymia" }
       ]
     },
     "Big Shaking/Jerking": {
@@ -180,42 +179,36 @@ export const SEIZURE_TYPES = [
   'Aura Only'
 ];
 
-export const TRIGGERS = [
-  'Sleep Deprivation',
-  'Missed Medication',
-  'Stress',
-  'Illness / Fever',
-  'Hormonal',
-  'Alcohol',
-  'Flashing Lights',
-  'Heat / Overheating',
-  'Exercise',
-  'Hunger / Low Blood Sugar',
-  'Unknown',
-];
+// Stored in English (records and sync match on it); shown translated
+const SEIZURE_TYPE_KEYS = {
+  'Tonic-Clonic': 'seizure_types.tonic_clonic',
+  'Focal Aware': 'seizure_types.focal_aware',
+  'Focal Impaired': 'seizure_types.focal_impaired',
+  'Absence': 'seizure_types.absence',
+  'Aura Only': 'seizure_types.aura_only',
+  'Uncategorized': 'seizure_types.uncategorized',
+};
+export const seizureTypeLabel = (type, t) => (type ? t(SEIZURE_TYPE_KEYS[type] || '', type) : '');
 
-export const EEG_MOOD_OPTIONS = [
-  'Calm',
-  'Anxious',
-  'Stressed',
-  'Irritable',
-  'Sad',
-  'Tearful',
-  'Elevated',
-  'Agitated',
-  'Fatigued',
-  'Sleepy',
-  'Alert',
-  'Distracted',
-  'Overwhelmed',
-  'Frustrated',
-  'Fearful',
-  'Apathetic',
-  'Restless',
-  'Content',
-  'Confused',
-  'Emotionally Flat',
+// Possible seizure triggers. `value` is what is stored on the event (unchanged, so old records still
+// match); `factorId` is the wellbeing factor recording the same thing, so a report can line up a
+// reported trigger with that day's wellbeing check-in.
+export const TRIGGER_DEFINITIONS = [
+  { value: 'Sleep Deprivation', labelKey: 'triggers.sleep_deprivation', factorId: 'sleeplessness' },
+  { value: 'Missed Medication', labelKey: 'triggers.missed_medication', factorId: 'missedMedication' },
+  { value: 'Stress', labelKey: 'triggers.stress', factorId: 'stress' },
+  { value: 'Illness / Fever', labelKey: 'triggers.illness_fever', factorId: 'illnessFever' },
+  { value: 'Hormonal', labelKey: 'triggers.hormonal', factorId: 'hormonalMenstruation' },
+  { value: 'Alcohol', labelKey: 'triggers.alcohol' },
+  { value: 'Flashing Lights', labelKey: 'triggers.flashing_lights' },
+  { value: 'Heat / Overheating', labelKey: 'triggers.heat' },
+  { value: 'Exercise', labelKey: 'triggers.exercise' },
+  { value: 'Hunger / Low Blood Sugar', labelKey: 'triggers.hunger' },
+  { value: 'Unknown', labelKey: 'triggers.unknown' },
 ];
+export const TRIGGERS = TRIGGER_DEFINITIONS.map(trigger => trigger.value);
+
+// The EEG diary and the wellbeing check-in use the same mood list (stored by its English label)
 
 export const WELLBEING_MOOD_OPTIONS = [
   { label: 'Happy', labelKey: 'wellbeing.moods.happy_label', help: 'Positive mood, cheerful, enjoying things.', helpKey: 'wellbeing.moods.happy_help' },
@@ -231,6 +224,8 @@ export const WELLBEING_MOOD_OPTIONS = [
   { label: 'Emotionally Flat', labelKey: 'wellbeing.moods.emotionally_flat_label', help: 'Little visible emotion or reduced response.', helpKey: 'wellbeing.moods.emotionally_flat_help' },
   { label: 'Very Happy / Euphoric', labelKey: 'wellbeing.moods.very_happy_euphoric_label', help: 'Unusually high, excited, or intensely positive mood.', helpKey: 'wellbeing.moods.very_happy_euphoric_help' },
 ];
+
+export const EEG_MOOD_OPTIONS = WELLBEING_MOOD_OPTIONS;
 
 export const DEFAULT_WELLBEING_FACTORS = [
   { id: 'sleepHours', label: 'Sleep hours', labelKey: 'wellbeing.factors.sleep_hours_label', type: 'number', unit: 'h', help: 'Approximate hours slept since the last check-in.', helpKey: 'wellbeing.factors.sleep_hours_help', active: true },

@@ -11,38 +11,40 @@ function clearAllTimers() {
   pendingTimers.clear();
 }
 
-async function fireNotification(med, hhMM) {
+// Through the service worker where possible, so tapping the reminder opens the app (see
+// public/notification-click.js); a plain notification otherwise, which focuses the app on tap
+async function show(title, { body, tag, target }) {
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-  const title = `Time to take ${med.name}`;
-  const body = `${slotDose(med, hhMM)}${med.unit} — tap to confirm in AuraTrack`;
-  const tag = `med-${med.id}-${hhMM}`;
+  const plain = () => {
+    const notification = new Notification(title, { body, tag });
+    notification.onclick = () => { window.focus(); notification.close(); };
+  };
   try {
     const sw = await navigator.serviceWorker?.ready;
     if (sw?.showNotification) {
-      await sw.showNotification(title, { body, tag, icon: '/favicon.svg', badge: '/favicon.svg' });
+      await sw.showNotification(title, { body, tag, icon: '/favicon.svg', badge: '/favicon.svg', data: { target } });
     } else {
-      new Notification(title, { body, tag });
+      plain();
     }
   } catch {
-    try { new Notification(title, { body, tag }); } catch { /* not supported */ }
+    try { plain(); } catch { /* not supported */ }
   }
 }
 
-async function fireWellbeingNotification() {
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-  const title = i18n.t('wellbeing.notification_title', "Log today's wellbeing");
-  const body = i18n.t('wellbeing.notification_body', 'Add mood and context while it is still fresh.');
-  const tag = `wellbeing-${localDayKey()}`;
-  try {
-    const sw = await navigator.serviceWorker?.ready;
-    if (sw?.showNotification) {
-      await sw.showNotification(title, { body, tag, icon: '/favicon.svg', badge: '/favicon.svg' });
-    } else {
-      new Notification(title, { body, tag });
-    }
-  } catch {
-    try { new Notification(title, { body, tag }); } catch { /* not supported */ }
-  }
+function fireNotification(med, hhMM) {
+  return show(i18n.t('notifications.dose_title', { name: med.name }), {
+    body: i18n.t('notifications.dose_body', { dose: `${slotDose(med, hhMM)}${med.unit}` }),
+    tag: `med-${med.id}-${hhMM}`,
+    target: 'doses',
+  });
+}
+
+function fireWellbeingNotification() {
+  return show(i18n.t('wellbeing.notification_title', "Log today's wellbeing"), {
+    body: i18n.t('wellbeing.notification_body', 'Add mood and context while it is still fresh.'),
+    tag: `wellbeing-${localDayKey()}`,
+    target: 'wellbeing',
+  });
 }
 
 export function useNotifications() {

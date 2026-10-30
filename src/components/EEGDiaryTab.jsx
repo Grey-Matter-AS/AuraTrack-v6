@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDuration, formatEventDate, formatEventTime } from '../utils/formatters';
 import { EEG_ACTIVITY_OPTIONS, EEG_MOOD_OPTIONS } from '../data/constants';
 import { BottomSheet, Button, Card, DateInput, FieldRow, NumberInput, Select, TextArea, TextInput } from './ui';
+import { localDateTimeInputValue } from '../utils/dates';
 
 const EEG_SESSION_STATUS_STYLES = {
   COMPLETED: {
@@ -37,11 +38,7 @@ function getEegSessionStatusStyle(status) {
 }
 
 // datetime-local fields hold local time; toISOString() would show (and save back) UTC
-const toLocalInput = (ms) => {
-  const d = new Date(ms);
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
+const toLocalInput = localDateTimeInputValue;
 
 function ActivityEditor({ activity, onSave, onDelete, onClose }) {
   const { t } = useTranslation();
@@ -97,7 +94,7 @@ function ActivityEditor({ activity, onSave, onDelete, onClose }) {
             placeholder={t('eeg.no_mood', 'No mood')}
             value={moodLabel}
             onChange={setMoodLabel}
-            options={EEG_MOOD_OPTIONS.map(option => ({ value: option, label: option }))}
+            options={EEG_MOOD_OPTIONS.map(mood => ({ value: mood.label, label: t(mood.labelKey, mood.label) }))}
           />
           <FieldRow min="13rem">
             <DateInput type="datetime-local" label={t('eeg.start_time_label', 'Start')} value={startTime} onChange={setStartTime} />

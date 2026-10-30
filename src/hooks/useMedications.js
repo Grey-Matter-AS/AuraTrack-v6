@@ -1,14 +1,11 @@
-import { useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../data/db';
+import { makeUUID } from '../utils/ids';
+import { DATA_CHANGED_EVENT } from '../utils/dataEvents';
 import { diffRegimen, getScheduledDosesForDay, regimenSnapshot, slotDose } from '../utils/medicationSchedule';
 
 const ASSUME_GRACE_MS = 90 * 60 * 1000; // same threshold the app uses for 'late'
 const ASSUME_BACKFILL_DAYS = 31;
-
-function makeUUID() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-  return `uuid-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
-}
 
 // Next local midnight (DST-safe, unlike adding 24h)
 function nextDay(dayStartMs) {
@@ -18,7 +15,78 @@ function nextDay(dayStartMs) {
   return d.getTime();
 }
 
+// Idempotent: fills in a record for every scheduled dose that passed without a log.
+// Default: today only, as 'missed'. With assume on: 'assumed' once 90 min have passed, and
+// back-filled for days the app was not opened (from when the setting was turned on, max 31 days).
+// The setting is read from the DB (not React state) so a call made before settings finish
+// loading on launch still uses the right mode. The check and the write run in one transaction,
+// so two runs at once (fast navigation, StrictMode) can't both add the same missed dose.
+export function recordMissedDoses(now = Date.now()) {
+  return db.transaction('rw', db.settings, db.medications, db.medicationChanges, db.medicationLogs, async () => {
+    const [assumeRow, sinceRow] = await Promise.all([
+      db.settings.get('assumeDosesTaken'),
+      db.settings.get('assumeDosesTakenSince'),
+    ]);
+    const assume = assumeRow?.value === true;
+    const assumeSince = sinceRow?.value || null;
+    const meds = (await db.medications.toArray()).filter(m => !m.deletedAt);
+    const allChanges = await db.medicationChanges.toArray();
+    const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+    const todayEnd   = new Date(now); todayEnd.setHours(23, 59, 59, 999);
+
+    let firstDay = todayStart.getTime();
+    if (assume) {
+      const since = assumeSince ? new Date(assumeSince) : new Date(todayStart);
+      since.setHours(0, 0, 0, 0);
+      const backfillLimit = todayStart.getTime() - ASSUME_BACKFILL_DAYS * 86400000;
+      firstDay = Math.min(todayStart.getTime(), Math.max(since.getTime(), backfillLimit));
+    }
+
+    const logs = await db.medicationLogs
+      .where('takenAt').between(firstDay, todayEnd.getTime(), true, true)
+      .toArray();
+    const dayKey = (ms) => new Date(ms).toDateString();
+    const cutoff = assume ? now - ASSUME_GRACE_MS : now;
+
+    for (let day = firstDay; day <= todayStart.getTime(); day = nextDay(day)) {
+      const doses = getScheduledDosesForDay(meds, day, allChanges);
+      for (const dose of doses) {
+        if (dose.scheduledTs > cutoff) continue; // not yet due (or still inside the grace period)
+        const existing = logs.find((log) => {
+          const matchesMedication = log.medicationUuid && dose.medicationUuid
+            ? log.medicationUuid === dose.medicationUuid
+            : log.medicationId === dose.medicationId;
+          return matchesMedication && log.scheduledTime === dose.scheduledHHMM
+            && dayKey(log.takenAt) === dayKey(dose.scheduledTs);
+        });
+        if (!existing) {
+          await db.medicationLogs.add({
+            uuid: makeUUID(),
+            medicationId: dose.medicationId,
+            medicationUuid: dose.medicationUuid ?? null,
+            scheduledTime: dose.scheduledHHMM,
+            takenAt: dose.scheduledTs,
+            status: assume ? 'assumed' : 'missed',
+            doseSnapshot: dose.dose ?? null,
+            unitSnapshot: dose.unit ?? '',
+          });
+        }
+      }
+    }
+  });
+}
+
+// One medication store for the whole app (App owns it, every screen reads it through the context),
+// so a medicine added in Settings reaches the reminders and the home screen at once.
+export const MedicationsContext = createContext(null);
+
 export function useMedications() {
+  const store = useContext(MedicationsContext);
+  if (!store) throw new Error('useMedications must be used inside MedicationsContext');
+  return store;
+}
+
+export function useMedicationsStore() {
   const [medications, setMedications] = useState([]);
   const [changes, setChanges] = useState([]);
   const [lastError, setLastError] = useState(null);
@@ -174,68 +242,12 @@ export function useMedications() {
     await db.medicationLogs.update(id, {
       ...changes,
       isEdited: true,
-      lastModified: Date.now(),
     });
   };
 
-  // Idempotent: fills in a record for every scheduled dose that passed without a log.
-  // Default: today only, as 'missed'. With assume on: 'assumed' once 90 min have passed, and
-  // back-filled for days the app was not opened (from when the setting was turned on, max 31 days).
-  // The setting is read from the DB (not React state) so a call made before settings finish
-  // loading on launch still uses the right mode.
   const markMissedDoses = async () => {
     try {
-      const [assumeRow, sinceRow] = await Promise.all([
-        db.settings.get('assumeDosesTaken').catch(() => null),
-        db.settings.get('assumeDosesTakenSince').catch(() => null),
-      ]);
-      const assume = assumeRow?.value === true;
-      const assumeSince = sinceRow?.value || null;
-      const meds = (await db.medications.toArray()).filter(m => !m.deletedAt);
-      const allChanges = await db.medicationChanges.toArray();
-      const now = Date.now();
-      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-      const todayEnd   = new Date(); todayEnd.setHours(23, 59, 59, 999);
-
-      let firstDay = todayStart.getTime();
-      if (assume) {
-        const since = assumeSince ? new Date(assumeSince) : todayStart;
-        since.setHours(0, 0, 0, 0);
-        const backfillLimit = todayStart.getTime() - ASSUME_BACKFILL_DAYS * 86400000;
-        firstDay = Math.min(todayStart.getTime(), Math.max(since.getTime(), backfillLimit));
-      }
-
-      const logs = await db.medicationLogs
-        .where('takenAt').between(firstDay, todayEnd.getTime(), true, true)
-        .toArray();
-      const dayKey = (ms) => new Date(ms).toDateString();
-      const cutoff = assume ? now - ASSUME_GRACE_MS : now;
-
-      for (let day = firstDay; day <= todayStart.getTime(); day = nextDay(day)) {
-        const doses = getScheduledDosesForDay(meds, day, allChanges);
-        for (const dose of doses) {
-          if (dose.scheduledTs > cutoff) continue; // not yet due (or still inside the grace period)
-          const existing = logs.find((log) => {
-            const matchesMedication = log.medicationUuid && dose.medicationUuid
-              ? log.medicationUuid === dose.medicationUuid
-              : log.medicationId === dose.medicationId;
-            return matchesMedication && log.scheduledTime === dose.scheduledHHMM
-              && dayKey(log.takenAt) === dayKey(dose.scheduledTs);
-          });
-          if (!existing) {
-            await db.medicationLogs.add({
-              uuid: makeUUID(),
-              medicationId: dose.medicationId,
-              medicationUuid: dose.medicationUuid ?? null,
-              scheduledTime: dose.scheduledHHMM,
-              takenAt: dose.scheduledTs,
-              status: assume ? 'assumed' : 'missed',
-              doseSnapshot: dose.dose ?? null,
-              unitSnapshot: dose.unit ?? '',
-            });
-          }
-        }
-      }
+      await recordMissedDoses();
       setLastError(null);
     } catch (err) {
       console.error('Failed to mark missed doses:', err);
@@ -244,9 +256,15 @@ export function useMedications() {
     }
   };
 
+  // Loaded once, and again after a sync or restore changed the data
   useEffect(() => {
     const id = setTimeout(load, 0);
-    return () => clearTimeout(id);
+    const reload = () => { load().catch(() => {}); };
+    window.addEventListener(DATA_CHANGED_EVENT, reload);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener(DATA_CHANGED_EVENT, reload);
+    };
   }, []);
 
   return {

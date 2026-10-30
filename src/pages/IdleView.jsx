@@ -5,7 +5,7 @@ import { MedicationDosePanel } from '../components/MedicationDosePanel';
 import { buildDangerMap } from '../utils/dangerFlags';
 import { ScrollFade } from '../components/ScrollFade';
 import { EEG_ACTIVITY_OPTIONS, EEG_MOOD_OPTIONS } from '../data/constants';
-import { formatDuration } from '../utils/formatters';
+import { formatDurationSetting } from '../utils/formatters';
 import { WellbeingEntrySheet } from '../components/WellbeingEntrySheet';
 import { ActivityIcon } from '../components/AppIcons';
 import { BottomSheet, Button, Card, ChipGroup, ChoiceList, EmptyState, Field, Inset, NumberInput, Select, TextArea, TextInput } from '../components/ui';
@@ -89,7 +89,7 @@ function EegActivitySheet({ onClose, onStart }) {
         placeholder={t('eeg.mood_placeholder', 'Mood (optional)')}
         value={moodLabel}
         onChange={setMoodLabel}
-        options={EEG_MOOD_OPTIONS.map(mood => ({ value: mood, label: mood }))}
+        options={EEG_MOOD_OPTIONS.map(mood => ({ value: mood.label, label: t(mood.labelKey, mood.label) }))}
       />
       <TextArea label={t('eeg.notes_label', 'Notes')} value={notes} onChange={setNotes} placeholder={t('eeg.notes_placeholder', 'Notes (optional)')} rows={3} />
     </BottomSheet>
@@ -108,6 +108,7 @@ export default function IdleView({
   allActiveMedications,
   onSaveDoses,
   durationFormat = 'seconds',
+  plan,
   dateFormat = 'locale',
   timeFormat = '12h',
   eegSession = null,
@@ -122,7 +123,7 @@ export default function IdleView({
   wellbeingEnabled = true,
 }) {
   const { t } = useTranslation();
-  const dangerMap = useMemo(() => buildDangerMap(fullHistory?.length ? fullHistory : history), [fullHistory, history]);
+  const dangerMap = useMemo(() => buildDangerMap(fullHistory?.length ? fullHistory : history, plan), [fullHistory, history, plan]);
   const hasMedications = Object.keys(medicationGroups ?? {}).length > 0 || (allActiveMedications?.length ?? 0) > 0;
   const [showSessionSheet, setShowSessionSheet] = useState(false);
   const [showActivitySheet, setShowActivitySheet] = useState(false);
@@ -228,7 +229,7 @@ export default function IdleView({
                   <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{ color: 'var(--accent-text)' }}>{t('idle.eeg_active', 'EEG Diary Active')}</p>
                   <p className="text-sm font-bold mt-1" style={{ color: 'var(--text-primary)' }}>{eegSession.title || t('idle.eeg_session_default', 'EEG monitoring session')}</p>
                   <p className="text-[11px] mt-1" style={{ color: 'var(--text-dim)' }}>
-                    {t('idle.eeg_session_elapsed', 'Session elapsed')}: {durationFormat === 'human' ? formatDuration(eegElapsed) : `${eegElapsed}s`}
+                    {t('idle.eeg_session_elapsed', 'Session elapsed')}: {formatDurationSetting(eegElapsed, durationFormat)}
                   </p>
                 </div>
                 <Button variant="danger" size="sm" className="shrink-0" onClick={() => onEndEegSession?.(eegSession.id)}>
@@ -253,7 +254,7 @@ export default function IdleView({
                       <div className="text-right">
                         <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-faint)' }}>{t('alert.elapsed')}</p>
                         <p className="text-lg font-mono font-black" style={{ color: 'var(--text-primary)' }}>
-                          {durationFormat === 'human' ? formatDuration(currentActivityElapsed) : `${currentActivityElapsed}s`}
+                          {formatDurationSetting(currentActivityElapsed, durationFormat)}
                         </p>
                       </div>
                     </div>

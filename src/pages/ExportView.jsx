@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from '../data/db';
-import { ScrollFade } from '../components/ScrollFade';
 import { ExportCard } from '../components/ExportCard';
 import { PrintPreviewOverlay } from '../components/PrintPreviewOverlay';
-import { BackupTransferModal } from '../components/BackupTransferModal';
-import { ActivityIcon, CalendarIcon, DownloadIcon, EyeIcon, FileStackIcon, ReportIcon, StethoscopeIcon, TableIcon, WarningIcon } from '../components/AppIcons';
+import { ActivityIcon, ArrowRightIcon, CalendarIcon, DownloadIcon, EyeIcon, FileStackIcon, ReportIcon, StethoscopeIcon, TableIcon, WarningIcon } from '../components/AppIcons';
 import {
   exportToCSV,
   buildEventTablePreview,
@@ -20,26 +18,27 @@ import {
 } from '../utils/exportHelpers';
 import { useMedications } from '../hooks/useMedications';
 import { DateInput } from '../components/ui';
+import { addLocalDays, endOfLocalDay, localDateKey, localMonthKey, parseLocalDate } from '../utils/dates';
 
-export default function ExportView({ onBack, settings = {}, isEmbedded = false, eeg = null, onBackupSuccess = null }) {
+// Lives inside History → Export. Backups have one home (Settings → Data & Backup); this links there.
+export default function ExportView({ settings = {}, eeg = null, onOpenBackup = null }) {
   const { t } = useTranslation();
   const [printPreview, setPrintPreview] = useState(null);
-  const [showBackupModal, setShowBackupModal] = useState(false);
   const [fromDate, setFromDate] = useState(
-    () => new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10)
+    () => localDateKey(addLocalDays(Date.now(), -30))
   );
   const [toDate, setToDate] = useState(
-    () => new Date().toISOString().slice(0, 10)
+    () => localDateKey()
   );
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateKey();
   const { medications, changes: medicationChanges, getLogsForPeriod } = useMedications();
   const changesInSelectedRange = () => {
-    const fromMs = new Date(fromDate).setHours(0, 0, 0, 0);
-    const toMs = new Date(toDate).setHours(23, 59, 59, 999);
+    const fromMs = parseLocalDate(fromDate).getTime();
+    const toMs = endOfLocalDay(parseLocalDate(toDate));
     return medicationChanges.filter(change => change.effectiveAt >= fromMs && change.effectiveAt <= toMs);
   };
   const [diaryMonth, setDiaryMonth] = useState(
-    () => new Date().toISOString().slice(0, 7)  // 'YYYY-MM'
+    () => localMonthKey()
   );
 
   const getEegBundle = async () => {
@@ -89,8 +88,8 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
 
   const handleNeurologistReport = async () => {
     const events = await getEvents();
-    const fromMs = new Date(fromDate).setHours(0, 0, 0, 0);
-    const toMs   = new Date(toDate).setHours(23, 59, 59, 999);
+    const fromMs = parseLocalDate(fromDate).getTime();
+    const toMs   = endOfLocalDay(parseLocalDate(toDate));
     const medLogs = await getLogsForPeriod(fromMs, toMs);
     const wellbeingEntries = await getWellbeingEntriesForPeriod(fromMs, toMs);
     setPrintPreview(buildNeurologistReportPreview(events, settings, medications, medLogs, { fromDate, toDate, fromMs, toMs }, wellbeingEntries, medicationChanges));
@@ -98,20 +97,15 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
 
   const handleNeurologistReportPdf = async () => {
     const events = await getEvents();
-    const fromMs = new Date(fromDate).setHours(0, 0, 0, 0);
-    const toMs   = new Date(toDate).setHours(23, 59, 59, 999);
+    const fromMs = parseLocalDate(fromDate).getTime();
+    const toMs   = endOfLocalDay(parseLocalDate(toDate));
     const medLogs = await getLogsForPeriod(fromMs, toMs);
     const wellbeingEntries = await getWellbeingEntriesForPeriod(fromMs, toMs);
     await exportNeurologistReportPDF(events, settings, medications, medLogs, { fromDate, toDate, fromMs, toMs }, wellbeingEntries, medicationChanges);
   };
 
-  const ContentWrapper = isEmbedded ? 'div' : ScrollFade;
-  const contentWrapperProps = isEmbedded
-    ? { className: 'space-y-3' }
-    : { className: 'space-y-3', wrapperClassName: 'flex-1' };
-
   return (
-    <div className={isEmbedded ? 'w-full pb-10 space-y-0' : 'app-page-shell flex-1 flex flex-col w-full overflow-hidden mx-auto'}>
+    <div className="w-full pb-10 space-y-0">
       {printPreview && (
         <PrintPreviewOverlay
           title={printPreview.title}
@@ -119,31 +113,6 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
           html={printPreview.html}
           onClose={() => setPrintPreview(null)}
         />
-      )}
-      {showBackupModal && (
-        <BackupTransferModal
-          key="history-export-backup"
-          isOpen
-          mode="export"
-          settings={settings}
-          onClose={() => setShowBackupModal(false)}
-          onExportSuccess={onBackupSuccess}
-        />
-      )}
-
-      {/* Header — hidden when embedded in History tab */}
-      {!isEmbedded && (
-        <div className="flex items-center gap-4 mb-6 shrink-0">
-          <button
-            onClick={onBack}
-            className="ui-btn ui-btn--secondary ui-btn--sm"
-          >
-            {t('nav.back')}
-          </button>
-          <h2 className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-dim)' }}>
-            {t('export.title')}
-          </h2>
-        </div>
       )}
 
       {/* Date Range Pickers */}
@@ -157,7 +126,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
         </div>
       </div>
 
-      <ContentWrapper {...contentWrapperProps}>
+      <div className="space-y-3">
 
         {/* ── Raw Data Exports ── */}
         <p className="text-[9px] font-black uppercase tracking-[0.3em] px-1" style={{ color: 'var(--text-faint)' }}>
@@ -169,9 +138,9 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
           description={t('export.backup_json_desc')}
           icon={<FileStackIcon className="w-5 h-5" />}
           actions={[{
-            label: t('export.generate'),
-            icon: <DownloadIcon className="w-4 h-4" />,
-            onClick: async () => setShowBackupModal(true),
+            label: t('export.go_to_backup'),
+            icon: <ArrowRightIcon className="w-4 h-4" />,
+            onClick: async () => onOpenBackup?.(),
           }]}
         />
         <ExportCard
@@ -183,8 +152,8 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
             icon: <DownloadIcon className="w-4 h-4" />,
             onClick: async () => {
               const events = await getEvents();
-              const fromMs = new Date(fromDate).setHours(0, 0, 0, 0);
-              const toMs   = new Date(toDate).setHours(23, 59, 59, 999);
+              const fromMs = parseLocalDate(fromDate).getTime();
+              const toMs   = endOfLocalDay(parseLocalDate(toDate));
               const logs   = await getLogsForPeriod(fromMs, toMs);
               const eegBundle = await getEegBundle();
               const wellbeingEntries = await getWellbeingEntriesForPeriod(fromMs, toMs);
@@ -337,7 +306,7 @@ export default function ExportView({ onBack, settings = {}, isEmbedded = false, 
           ]}
         />
 
-      </ContentWrapper>
+      </div>
     </div>
   );
 }

@@ -4,50 +4,25 @@ import jsQR from 'jsqr';
 import i18n from '../i18n';
 import { useP2PSync } from '../hooks/useP2PSync';
 import { useLANSync } from '../hooks/useLANSync';
-import { BackupTransferModal } from './BackupTransferModal';
-import { BottomSheet, Button, ChoiceList } from './ui';
+import { db } from '../data/db';
+import { BottomSheet, Button, Checkbox, ChoiceList } from './ui';
 import {
   ActivityIcon,
   CalendarIcon,
   CheckIcon,
   ClipboardListIcon,
-  DownloadIcon,
   GlobeIcon,
   LoaderIcon,
   PillIcon,
   ShieldIcon,
-  UploadIcon,
   WarningIcon,
   WifiIcon,
 } from './AppIcons';
-import { assertImportFileSafe } from '../utils/importSanitizer';
-import { parseBackupFileText } from '../utils/backupFiles';
+import { describeSkipped, mergeTotal } from '../utils/mergeSummary';
 
 function wellbeingEntriesAdded(count) {
   return i18n.t('sync.wellbeing_entries_added', { count, defaultValue: '{{count}} new wellbeing entries added' });
 }
-
-function syncImportSummary(r) {
-  return i18n.t('sync.import_summary_with_wellbeing', {
-    events: r.events,
-    medications: r.medications,
-    logs: r.logs,
-    eegSessions: r.eegSessions,
-    eegActivities: r.eegActivities,
-    wellbeingEntries: r.wellbeingEntries || 0,
-    conflicts: r.conflicts?.length || 0,
-    defaultValue: 'Added {{events}} event(s), {{medications}} medication(s), {{logs}} dose log(s), {{eegSessions}} EEG session(s), {{eegActivities}} EEG activity record(s), and {{wellbeingEntries}} wellbeing entries.',
-  }) + (r.medicationChanges || r.medicationsUpdated || r.medicationsDeleted
-    ? ` ${i18n.t('sync.medication_history_summary', {
-      changes: r.medicationChanges || 0,
-      updated: r.medicationsUpdated || 0,
-      deleted: r.medicationsDeleted || 0,
-    })}`
-    : '');
-}
-
-const mergeTotal = (r) => r.settings + r.events + r.medications + r.logs + r.eegSessions + r.eegActivities
-  + (r.wellbeingEntries || 0) + (r.medicationChanges || 0) + (r.medicationsUpdated || 0) + (r.medicationsDeleted || 0);
 
 // ─── Shared sub-components ───────────────────────────────────
 
@@ -139,7 +114,9 @@ function RoleSelector({ role, onChange, locked = false }) {
 
 function DonePanel({ result, onClose }) {
   const medicationHistoryCount = (result?.medicationChanges || 0) + (result?.medicationsUpdated || 0) + (result?.medicationsDeleted || 0);
-  const total = (result?.events || 0) + (result?.medications || 0) + (result?.logs || 0) + (result?.eegSessions || 0) + (result?.eegActivities || 0) + (result?.wellbeingEntries || 0) + medicationHistoryCount;
+  const total = result ? mergeTotal(result) : 0;
+  const updated = (result?.eventsUpdated || 0) + (result?.logsUpdated || 0) + (result?.eegUpdated || 0) + (result?.wellbeingUpdated || 0);
+  const skipped = (result?.rejected || 0) + (result?.conflicts || []).filter(c => c.type?.startsWith('orphan_')).length;
   return (
     <div className="space-y-4 text-center">
       <span className="app-status-badge app-status-badge--success mx-auto mb-2 !h-12 !w-12 !rounded-full !p-0"><CheckIcon className="w-6 h-6" /></span>
@@ -154,8 +131,13 @@ function DonePanel({ result, onClose }) {
             {result.eegSessions > 0 && <StatusRow icon={<ActivityIcon className="w-5 h-5" />} text={i18n.t('sync.eeg_sessions_added', { count: result.eegSessions })} />}
             {result.eegActivities > 0 && <StatusRow icon={<ActivityIcon className="w-5 h-5" />} text={i18n.t('sync.eeg_activities_added', { count: result.eegActivities })} />}
             {result.wellbeingEntries > 0 && <StatusRow icon={<ActivityIcon className="w-5 h-5" />} text={wellbeingEntriesAdded(result.wellbeingEntries)} />}
+            {updated > 0 && <StatusRow icon={<CheckIcon className="w-5 h-5" />} text={i18n.t('settings.data.import_summary_updated', { count: updated })} />}
+            {result.deleted > 0 && <StatusRow icon={<CheckIcon className="w-5 h-5" />} text={i18n.t('settings.data.import_summary_deleted', { count: result.deleted })} />}
           </div>
       }
+      {skipped > 0 && (
+        <p className="app-alert app-alert--warning rounded-xl px-4 py-3 text-xs font-bold text-left">{describeSkipped(result)}</p>
+      )}
       <button onClick={onClose}
         className="ui-btn ui-btn--primary ui-btn--md ui-btn--full"
        >
@@ -273,8 +255,8 @@ function QRScanner({ onScan, onCancel, prompt = i18n.t('sync.scan_qr_prompt') })
 
 // ─── Easy Sync (PeerJS) panel ─────────────────────────────────
 
-function EasySyncPanel({ connectToken, role, onDone, onScanSenderQR }) {
-  const p2p = useP2PSync();
+function EasySyncPanel({ connectToken, role, onDone, onScanSenderQR, mergeOptions }) {
+  const p2p = useP2PSync(mergeOptions);
   const [qrUrl, setQrUrl] = useState(null);
 
   // Guest: auto-connect when opened with a token from scanned QR
@@ -410,8 +392,8 @@ function EasySyncPanel({ connectToken, role, onDone, onScanSenderQR }) {
 
 // ─── Private Sync (LAN) panel ─────────────────────────────────
 
-function PrivateSyncPanel({ offerSDP, role, onDone, onScanSenderQR }) {
-  const lan = useLANSync();
+function PrivateSyncPanel({ offerSDP, role, onDone, onScanSenderQR, mergeOptions }) {
+  const lan = useLANSync(mergeOptions);
   const [scanning, setScanning] = useState(false);
 
   // Guest: auto-process offer when opened with encoded SDP
@@ -553,120 +535,12 @@ function PrivateSyncPanel({ offerSDP, role, onDone, onScanSenderQR }) {
 
 // ─── Manual File panel ────────────────────────────────────────
 
-function ManualFilePanel({ role, onDone, onBackupSuccess }) {
-  const [status, setStatus] = useState(null);
-  const fileRef = useRef(null);
-  const [backupModal, setBackupModal] = useState({ mode: null, fileName: '', fileText: '' });
-
-  const handleImport = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      assertImportFileSafe(file);
-      const { mergeRemoteData } = await import('../utils/syncHelpers');
-      const text = await file.text();
-      const parsed = parseBackupFileText(text);
-      if (parsed.kind === 'encrypted') {
-        setBackupModal({ mode: 'import', fileName: file.name, fileText: text });
-        e.target.value = '';
-        return;
-      }
-      const r = await mergeRemoteData(parsed.parsed);
-      const total = mergeTotal(r);
-      setStatus(total
-        ? `${syncImportSummary(r)}${r.conflicts?.length ? ` ${i18n.t('sync.conflicts_kept_local', { count: r.conflicts.length, defaultValue: '{{count}} conflict(s) kept local records.' })}` : ''}`
-        : i18n.t('sync.already_up_to_date_short'));
-    } catch { setStatus(i18n.t('settings.data.import_failed')); }
-    e.target.value = '';
-  };
-
-  const handleImportClick = async () => {
-    if ('showOpenFilePicker' in window) {
-      try {
-        const [h] = await window.showOpenFilePicker({
-          types: [{ description: 'AuraTrack Backup', accept: { 'application/json': ['.json', '.atbak'] } }],
-          multiple: false,
-        });
-        const file = await h.getFile();
-        const fakeEvent = { target: { files: [file], value: '' } };
-        await handleImport(fakeEvent);
-        return;
-      } catch (e) { if (e.name === 'AbortError') return; }
-    }
-    fileRef.current?.click();
-  };
-
-  return (
-    <div className="space-y-4">
-      {backupModal.mode === 'export' && (
-        <BackupTransferModal
-          key="sync-backup-export"
-          isOpen
-          mode="export"
-          onClose={() => setBackupModal({ mode: null, fileName: '', fileText: '' })}
-          onExportSuccess={async (summary) => {
-            await onBackupSuccess?.(summary);
-            setStatus(i18n.t('sync.exported_events', { count: summary.events }));
-          }}
-        />
-      )}
-      {backupModal.mode === 'import' && (
-        <BackupTransferModal
-          key={`sync-backup-import-${backupModal.fileName}`}
-          isOpen
-          mode="import"
-          fileName={backupModal.fileName}
-          fileText={backupModal.fileText}
-          onClose={() => setBackupModal({ mode: null, fileName: '', fileText: '' })}
-          onImportSuccess={(r) => {
-            const total = mergeTotal(r);
-            setStatus(total
-              ? `${syncImportSummary(r)}${r.conflicts?.length ? ` ${i18n.t('sync.conflicts_kept_local', { count: r.conflicts.length, defaultValue: '{{count}} conflict(s) kept local records.' })}` : ''}`
-              : i18n.t('sync.already_up_to_date_short'));
-          }}
-        />
-      )}
-      <RoleBadge role={role} />
-      <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-        {role === 'sender'
-          ? i18n.t('sync.manual_sender_intro')
-          : i18n.t('sync.manual_receiver_intro')}
-      </p>
-      <div className="space-y-2">
-        <Button variant={role === 'sender' ? 'primary' : 'secondary'} fullWidth icon={<DownloadIcon className="w-4 h-4" />}
-          onClick={() => setBackupModal({ mode: 'export', fileName: '', fileText: '' })}>
-          {i18n.t('backup.modal.export_cta')}
-        </Button>
-        <Button variant={role === 'receiver' ? 'primary' : 'secondary'} fullWidth icon={<UploadIcon className="w-4 h-4" />} onClick={handleImportClick}>
-          {i18n.t('sync.import_backup_file')}
-        </Button>
-        {/* Hidden native file picker opened by the Import button — not a visible field */}
-        {/* eslint-disable-next-line no-restricted-syntax */}
-        <input ref={fileRef} type="file" accept=".atbak,.json,application/json" className="hidden" onChange={handleImport} />
-      </div>
-      {status && (
-        <p className="text-[11px] font-bold text-center py-1" style={{ color: 'var(--text-secondary)' }}>
-          {status}
-        </p>
-      )}
-      <button onClick={onDone}
-        className="ui-btn ui-btn--secondary ui-btn--md ui-btn--full"
-       >
-        {i18n.t('sync.done')}
-      </button>
-    </div>
-  );
-}
-
-// ─── Root SyncModal ───────────────────────────────────────────
-
 const MODES = [
   { id: 'easy',    labelKey: 'sync.easy_sync',    subKey: 'sync.internet' },
   { id: 'private', labelKey: 'sync.private_sync', subKey: 'sync.same_wifi' },
-  { id: 'manual',  labelKey: 'sync.manual_file',  subKey: 'sync.export_import' },
 ];
 
-export default function SyncModal({ isOpen, onClose, connectToken, offerSDP, onBackupSuccess }) {
+export default function SyncModal({ isOpen, onClose, connectToken, offerSDP }) {
   // If opened via URL hash, jump straight to the right mode
   const defaultMode = connectToken ? 'easy' : offerSDP ? 'private' : null;
   const defaultRole = connectToken || offerSDP ? 'receiver' : 'sender';
@@ -676,6 +550,15 @@ export default function SyncModal({ isOpen, onClose, connectToken, offerSDP, onB
   const [scanError, setScanError] = useState('');
   const [scannedConnectToken, setScannedConnectToken] = useState(null);
   const [scannedOfferSDP, setScannedOfferSDP] = useState(null);
+  // Copy mode, language, look and reminders too: on by default only when this phone has no seizures yet
+  const [copyAllSettings, setCopyAllSettings] = useState(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    let alive = true;
+    db.events.count().then(n => { if (alive) setCopyAllSettings(n === 0); }).catch(() => {});
+    return () => { alive = false; };
+  }, [isOpen]);
+  const mergeOptions = { settingsScope: copyAllSettings ? 'all' : 'shared' };
   const effectiveConnectToken = connectToken ?? scannedConnectToken;
   const effectiveOfferSDP = offerSDP ?? scannedOfferSDP;
   const isLinked = !!(connectToken || offerSDP); // came from external QR/app link — lock the mode
@@ -769,6 +652,7 @@ export default function SyncModal({ isOpen, onClose, connectToken, offerSDP, onB
             onChange={setMode}
             options={MODES.map(m => ({ value: m.id, label: `${i18n.t(m.labelKey)} ›`, detail: i18n.t(m.subKey) }))}
           />
+          <p className="text-[11px]" style={{ color: 'var(--text-dim)' }}>{i18n.t('sync.backup_elsewhere')}</p>
         </>
       )}
 
@@ -786,12 +670,18 @@ export default function SyncModal({ isOpen, onClose, connectToken, offerSDP, onB
             setRole(nextRole);
             if (nextRole !== 'receiver') clearScannedRouting();
           }} locked={isReceiverLocked} />
+          {/* Two phones in use keep their own mode, language and look; a new phone usually wants a full copy */}
+          <Checkbox
+            checked={copyAllSettings}
+            onChange={setCopyAllSettings}
+            label={i18n.t('sync.copy_device_settings')}
+            help={i18n.t('sync.copy_device_settings_help')}
+          />
           {scanError && (
             <p className="app-alert app-alert--danger rounded-xl px-4 py-3 text-[11px] font-bold text-center">{scanError}</p>
           )}
-          {mode === 'easy'    && <EasySyncPanel connectToken={effectiveConnectToken} role={role} onDone={onClose} onScanSenderQR={startReceiverScan} />}
-          {mode === 'private' && <PrivateSyncPanel offerSDP={effectiveOfferSDP} role={role} onDone={onClose} onScanSenderQR={startReceiverScan} />}
-          {mode === 'manual'  && <ManualFilePanel role={role} onDone={onClose} onBackupSuccess={onBackupSuccess} />}
+          {mode === 'easy'    && <EasySyncPanel connectToken={effectiveConnectToken} role={role} onDone={onClose} onScanSenderQR={startReceiverScan} mergeOptions={mergeOptions} />}
+          {mode === 'private' && <PrivateSyncPanel offerSDP={effectiveOfferSDP} role={role} onDone={onClose} onScanSenderQR={startReceiverScan} mergeOptions={mergeOptions} />}
         </>
       )}
     </BottomSheet>

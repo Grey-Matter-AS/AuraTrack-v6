@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet, Button, DateInput, FieldRow, Inset, Select, TextArea } from './ui';
+import { localDateKey } from '../utils/dates';
 
-const localDateKey = (date) => {
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
 
 // Default to the next dose still due today, otherwise tomorrow's first dose
 function defaultEffective(slots) {

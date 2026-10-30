@@ -43,7 +43,7 @@ export function usePWAInstall() {
       window.removeEventListener('beforeinstallprompt', handler);
       clearTimeout(delayTimer);
     };
-  }, []);
+  }, [ios]);
 
   const install = async () => {
     if (!deferredPrompt) return;

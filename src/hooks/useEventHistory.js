@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { db } from '../data/db';
+import { deleteEvent as deleteEventRecord } from '../data/records';
 
 export function useEventHistory() {
   const [history, setHistory] = useState([]);
@@ -24,7 +25,7 @@ export function useEventHistory() {
 
   const deleteEvent = useCallback(async (id) => {
     try {
-      await db.events.delete(id);
+      await deleteEventRecord(id);
     } catch (err) {
       console.error('Failed to delete event:', err);
       throw err;

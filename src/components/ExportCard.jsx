@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { Button, ButtonRow, Card } from './ui';
 
 export function ExportCard({ label, description, icon = null, onExport, actions = null }) {
+  const { t } = useTranslation();
   return (
     <Card className="w-full !p-5 text-left shadow-lg">
       <div className="flex items-start gap-3">
@@ -26,7 +28,7 @@ export function ExportCard({ label, description, icon = null, onExport, actions 
           ))}
         </ButtonRow>
       ) : (
-        <Button variant="primary" size="sm" className="mt-4" onClick={onExport}>Export</Button>
+        <Button variant="primary" size="sm" className="mt-4" onClick={onExport}>{t('export.export_button')}</Button>
       )}
     </Card>
   );
